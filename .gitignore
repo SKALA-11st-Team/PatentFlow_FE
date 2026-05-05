@@ -34,3 +34,6 @@ coverage/
 # Vite / TypeScript cache
 *.tsbuildinfo
 .vite/
+
+# Private project reference documents
+docs/
