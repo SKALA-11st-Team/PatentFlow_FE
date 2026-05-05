@@ -17,7 +17,7 @@ PatentFlow is an internal patent management AI workflow system.
 - Service name: PatentFlow
 - Team name: SYUUK
 - Topic: Internal patent management AI
-- Core message: AI supports, humans decide
+- Product role: AI-assisted patent review workflow
 - Goal: Help legal/patent management teams and business departments review company-owned patents around annual fee payment points.
 - Product nature: Human-in-the-loop decision-support workflow system, not a simple report generator.
 
@@ -26,8 +26,8 @@ Core workflow:
 ```text
 Review target identification
 → Patent understanding
-→ AI evaluation draft generation
-→ Human review and final decision
+→ AI patent evaluation report generation
+→ Review and decision recording
 → Mailing / delivery
 → History management
 → Abandoned patent sales-candidate management
@@ -47,7 +47,7 @@ The administrator can:
 - Register and edit patent basic information
 - View AI evaluation results
 - View evaluation evidence
-- Record or edit human final decisions
+- Record or edit final decisions and legal action results
 - Manage mailing preview and sending history
 - Manage department-recipient mappings
 - Manage abandoned patents as sales candidates
@@ -59,7 +59,7 @@ The business user can:
 
 - View patents assigned to their department
 - Understand patent content through summaries and explanations
-- View AI evaluation drafts
+- View AI patent evaluation reports
 - Enter business-side opinions
 - Upload internal documents for re-evaluation
 - View re-evaluation results
@@ -81,6 +81,69 @@ Planned frontend stack:
 Do not add new dependencies unless they are clearly needed.
 
 If a dependency is needed, explain why.
+
+## PatentFlow Reference Docs
+
+Use the project documents in `docs/` as the managed reference set for frontend work.
+
+Before creating or changing UI, layout, shared components, page styling, global CSS, mock data, API contracts, evaluation screens, or business review flows, check the relevant docs first:
+
+- `docs/DESIGN_SYSTEM.md`: UI tone, design tokens, layout principles, component styling, and interaction states.
+- `docs/skax_patents_list.md`: primary source for demo patent metadata and patent list fixtures.
+- `docs/patent_evaluation_criteria.md`: official PatentFlow patent evaluation criteria, evaluation axes, final comprehensive indicator, and final judgment categories.
+- `docs/business_evaluavte_checklist.md`: business-side checklist reference for business relevance and internal review inputs.
+- `docs/api_priority.md`: frontend/backend API priority, MVP API response shape, and enum coordination.
+- `docs/need_api.md`: additional API needs and integration notes when present.
+- `docs/prompt.md`: AI prompt/reference content when prompt behavior affects frontend copy or mock AI report structure.
+
+Use `docs/DESIGN_SYSTEM.md` as the project design reference for:
+
+- Overall UI tone: quiet, practical, enterprise workflow UI
+- Design tokens for color, spacing, radius, shadow, and typography
+- Layout principles for cards, sections, tables, forms, and status messages
+- Interaction states such as hover, focus, selected, and disabled
+- Rules to avoid unnecessary hero sections, decorative gradients, card nesting, and overly generic admin UI
+
+Use `docs/patent_evaluation_criteria.md` as the project evaluation reference for:
+
+- Evaluation axes: 권리성, 기술성, 시장성, 라이프사이클 경제성
+- 사업 연계성 is deferred and must not be included in current scoring, `EvaluationCategory`, or business checklist score totals.
+- Final comprehensive indicator: 종합 가치 지표, 특허 가치 평가, 포트폴리오 내 가치 수준
+- Business opinion categories: 유지, 포기
+- Business review inputs and internal document upload assumptions
+- Business opinion delivered state: checklist scores, qualitative evaluation, and final opinion must be submitted together
+- Display rules for insufficient data: 정보 부족 있음, 추가 확인 필요, N/A
+
+When frontend mock data, fixtures, demo patent rows, or patent list examples are needed, first check `docs/skax_patents_list.md`.
+
+Use that file as the primary source for patent metadata such as:
+
+- 관리번호
+- 발명의 명칭(가제)
+- 발명의 명칭(최종)
+- 관련사업 분야
+- 관련기술 분야
+- 관련제품
+- 출원국
+- 공동출원여부
+- 공동출원인명
+- 상태
+- 출원일
+- 등록일
+- 출원번호
+- 등록번호
+- 예상 소멸일
+
+If the UI needs evaluation summaries, recommendations, business opinions, or history that are not present in `docs/skax_patents_list.md`, create clearly marked mock evaluation data around the real patent metadata instead of replacing the patent metadata with invented patents.
+
+These docs do not override PatentFlow domain requirements, fixed FR IDs, official UI IDs, or existing component conventions.
+
+If implementation details conflict, follow this priority:
+
+1. Explicit user request
+2. Fixed functional requirements and traceability rules in this AGENTS.md
+3. Existing project structure and component patterns
+4. Relevant `docs/` reference document
 
 ## Out of Scope for This Agent
 
@@ -119,7 +182,7 @@ Frontend work should reflect these fixed requirements:
 - FR-008: 종합 권고안 생성
 - FR-009: 사업부 의견 입력
 - FR-010: 내부 문서 반영 재평가
-- FR-011: AI 초안과 사람 최종 판단 분리 조회/수정
+- FR-011: AI 특허 평가 레포트와 최종 판단 분리 조회/수정
 - FR-012: 최종 의사결정 기록
 - FR-013: 평가/판단 이력 조회
 - FR-014: 부서별 수신자 및 메일링 매핑 등록/수정
@@ -168,43 +231,61 @@ Include or prepare areas for:
 - Problem solved by the patent
 - Core technical points
 - Rights / claims summary
-- AI evaluation draft
+- AI patent evaluation report
 - Evaluation score by category
 - Evidence for each evaluation item
 - Missing information or N/A fields
-- Human final decision
+- Final decision
 - Business department opinion
 - Evaluation and decision history
 
 The UI must clearly separate:
 
-```text
-AI evaluation draft != Human final decision
-```
-
 Use labels or visual separation such as:
 
-- AI 평가 초안
-- 사람 최종 판단
+- AI 특허 평가 레포트
+- 최종 판단
 - 사업부 의견
 - 평가 근거
 - 정보 부족 / 추가 확인 필요
 
 ## Evaluation UI Direction
 
-Evaluation criteria may include:
+Evaluation criteria should follow `docs/patent_evaluation_criteria.md`.
 
+Evaluation axes:
+
+- 권리성
 - 기술성
 - 시장성
-- 사업 연관성
-- 전략적 가치
-- 권리범위
-- 기술/시장 성숙도
-- 비용 대비 효용
+- 라이프사이클 경제성
 
-Frontend must not present AI output as the final decision.
+Do not add 사업 연계성 as a current scoring axis. It is deferred for future development and should only appear as a future/TODO note when needed.
 
-AI output should be shown as a draft or recommendation.
+Final comprehensive indicator:
+
+- 종합 가치 지표
+- 특허 가치 평가
+- 포트폴리오 내 가치 수준
+
+Business opinion categories:
+
+- 유지
+- 포기
+
+AI report recommendation labels:
+
+- 유지 권고
+- 포기 검토
+- 추가 정보 필요
+
+Workflow status labels should describe process state, such as:
+
+- 사업부 응답 대기
+- 결재 대기
+- 처리 완료
+
+Frontend should present AI output as a patent evaluation report or recommendation, not as an already-recorded decision.
 
 When data is insufficient, display:
 
@@ -215,6 +296,29 @@ When data is insufficient, display:
 Do not invent missing business data in frontend fixtures.
 
 Mock data should clearly look like test data.
+
+## Current Product Decisions To Preserve
+
+The following decisions came from implementation review and should not be accidentally reverted:
+
+1. 사업 연계성 is not a current evaluation criterion. Current scoring uses only 권리성, 기술성, 시장성, and 라이프사이클 경제성. Do not reintroduce `BUSINESS_ALIGNMENT`, 사업 관련성 checklist scoring, or 사업 연계성 totals unless explicitly requested.
+2. Do not put individual patent detail pages in the main nav. Patent detail screens are reached from dashboard/list rows.
+3. The business dashboard is for current work. The `의견 요청 특허` table should show actionable request status only; do not add past-history links such as `제출 이력` inside the business opinion column. Submission history belongs in the dedicated `제출 이력` nav/page.
+4. Business submission history detail is separate from normal business patent detail. `/business/submissions/:patentId` should show why the business made a prior choice, the AI report at that time, checklist evaluation history, and a small request/opinion/approval/action timeline.
+5. Checklist totals and detail scores must use the same source. Checklist total is item score sum plus qualitative score. Do not mix AI 0-100 evaluation scores with business checklist 1-4 item scores in the same total/detail display.
+6. Avoid `N/A` for not-yet-written user input. Use action/state copy such as `작성 필요`, `대기 중`, or `의견 대기`. Reserve `N/A` for true not-applicable or missing source data.
+7. Dashboard deadline cells should combine remaining days and date in one column:
+
+```text
+D-n
+yy-mm-dd
+```
+
+Do not add a separate `남은 일` column unless explicitly requested.
+
+8. Annual fee due dates are based on registration date: first due date is 3 years after registration, then every year. If the calculated due date has already passed, show the next yearly due date.
+9. Notification UX should not use checkbox-style read controls. Group notifications by `오늘`, `지난주`, `그 이전`; show title top-left and time top-right; reveal `읽음으로 표시` / `읽지 않음으로 표시` on hover, and update the unread badge accordingly.
+10. On the admin dashboard, the `관련 사업별 특허 현황` visualization should navigate to the same KPI drilldown list page used by dashboard KPI cards, with the selected business area passed as a query filter such as `/admin/review-targets?businessArea=AI`. Do not send this interaction to the patent management edit/list page, and do not implement it as an in-place filter that only changes the list below the dashboard visualization.
 
 ## Suggested Frontend Directory Structure
 
@@ -257,13 +361,13 @@ src/
     patent/
       PatentSummaryCard.tsx
       PatentMetaPanel.tsx
-      PatentStatusBadge.tsx
+      WorkflowStatusBadge.tsx
       PatentFilterBar.tsx
     evaluation/
       EvaluationScoreCard.tsx
       EvaluationEvidenceList.tsx
       RecommendationBadge.tsx
-      HumanDecisionPanel.tsx
+      FinalDecisionPanel.tsx
     mailing/
       MailPreview.tsx
       MailingHistoryTable.tsx
@@ -327,6 +431,8 @@ If routing is needed, use routes like:
 /business/dashboard
 /business/patents
 /business/patents/:patentId
+/business/submissions
+/business/submissions/:patentId
 /business/opinions/:patentId
 /business/upload/:patentId
 ```
@@ -364,17 +470,29 @@ Do not hardcode all data directly inside page components.
 
 Prefer explicit domain types.
 
+Frontend status values, enum-like value arrays, Korean labels, workflow display order, and badge tone metadata should be managed in `src/constants/status.ts`.
+
+Do not duplicate status labels or workflow ordering inside page components. Import from `src/constants/status.ts` instead.
+
 Suggested domain types:
 
 ```ts
-type PatentStatus =
-  | "NORMAL"
-  | "REVIEW_REQUIRED"
-  | "MAIL_SENT"
-  | "OPINION_SUBMITTED"
-  | "FINAL_DECIDED"
+type PatentLifecycleStatus =
+  | "ACTIVE"
   | "ABANDONED"
-  | "SALES_CANDIDATE";
+  | "SOLD"
+  | "EXPIRED";
+
+type ReviewWorkflowStatus =
+  | "NOT_IN_REVIEW_QUARTER"
+  | "REVIEW_QUARTER_STARTED"
+  | "REPORT_GENERATED"
+  | "MAIL_READY"
+  | "WAITING_BUSINESS_RESPONSE"
+  | "BUSINESS_RESPONSE_RECEIVED"
+  | "WAITING_EXECUTIVE_APPROVAL"
+  | "APPROVAL_COMPLETED"
+  | "LEGAL_ACTION_RECORDED";
 
 type Recommendation =
   | "MAINTAIN"
@@ -383,14 +501,27 @@ type Recommendation =
   | "SALES_CANDIDATE"
   | "HOLD";
 
+type BusinessOpinionDecision =
+  | "MAINTAIN"
+  | "ABANDON";
+
+type ExecutiveApprovalDecision =
+  | "APPROVED_MAINTAIN"
+  | "APPROVED_ABANDON"
+  | "APPROVED_SELL"
+  | "REJECTED"
+  | "REQUEST_CHANGES";
+
+type LegalActionResult =
+  | "MAINTAINED"
+  | "ABANDONED"
+  | "SOLD";
+
 type EvaluationCategory =
+  | "RIGHTS"
   | "TECHNOLOGY"
   | "MARKET"
-  | "BUSINESS_RELEVANCE"
-  | "STRATEGIC_VALUE"
-  | "RIGHT_SCOPE"
-  | "MATURITY"
-  | "COST_EFFECTIVENESS";
+  | "LIFECYCLE_ECONOMICS";
 ```
 
 Korean labels can be mapped at the UI layer.
@@ -517,7 +648,7 @@ Use this mapping as the default traceability guide.
 | FR-008 | 종합 권고안 생성 | UI-005 |
 | FR-009 | 사업부 의견 입력 | UI-006, UI-005 |
 | FR-010 | 내부 문서 반영 재평가 | UI-006, UI-005 |
-| FR-011 | AI 초안과 사람 최종 판단 분리 조회/수정 | UI-005 |
+| FR-011 | AI 특허 평가 레포트와 최종 판단 분리 조회/수정 | UI-005 |
 | FR-012 | 최종 의사결정 기록 | UI-005, UI-009 |
 | FR-013 | 평가/판단 이력 조회 | UI-005, UI-009 |
 | FR-014 | 부서별 수신자 및 메일링 매핑 등록/수정 | UI-007, UI-008 |
@@ -592,8 +723,8 @@ Frontend priorities before mid presentation:
 2. Patent Management list
 3. Patent Detail
 4. Patent summary display
-5. AI evaluation draft display
-6. Human final decision separation
+5. AI patent evaluation report display
+6. Final decision display
 7. Basic mock data and API client structure
 
 Frontend priorities before final presentation:
@@ -626,7 +757,146 @@ Do not claim tests passed unless they were actually run.
 
 If tests cannot be run, explain why.
 
+## Git Workflow
+
+### Branch Strategy
+
+Use GitHub Flow with a shared `dev` branch before `main`.
+
+```text
+feature/name → PR → dev → main
+```
+
+Branch roles:
+
+| Branch | Description |
+|---|---|
+| `main` | 즉각적으로 배포가 가능한 상태 |
+| `dev` | `main` 브랜치에 올라가기 전에 기능을 합치고 문제가 있는지 점검 |
+| `feature/name` | `dev` 브랜치를 기준으로 생성한다. `name`은 기능 요약을 영어로 적절히 번역하여 작성한다. |
+| `fix/name` | `dev` 브랜치를 기준으로 생성한다. 버그 수정이나 작은 보완 작업에 사용한다. |
+| `docs` | 문서화 작업 용도로 사용한다. |
+
+Example flow:
+
+```mermaid
+gitGraph
+    commit
+    branch dev
+    checkout dev
+    commit
+
+    branch "feature/user-auth"
+    commit
+    commit
+    checkout dev
+    merge "feature/user-auth"
+
+    branch "docs"
+    commit
+    checkout dev
+    merge "docs"
+
+    branch "feature/signup"
+    commit
+    commit
+    checkout dev
+    merge "feature/signup"
+
+    checkout main
+    merge dev
+
+    checkout dev
+    branch "feature/new-ui"
+    commit
+    commit
+    checkout dev
+    merge "feature/new-ui"
+```
+
+### Commit Size
+
+- Keep commits reviewable and focused.
+- One commit should not exceed 50 changed lines in a single file when practical.
+- Review AI-generated code before committing it.
+
+### Commit Message
+
+Use the Udacity-style prefix format.
+
+- Do not use emojis.
+- Write commit messages in Korean.
+- Make the first line clear enough to understand the change by itself.
+
+Format:
+
+```text
+<커밋_타입>: <수정사항_한줄_요약> (<#이슈넘버>)
+```
+
+The issue number is optional and should be used when the commit is tied to a specific bug, task, or issue.
+
+Commit types:
+
+| Type | Description |
+|---|---|
+| `feat` | 새로운 기능 추가 |
+| `fix` | 버그 수정 |
+| `docs` | 문서 변경 |
+| `style` | 포매팅, 누락된 세미콜론 등 코드 의미 변경 없음 |
+| `refactor` | 프로덕션 코드 리팩토링 |
+| `test` | 테스트 추가 또는 테스트 리팩토링. 프로덕션 코드 변경 없음 |
+| `chore` | 빌드 작업, 패키지 관리자 구성 업데이트 등. 프로덕션 코드 변경 없음 |
+
+Examples:
+
+```text
+feat: 특허 상세 AI 평가 레포트 영역 추가 (#12)
+fix: 사업부 의견 제출 상태 표시 오류 수정 (#18)
+docs: 공통 에이전트 작업 규칙 추가
+chore: vite react typescript 환경 설정 (#76)
+```
+
+### Pull Request Guide
+
+- Merge into `dev` with squash and merge.
+- Merge `dev` into `main` with a normal merge.
+- When merging a PR, keep the commit title prefixed with the same commit type format.
+- Example: `chore: vite react typescript 환경 설정 (#76)`
+
 ## Work Rules
+
+The behavioral guidelines from `docs/CLAUDE.md` are integrated here as the default coding discipline for this project.
+
+### Think Before Coding
+
+- Do not assume unclear requirements. State assumptions explicitly, and ask when a reasonable assumption would be risky.
+- If multiple interpretations exist, mention the tradeoff before choosing an implementation path.
+- If a simpler approach solves the request, prefer it and avoid speculative expansion.
+- Push back when a requested change conflicts with product decisions, FR/UI traceability, or existing project constraints.
+
+### Simplicity First
+
+- Implement the minimum code that satisfies the requested behavior.
+- Do not add features, abstractions, flexibility, configuration, or defensive error handling that the task does not need.
+- Avoid single-use abstractions unless they clearly reduce real complexity or match an existing pattern.
+- If the implementation grows much larger than the problem requires, simplify before finishing.
+
+### Surgical Changes
+
+- Touch only files and lines directly related to the task.
+- Do not improve, reformat, refactor, delete, or rename adjacent code unless required for the requested change.
+- Match the existing project style even when a different style would be personally preferred.
+- Remove only imports, variables, functions, or files made unused by your own changes.
+- If unrelated dead code or cleanup is noticed, mention it in the report instead of changing it.
+
+### Goal-Driven Execution
+
+- Convert the request into verifiable success criteria before implementing.
+- For bug fixes, prefer reproducing the issue with a focused test or check before changing behavior.
+- For refactors, verify behavior before and after when practical.
+- For multi-step tasks, keep a brief plan and continue until the result is implemented and checked.
+- Report verification honestly; do not claim tests passed unless the exact command was run.
 
 Before changing code:
 
