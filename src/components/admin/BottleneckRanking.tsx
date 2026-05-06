@@ -15,7 +15,7 @@ interface WorkflowProgressItem {
 
 /**
  * @relatedFR FR-001, FR-012
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드에서 미완료 workflow 병목 Top 3를 순위 카드로 표시한다.
  */
 export function BottleneckRanking({ workflowProgress }: { workflowProgress: WorkflowProgressItem[] }) {
@@ -40,7 +40,7 @@ export function BottleneckRanking({ workflowProgress }: { workflowProgress: Work
 
 /**
  * @relatedFR FR-001, FR-012
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드 병목 Top 3 후보를 미완료 단계 기준으로 산출한다.
  */
 function getBottleneckItems(workflowProgress: WorkflowProgressItem[]) {

@@ -2,10 +2,12 @@ import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Button } from "../../components/common/Button";
+import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
-import { patents } from "../../mocks/patents.mock";
+import { useClientPagination } from "../../hooks/useClientPagination";
+import { usePatentList } from "../../hooks/usePatentList";
 import { reviewWorkflowStatusLabels, REVIEW_WORKFLOW_STATUSES } from "../../constants/status";
 import type { PatentListItem, PatentUpsertPayload, ReviewWorkflowStatus } from "../../types/patent";
 import { getNextAnnualFeeDueDate } from "../../utils/annualFee";
@@ -30,13 +32,13 @@ const emptyPatentForm: PatentFormState = {
 
 /**
  * @relatedFR FR-001, FR-002, FR-003, FR-004
- * @relatedUI UI-003, UI-004
+ * @relatedUI UI-LEGAL-03, UI-LEGAL-04
  * @description 관리자 특허 기본 정보 등록과 수정 대상 특허 테이블 조회 화면
  */
 export function AdminPatentListPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [patentList, setPatentList] = useState<PatentListItem[]>(() => [...patents]);
+  const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [form, setForm] = useState<PatentFormState>(emptyPatentForm);
   const [keyword, setKeyword] = useState("");
   const [businessAreaFilter, setBusinessAreaFilter] = useState(() => searchParams.get("businessArea") ?? "ALL");
@@ -51,6 +53,14 @@ export function AdminPatentListPage() {
     () => getEditablePatentRows(patentList, keyword, businessAreaFilter, workflowFilter, sort),
     [businessAreaFilter, keyword, patentList, sort, workflowFilter],
   );
+  const {
+    currentPage,
+    pageSize,
+    pagedItems: displayedPatents,
+    setCurrentPage,
+    totalItems,
+    totalPages,
+  } = useClientPagination(listedPatents, [businessAreaFilter, keyword, sort, workflowFilter]);
   const businessAreaOptions = useMemo(
     () => Array.from(new Set(patentList.map((patent) => patent.businessArea))).sort((first, second) => first.localeCompare(second, "ko")),
     [patentList],
@@ -134,7 +144,7 @@ export function AdminPatentListPage() {
 
   /**
    * @relatedFR FR-003, FR-004
-   * @relatedUI UI-004
+   * @relatedUI UI-LEGAL-04
    * @description 등록 폼의 특허명/제품 정보를 기준으로 관련사업/관련기술 분야 AI 추천값을 적용한다.
    */
   async function handleSuggestContextFields() {
@@ -186,7 +196,7 @@ export function AdminPatentListPage() {
     >
       <Section
         title="신규 특허 등록"
-        description="관리번호로 KIPRIS를 먼저 조회하고, 결과가 없으면 Google Patents 검색을 백엔드에 요청하는 흐름입니다."
+        description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "관리번호로 KIPRIS를 먼저 조회하고, 결과가 없으면 Google Patents 검색을 백엔드에 요청하는 흐름입니다.")}
       >
         <form className="patent-edit-form" onSubmit={handleSavePatent}>
           <div className="external-lookup-row">
@@ -335,7 +345,7 @@ export function AdminPatentListPage() {
               </tr>
             </thead>
             <tbody>
-              {listedPatents.map((patent) => (
+              {displayedPatents.map((patent) => (
                 <tr
                   className="clickable-row"
                   key={patent.patentId}
@@ -378,6 +388,13 @@ export function AdminPatentListPage() {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+        />
       </Section>
     </AppLayout>
   );
@@ -385,7 +402,7 @@ export function AdminPatentListPage() {
 
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-003, UI-004
+ * @relatedUI UI-LEGAL-03, UI-LEGAL-04
  * @description 관리자 특허관리 검색, 필터, 정렬 조건에 맞는 수정 대상 특허 행을 반환한다.
  */
 function getEditablePatentRows(
@@ -419,7 +436,7 @@ function getEditablePatentRows(
 
 /**
  * @relatedFR FR-003, FR-004
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description 등록 폼 데이터를 특허관리 테이블에서 즉시 확인할 수 있는 특허 항목으로 변환한다.
  */
 function createListItemFromForm(form: PatentFormState, patentId: string): PatentListItem {

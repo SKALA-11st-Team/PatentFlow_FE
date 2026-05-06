@@ -13,7 +13,7 @@ interface KpiCardProps {
 
 /**
  * @relatedFR FR-001, FR-002, FR-009, FR-012
- * @relatedUI UI-002, UI-006
+ * @relatedUI UI-LEGAL-01, UI-BUS-01
  * @description 관리자/사업부 대시보드 KPI 값을 표시하고 선택적으로 화면 이동 또는 대시보드 내부 필터 액션을 실행한다.
  */
 export function KpiCard({
@@ -29,7 +29,7 @@ export function KpiCard({
   const className = `kpi-card kpi-${tone}${to || onClick ? " kpi-card-button" : ""}${isSelected ? " selected-kpi-card" : ""}`;
   const content = (
     <>
-      <span>{label}</span>
+      <span className="kpi-card-title">{label}</span>
       <strong>
         {value}
         {denominator === undefined ? null : <small className="kpi-denominator"> / {denominator}</small>}

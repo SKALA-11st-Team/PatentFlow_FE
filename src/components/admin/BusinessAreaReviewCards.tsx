@@ -20,7 +20,7 @@ const businessAreaChartColors = ["#EA002C", "#009A93", "#F47725", "#5B5F97", "#2
 
 /**
  * @relatedFR FR-001, FR-002, FR-009, FR-012
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드에서 관련사업 분야별 특허 검토 현황을 카드로 요약한다.
  */
 export function BusinessAreaReviewCards({
@@ -81,7 +81,7 @@ export function BusinessAreaReviewCards({
 
 /**
  * @relatedFR FR-001, FR-002, FR-009, FR-012
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관련사업 분야별 특허 수와 주요 workflow 대기 건수를 집계한다.
  */
 function getBusinessAreaSummaries(patentList: PatentListItem[]) {
@@ -119,7 +119,7 @@ function getBusinessAreaSummaries(patentList: PatentListItem[]) {
 
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 단일 사업별 분포 그래프의 각 조각 위치와 색상을 계산한다.
  */
 function getSegmentStyle(summary: BusinessAreaSummary, previousSummaries: BusinessAreaSummary[]) {
@@ -134,7 +134,7 @@ function getSegmentStyle(summary: BusinessAreaSummary, previousSummaries: Busine
 
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관련사업 분야 카드의 표시 순서를 이번 분기 검토 건수와 이름 기준으로 정렬한다.
  */
 function compareBusinessAreaSummaries(firstSummary: BusinessAreaSummary, secondSummary: BusinessAreaSummary) {
@@ -147,7 +147,7 @@ function compareBusinessAreaSummaries(firstSummary: BusinessAreaSummary, secondS
 
 /**
  * @relatedFR FR-001
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관련사업 분야에 연결된 담당 부서명을 카드 보조 문구로 표시한다.
  */
 function formatDepartmentNames(departmentNames: string[]) {

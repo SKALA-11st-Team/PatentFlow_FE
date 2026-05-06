@@ -3,7 +3,7 @@ import { Section } from "../../components/common/Section";
 
 /**
  * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-007
+ * @relatedUI UI-LEGAL-06
  * @description 관리자 메일 미리보기, 수신자 매핑, 발송 이력을 관리하는 화면
  */
 export function AdminMailingPage() {

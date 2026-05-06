@@ -568,10 +568,11 @@ textarea {
   color: var(--color-white);
 }
 
-.kpi-card span {
-  color: var(--color-text-muted);
+.kpi-card .kpi-card-title {
+  color: var(--color-text-primary);
   display: block;
-  font-size: 13px;
+  font-size: 17px;
+  font-weight: 800;
 }
 
 .kpi-card strong {
@@ -605,6 +606,43 @@ textarea {
 
 .kpi-success {
   border-left: 4px solid var(--color-success);
+}
+
+.pagination-controls {
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: 13px;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-sm) 0;
+}
+
+.pagination-controls div {
+  align-items: center;
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.pagination-controls button {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font: inherit;
+  min-width: 54px;
+  padding: 6px 10px;
+}
+
+.pagination-controls button:disabled {
+  color: var(--color-text-light);
+  cursor: not-allowed;
+}
+
+.pagination-controls strong {
+  color: var(--color-text-primary);
+  font-size: 13px;
 }
 
 .quarter-donut-card {

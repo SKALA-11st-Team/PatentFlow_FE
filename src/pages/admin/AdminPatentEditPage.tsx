@@ -1,35 +1,71 @@
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { suggestPatentContextFields, updatePatent } from "../../api/patents";
+import { getPatentDetail, suggestPatentContextFields, updatePatent } from "../../api/patents";
 import { Button } from "../../components/common/Button";
 import { Section } from "../../components/common/Section";
 import { AppLayout } from "../../components/layout/AppLayout";
-import { patents } from "../../mocks/patents.mock";
 import type { PatentListItem, PatentUpsertPayload } from "../../types/patent";
 
 type PatentFormState = PatentUpsertPayload;
 
 /**
  * @relatedFR FR-003, FR-004
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description 특허관리 테이블에서 선택한 특허의 기본 정보와 회사 컨텍스트를 상세 수정한다.
  */
 export function AdminPatentEditPage() {
   const { patentId } = useParams();
   const navigate = useNavigate();
-  const patent = useMemo(() => patents.find((item) => item.patentId === patentId), [patentId]);
-  const [form, setForm] = useState<PatentFormState>(() =>
-    patent ? createFormStateFromPatent(patent) : createEmptyFormState(),
-  );
+  const [patent, setPatent] = useState<PatentListItem | null>(null);
+  const [form, setForm] = useState<PatentFormState>(() => createEmptyFormState());
   const [saveMessage, setSaveMessage] = useState("");
+  const [loadMessage, setLoadMessage] = useState("특허 정보를 불러오는 중입니다.");
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadPatent() {
+      if (!patentId) {
+        setLoadMessage("수정할 특허 ID가 없습니다.");
+        return;
+      }
+
+      try {
+        const detail = await getPatentDetail(patentId);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (!detail) {
+          setLoadMessage("수정할 특허를 찾을 수 없습니다.");
+          return;
+        }
+
+        setPatent(detail);
+        setForm(createFormStateFromPatent(detail));
+        setLoadMessage("");
+      } catch {
+        if (isMounted) {
+          setLoadMessage("특허 정보를 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
+        }
+      }
+    }
+
+    loadPatent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [patentId]);
+
   if (!patent || !patentId) {
     return (
-      <AppLayout role="ADMIN" title="특허 정보 수정" description="수정할 특허를 찾을 수 없습니다.">
+      <AppLayout role="ADMIN" title="특허 정보 수정" description="수정할 특허를 확인합니다.">
         <Section title="수정 대상 없음">
-          <p className="empty-state">특허관리 목록에서 다시 수정할 특허를 선택해 주세요.</p>
+          <p className="empty-state">{loadMessage}</p>
           <Link className="back-link" to="/admin/patents">
             특허관리로 돌아가기
           </Link>
@@ -70,7 +106,7 @@ export function AdminPatentEditPage() {
 
   /**
    * @relatedFR FR-003, FR-004
-   * @relatedUI UI-004
+   * @relatedUI UI-LEGAL-04
    * @description 수정 폼의 특허명/제품 정보를 기준으로 관련사업/관련기술 분야 AI 추천값을 적용한다.
    */
   async function handleSuggestContextFields() {
@@ -206,7 +242,7 @@ export function AdminPatentEditPage() {
 
 /**
  * @relatedFR FR-003, FR-004
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description 선택한 특허 행 데이터를 상세 수정 폼 상태로 변환한다.
  */
 function createFormStateFromPatent(patent: PatentListItem): PatentFormState {

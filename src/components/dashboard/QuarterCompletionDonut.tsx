@@ -7,7 +7,7 @@ interface QuarterCompletionDonutProps {
 
 /**
  * @relatedFR FR-001, FR-009, FR-012
- * @relatedUI UI-002, UI-006
+ * @relatedUI UI-LEGAL-01, UI-BUS-01
  * @description 대시보드에서 이번 분기 대상 대비 완료 비율을 원형 그래프로 표시한다.
  */
 export function QuarterCompletionDonut({ completed, helper, label, total }: QuarterCompletionDonutProps) {
@@ -40,7 +40,7 @@ export function QuarterCompletionDonut({ completed, helper, label, total }: Quar
 
 /**
  * @relatedFR FR-001, FR-009, FR-012
- * @relatedUI UI-002, UI-006
+ * @relatedUI UI-LEGAL-01, UI-BUS-01
  * @description 완료 건수와 전체 건수로 대시보드 원형 그래프 비율을 계산한다.
  */
 function getCompletionPercent(completed: number, total: number) {
@@ -53,7 +53,7 @@ function getCompletionPercent(completed: number, total: number) {
 
 /**
  * @relatedFR FR-001, FR-009, FR-012
- * @relatedUI UI-002, UI-006
+ * @relatedUI UI-LEGAL-01, UI-BUS-01
  * @description 현재 날짜를 yy-n분기 형식으로 표시한다.
  */
 function getCurrentQuarterLabel() {

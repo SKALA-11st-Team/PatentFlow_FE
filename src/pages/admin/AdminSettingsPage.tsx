@@ -3,7 +3,7 @@ import { Section } from "../../components/common/Section";
 
 /**
  * @relatedFR FR-014
- * @relatedUI UI-008
+ * @relatedUI UI-LEGAL-08
  * @description 관리자 운영 기준, 평가 기준, AI 레포트 메일 발송 매핑 정보를 설정하는 화면
  */
 export function AdminSettingsPage() {

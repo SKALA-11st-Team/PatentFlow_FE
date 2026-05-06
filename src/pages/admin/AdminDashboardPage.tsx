@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { BusinessAreaReviewCards } from "../../components/admin/BusinessAreaReviewCards";
 import { KpiCard } from "../../components/common/KpiCard";
+import { PaginationControls } from "../../components/common/PaginationControls";
 import { QuarterCompletionDonut } from "../../components/dashboard/QuarterCompletionDonut";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
-import { patents } from "../../mocks/patents.mock";
+import { usePatentList } from "../../hooks/usePatentList";
+import { useClientPagination } from "../../hooks/useClientPagination";
 import {
   REVIEW_WORKFLOW_FILTER_OPTIONS,
   type ReviewWorkflowFilter,
@@ -25,7 +27,7 @@ const sortLabels: Record<SortKey, string> = {
 
 /**
  * @relatedFR FR-001, FR-002, FR-011, FR-012, FR-017
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드에서 특허 조회, 검색, 필터링, 정렬을 제공하고 행 클릭으로 특허 상세에 진입한다.
  */
 export function AdminDashboardPage() {
@@ -33,16 +35,24 @@ export function AdminDashboardPage() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
+  const { errorMessage, isLoading, patents } = usePatentList();
   const quarterlyTargets = patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER");
   const mailReady = patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
   const waitingBusiness = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE");
-  const waitingApproval = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_EXECUTIVE_APPROVAL");
   const actionRecorded = patents.filter((patent) => patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED");
   const quarterlyTargetCount = quarterlyTargets.length;
   const filteredPatents = useMemo(
     () => getFilteredAndSortedPatents(patents, searchKeyword, workflowFilter, sortKey),
-    [searchKeyword, sortKey, workflowFilter],
+    [patents, searchKeyword, sortKey, workflowFilter],
   );
+  const {
+    currentPage,
+    pageSize,
+    pagedItems: displayedPatents,
+    setCurrentPage,
+    totalItems,
+    totalPages,
+  } = useClientPagination(filteredPatents, [searchKeyword, workflowFilter, sortKey]);
 
   return (
     <AppLayout
@@ -88,13 +98,6 @@ export function AdminDashboardPage() {
           />
           <KpiCard
             denominator={quarterlyTargetCount}
-            helper="임원 승인 필요"
-            label="결재 대기"
-            value={waitingApproval.length}
-            to="/admin/review-targets?workflow=WAITING_EXECUTIVE_APPROVAL"
-          />
-          <KpiCard
-            denominator={quarterlyTargetCount}
             helper={`완료율 ${formatPercent(actionRecorded.length, quarterlyTargetCount)}`}
             label="처리 완료"
             value={actionRecorded.length}
@@ -121,7 +124,9 @@ export function AdminDashboardPage() {
         <div className="section-header">
           <div>
             <h2>특허 조회</h2>
-            <p>특허명, 출원번호, 부서와 검토 단계 기준으로 조회하고 마감 기한 순서를 확인합니다.</p>
+            <p>
+              {errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "특허명, 출원번호, 부서와 검토 단계 기준으로 조회하고 마감 기한 순서를 확인합니다.")}
+            </p>
           </div>
         </div>
         <div className="filter-bar">
@@ -169,7 +174,7 @@ export function AdminDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredPatents.map((patent) => (
+              {displayedPatents.map((patent) => (
                 <tr
                   className="clickable-row"
                   key={patent.patentId}
@@ -206,6 +211,13 @@ export function AdminDashboardPage() {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+        />
       </section>
     </AppLayout>
   );
@@ -213,7 +225,7 @@ export function AdminDashboardPage() {
 
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드 특허 조회 목록에 검색, 검토 단계 필터, 정렬 기준을 적용한다.
  */
 function getFilteredAndSortedPatents(
@@ -240,7 +252,7 @@ function getFilteredAndSortedPatents(
 
 /**
  * @relatedFR FR-002
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드 특허 조회 목록의 정렬 순서를 계산한다.
  */
 function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
@@ -261,7 +273,7 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
 
 /**
  * @relatedFR FR-001
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 특허명 컬럼의 표시 길이를 최대 30글자로 제한한다.
  */
 function truncatePatentTitle(title: string) {
@@ -270,7 +282,7 @@ function truncatePatentTitle(title: string) {
 
 /**
  * @relatedFR FR-001, FR-012
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드 KPI 완료율을 백분율로 표시한다.
  */
 function formatPercent(value: number, total: number) {

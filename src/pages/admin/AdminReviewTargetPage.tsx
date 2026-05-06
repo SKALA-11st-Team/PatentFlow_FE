@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { decideExecutiveApprovals, sendBusinessReviewMails } from "../../api/patents";
-import { Badge } from "../../components/common/Badge";
+import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { Button } from "../../components/common/Button";
+import { PaginationControls } from "../../components/common/PaginationControls";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
-import { patents } from "../../mocks/patents.mock";
+import { usePatentList } from "../../hooks/usePatentList";
+import { useClientPagination } from "../../hooks/useClientPagination";
 import {
   REVIEW_WORKFLOW_FILTER_OPTIONS,
-  businessOpinionLabels,
   reviewWorkflowStatusLabels,
   type ReviewWorkflowFilter,
 } from "../../constants/status";
-import type { ExecutiveApprovalDecision, PatentListItem, ReviewWorkflowStatus } from "../../types/patent";
+import type { PatentListItem, ReviewWorkflowStatus } from "../../types/patent";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
 type ReviewTargetScope = "ALL" | "QUARTER";
@@ -27,8 +27,8 @@ const sortLabels: Record<SortKey, string> = {
 
 /**
  * @relatedFR FR-001, FR-002, FR-011, FR-012, FR-014, FR-015, FR-016, FR-017
- * @relatedUI UI-002, UI-003, UI-005, UI-007
- * @description 관리자 KPI 카드에서 진입하는 상태별 특허 조회와 메일/결재 일괄 처리 화면
+ * @relatedUI UI-LEGAL-02
+ * @description 관리자 KPI 카드에서 진입하는 상태별 특허 조회와 메일 일괄 처리 화면
  */
 export function AdminReviewTargetPage() {
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ export function AdminReviewTargetPage() {
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>(initialWorkflow);
   const [businessAreaFilter, setBusinessAreaFilter] = useState(initialBusinessArea);
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
-  const [patentList, setPatentList] = useState<PatentListItem[]>(() => [...patents]);
+  const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [selectedPatentIds, setSelectedPatentIds] = useState<string[]>([]);
   const [actionMessage, setActionMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -48,6 +48,14 @@ export function AdminReviewTargetPage() {
     () => getFilteredAndSortedReviewTargets(patentList, searchKeyword, workflowFilter, businessAreaFilter, scope, sortKey),
     [businessAreaFilter, patentList, scope, searchKeyword, sortKey, workflowFilter],
   );
+  const {
+    currentPage,
+    pageSize,
+    pagedItems: displayedPatents,
+    setCurrentPage,
+    totalItems,
+    totalPages,
+  } = useClientPagination(filteredPatents, [businessAreaFilter, scope, searchKeyword, sortKey, workflowFilter]);
   const businessAreaOptions = useMemo(
     () =>
       Array.from(new Set(patentList.map((patent) => patent.businessArea))).sort((first, second) =>
@@ -58,18 +66,16 @@ export function AdminReviewTargetPage() {
   const pageTitle = getReviewTargetPageTitle(scope, initialWorkflow, businessAreaFilter);
   const sectionTitle = getReviewTargetSectionTitle(scope, workflowFilter, businessAreaFilter);
   const isActionableMailList = workflowFilter === "MAIL_READY";
-  const isActionableApprovalList = workflowFilter === "WAITING_EXECUTIVE_APPROVAL";
-  const canSelectRows = isActionableMailList || isActionableApprovalList;
+  const canSelectRows = isActionableMailList;
   const shouldShowWorkflowColumn = workflowFilter === "ALL";
-  const selectablePatentIds = useMemo(() => filteredPatents.map((patent) => patent.patentId), [filteredPatents]);
+  const selectablePatentIds = useMemo(() => displayedPatents.map((patent) => patent.patentId), [displayedPatents]);
   const areAllRowsSelected =
     selectablePatentIds.length > 0 && selectablePatentIds.every((patentId) => selectedPatentIds.includes(patentId));
   const tableColumnCount =
     4 +
     (canSelectRows ? 1 : 0) +
     (shouldShowWorkflowColumn ? 1 : 0) +
-    (isActionableMailList ? 2 : 0) +
-    (isActionableApprovalList ? 1 : 0);
+    (isActionableMailList ? 2 : 0);
 
   useEffect(() => {
     setSelectedPatentIds((currentIds) => currentIds.filter((patentId) => selectablePatentIds.includes(patentId)));
@@ -94,34 +100,12 @@ export function AdminReviewTargetPage() {
     try {
       const result = await sendBusinessReviewMails(selectedPatentIds);
 
-      setPatentList([...patents]);
+      setPatentList(await getPatents({ page: 1, size: 20 }));
       setSelectedPatentIds([]);
       setActionMessage(
         result.updatedCount > 0
           ? `${result.updatedCount}건의 사업부 검토 요청 메일을 발송했습니다. 상태가 사업부 응답 대기로 변경되었습니다.`
           : "메일 발송 처리할 선택 건이 없습니다.",
-      );
-    } finally {
-      setIsProcessing(false);
-    }
-  }
-
-  async function handleApprovalDecision(
-    decision: Extract<ExecutiveApprovalDecision, "APPROVED_MAINTAIN" | "APPROVED_ABANDON">,
-  ) {
-    setIsProcessing(true);
-    setActionMessage("");
-
-    try {
-      const result = await decideExecutiveApprovals(selectedPatentIds, decision);
-      const decisionText = decision === "APPROVED_MAINTAIN" ? "유지" : "포기";
-
-      setPatentList([...patents]);
-      setSelectedPatentIds([]);
-      setActionMessage(
-        result.updatedCount > 0
-          ? `${result.updatedCount}건을 ${decisionText} 결정으로 입력했습니다. 상태가 결재 완료로 변경되었습니다.`
-          : `${decisionText} 결정으로 처리할 선택 건이 없습니다.`,
       );
     } finally {
       setIsProcessing(false);
@@ -138,7 +122,7 @@ export function AdminReviewTargetPage() {
         <div className="section-header">
           <div>
             <h2>{sectionTitle}</h2>
-            <p>{filteredPatents.length}건의 특허가 조회되었습니다.</p>
+            <p>{errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : `${filteredPatents.length}건의 특허가 조회되었습니다.`)}</p>
           </div>
           {canSelectRows ? (
             <div className="section-actions">
@@ -148,25 +132,6 @@ export function AdminReviewTargetPage() {
                   <Button disabled={selectedPatentIds.length === 0 || isProcessing} onClick={handleSendMails} type="button">
                     {isProcessing ? "처리 중" : "메일 발송"}
                   </Button>
-                ) : null}
-                {isActionableApprovalList ? (
-                  <>
-                    <Button
-                      disabled={selectedPatentIds.length === 0 || isProcessing}
-                      onClick={() => handleApprovalDecision("APPROVED_MAINTAIN")}
-                      type="button"
-                    >
-                      {isProcessing ? "처리 중" : "유지 결정"}
-                    </Button>
-                    <Button
-                      disabled={selectedPatentIds.length === 0 || isProcessing}
-                      onClick={() => handleApprovalDecision("APPROVED_ABANDON")}
-                      type="button"
-                      variant="secondary"
-                    >
-                      포기 결정
-                    </Button>
-                  </>
                 ) : null}
               </div>
             </div>
@@ -241,13 +206,12 @@ export function AdminReviewTargetPage() {
                     <th>이메일</th>
                   </>
                 ) : null}
-                {isActionableApprovalList ? <th>사업부 의견</th> : null}
                 {shouldShowWorkflowColumn ? <th>검토 단계</th> : null}
                 <th>마감 기한</th>
               </tr>
             </thead>
             <tbody>
-              {filteredPatents.map((patent) => {
+              {displayedPatents.map((patent) => {
                 const recipient = getDepartmentRecipient(patent);
 
                 return (
@@ -286,17 +250,6 @@ export function AdminReviewTargetPage() {
                         <td>{recipient.email}</td>
                       </>
                     ) : null}
-                    {isActionableApprovalList ? (
-                      <td>
-                        {patent.businessOpinionDecision ? (
-                          <Badge tone={patent.businessOpinionDecision === "MAINTAIN" ? "success" : "warning"}>
-                            {businessOpinionLabels[patent.businessOpinionDecision]}
-                          </Badge>
-                        ) : (
-                          <span className="table-subtext">의견 대기</span>
-                        )}
-                      </td>
-                    ) : null}
                     {shouldShowWorkflowColumn ? (
                       <td>
                         <WorkflowStatusBadge status={patent.reviewWorkflowStatus} />
@@ -318,6 +271,13 @@ export function AdminReviewTargetPage() {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+        />
       </section>
     </AppLayout>
   );
@@ -325,7 +285,7 @@ export function AdminReviewTargetPage() {
 
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-002, UI-003
+ * @relatedUI UI-LEGAL-02
  * @description KPI query parameter를 검토 단계 필터 초기값으로 변환한다.
  */
 function getInitialWorkflowFilter(workflow: string | null): ReviewWorkflowFilter {
@@ -336,7 +296,7 @@ function getInitialWorkflowFilter(workflow: string | null): ReviewWorkflowFilter
 
 /**
  * @relatedFR FR-001
- * @relatedUI UI-002, UI-003
+ * @relatedUI UI-LEGAL-02
  * @description KPI query parameter를 전체/이번 분기 조회 범위로 변환한다.
  */
 function getReviewTargetScope(scope: string | null): ReviewTargetScope {
@@ -345,7 +305,7 @@ function getReviewTargetScope(scope: string | null): ReviewTargetScope {
 
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-002, UI-003
+ * @relatedUI UI-LEGAL-02
  * @description KPI 조건과 사용자가 입력한 검색/필터/정렬 조건을 적용한 특허 조회 결과를 반환한다.
  */
 function getFilteredAndSortedReviewTargets(
@@ -376,7 +336,7 @@ function getFilteredAndSortedReviewTargets(
 
 /**
  * @relatedFR FR-002
- * @relatedUI UI-002, UI-003
+ * @relatedUI UI-LEGAL-02
  * @description 관리자 특허 조회 결과의 정렬 순서를 계산한다.
  */
 function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
@@ -397,7 +357,7 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
 
 /**
  * @relatedFR FR-001
- * @relatedUI UI-002, UI-003
+ * @relatedUI UI-LEGAL-02
  * @description KPI 조회 결과 화면 제목을 선택 조건에 맞게 표시한다.
  */
 function getReviewTargetPageTitle(scope: ReviewTargetScope, workflowFilter: ReviewWorkflowFilter, businessArea: string) {
@@ -414,7 +374,7 @@ function getReviewTargetPageTitle(scope: ReviewTargetScope, workflowFilter: Revi
 
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-002, UI-003
+ * @relatedUI UI-LEGAL-02
  * @description 특허 조회 결과 대신 현재 검토 단계 상태를 목록 제목으로 표시한다.
  */
 function getReviewTargetSectionTitle(scope: ReviewTargetScope, workflowFilter: ReviewWorkflowFilter, businessArea: string) {
@@ -431,7 +391,7 @@ function getReviewTargetSectionTitle(scope: ReviewTargetScope, workflowFilter: R
 
 /**
  * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-002, UI-007
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-06
  * @description 메일 발송 대기 목록에서 부서별 담당자 이름과 이메일을 표시한다.
  */
 function getDepartmentRecipient(patent: PatentListItem) {
@@ -445,7 +405,7 @@ function getDepartmentRecipient(patent: PatentListItem) {
 
 /**
  * @relatedFR FR-001
- * @relatedUI UI-002, UI-003
+ * @relatedUI UI-LEGAL-02
  * @description 특허 조회 결과의 특허명 표시 길이를 제한한다.
  */
 function truncatePatentTitle(title: string) {

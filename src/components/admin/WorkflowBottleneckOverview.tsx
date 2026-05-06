@@ -11,7 +11,7 @@ interface WorkflowProgressItem {
 
 /**
  * @relatedFR FR-001, FR-012
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드에서 이번 분기 workflow 병목과 단계별 흐름을 표시한다.
  */
 export function WorkflowBottleneckOverview({ quarterlyTargets }: { quarterlyTargets: PatentListItem[] }) {
@@ -50,7 +50,7 @@ export function WorkflowBottleneckOverview({ quarterlyTargets }: { quarterlyTarg
 
 /**
  * @relatedFR FR-001, FR-012
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 이번 분기 검토 대상 특허를 workflow 단계별 처리 현황 데이터로 집계한다.
  */
 function getWorkflowProgress(quarterlyTargets: PatentListItem[]): WorkflowProgressItem[] {
