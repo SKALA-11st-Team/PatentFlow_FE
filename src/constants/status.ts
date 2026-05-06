@@ -1,6 +1,6 @@
 /**
  * @relatedFR FR-001, FR-002, FR-006, FR-009, FR-011, FR-012, FR-017
- * @relatedUI UI-002, UI-005, UI-006, UI-009
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-07, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
  * @description PatentFlow FE에서 사용하는 상태값, 라벨, 표시 순서, 배지 tone을 한 곳에서 관리한다.
  */
 
@@ -133,8 +133,8 @@ export const reviewWorkflowStatusLabels: Record<ReviewWorkflowStatus, string> = 
   MAIL_READY: "메일 발송 대기",
   WAITING_BUSINESS_RESPONSE: "사업부 응답 대기",
   BUSINESS_RESPONSE_RECEIVED: "사업부 응답 완료",
-  WAITING_EXECUTIVE_APPROVAL: "결재 대기",
-  APPROVAL_COMPLETED: "결재 완료",
+  WAITING_EXECUTIVE_APPROVAL: "임원 승인 대기",
+  APPROVAL_COMPLETED: "승인 완료",
   LEGAL_ACTION_RECORDED: "처리 완료",
 };
 
@@ -145,7 +145,7 @@ export const reviewWorkflowShortLabels: Record<ReviewWorkflowStatus, string> = {
   MAIL_READY: "발송 대기",
   WAITING_BUSINESS_RESPONSE: "회신 대기",
   BUSINESS_RESPONSE_RECEIVED: "회신 완료",
-  WAITING_EXECUTIVE_APPROVAL: "결재 대기",
+  WAITING_EXECUTIVE_APPROVAL: "승인 대기",
   APPROVAL_COMPLETED: "승인 완료",
   LEGAL_ACTION_RECORDED: "처리 완료",
 };
@@ -207,9 +207,9 @@ export const workflowStageActions: Record<ReviewWorkflowStatus, string> = {
   REPORT_GENERATED: "발송 준비",
   MAIL_READY: "메일 발송",
   WAITING_BUSINESS_RESPONSE: "사업부 확인",
-  BUSINESS_RESPONSE_RECEIVED: "결재 상신",
-  WAITING_EXECUTIVE_APPROVAL: "결재 확인",
-  APPROVAL_COMPLETED: "결과 입력",
+  BUSINESS_RESPONSE_RECEIVED: "결과 입력",
+  WAITING_EXECUTIVE_APPROVAL: "승인 대기",
+  APPROVAL_COMPLETED: "승인 완료",
   LEGAL_ACTION_RECORDED: "종료",
 };
 
@@ -219,9 +219,9 @@ export const workflowBottleneckDescriptions: Record<ReviewWorkflowStatus, string
   REPORT_GENERATED: "AI 레포트 생성 후 발송 준비 단계로 넘겨야 합니다.",
   MAIL_READY: "관리자가 사업부 검토 요청 메일을 발송해야 합니다.",
   WAITING_BUSINESS_RESPONSE: "사업부 회신 독려와 제출 여부 확인이 필요합니다.",
-  BUSINESS_RESPONSE_RECEIVED: "제출된 사업부 의견을 확인하고 결재 상신해야 합니다.",
-  WAITING_EXECUTIVE_APPROVAL: "임원 결재 진행 상황을 확인해야 합니다.",
-  APPROVAL_COMPLETED: "결재 결과에 따른 유지/포기/매각 처리 결과 입력이 필요합니다.",
+  BUSINESS_RESPONSE_RECEIVED: "제출된 사업부 의견을 확인하고 유지/포기/매각 처리 결과 입력이 필요합니다.",
+  WAITING_EXECUTIVE_APPROVAL: "임원 승인 대기 중인 특허입니다.",
+  APPROVAL_COMPLETED: "승인이 완료되어 법무 처리 결과 기록이 필요합니다.",
   LEGAL_ACTION_RECORDED: "이번 분기 처리 workflow가 완료되었습니다.",
 };
 
@@ -233,7 +233,7 @@ export const workflowUrgencyRank: Record<ReviewWorkflowStatus, number> = {
   WAITING_BUSINESS_RESPONSE: 2,
   BUSINESS_RESPONSE_RECEIVED: 4,
   WAITING_EXECUTIVE_APPROVAL: 3,
-  APPROVAL_COMPLETED: 4,
+  APPROVAL_COMPLETED: 7,
   LEGAL_ACTION_RECORDED: 99,
 };
 
@@ -244,7 +244,7 @@ export const reviewWorkflowTone: Record<ReviewWorkflowStatus, StatusTone> = {
   MAIL_READY: "primary",
   WAITING_BUSINESS_RESPONSE: "warning",
   BUSINESS_RESPONSE_RECEIVED: "success",
-  WAITING_EXECUTIVE_APPROVAL: "primary",
+  WAITING_EXECUTIVE_APPROVAL: "warning",
   APPROVAL_COMPLETED: "success",
   LEGAL_ACTION_RECORDED: "success",
 };

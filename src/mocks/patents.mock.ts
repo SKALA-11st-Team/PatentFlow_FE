@@ -1,6 +1,7 @@
 import type {
   BusinessOpinionDecision,
   EvaluationCategory,
+  ExecutiveApprovalDecision,
   LegalActionResult,
   PatentDetail,
   PatentHistoryItem,
@@ -20,8 +21,6 @@ const reviewTargetWorkflowCycle: ReviewWorkflowStatus[] = [
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "WAITING_EXECUTIVE_APPROVAL",
-  "APPROVAL_COMPLETED",
   "LEGAL_ACTION_RECORDED",
 ];
 
@@ -105,6 +104,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
   const recommendation = getRecommendation(row, reviewWorkflowStatus, index);
   const businessOpinionDecision = getBusinessOpinion(reviewWorkflowStatus, recommendation);
   const legalActionResult = getLegalActionResult(reviewWorkflowStatus, recommendation);
+  const executiveApprovalDecision = getExecutiveApprovalDecision(legalActionResult);
   const annualFeeDueDate = getMockDeadlineDate(row.registrationDate, reviewWorkflowStatus, index);
   const productName = normalizeProductName(row.productName);
 
@@ -131,7 +131,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
     reviewReason: getReviewReason(reviewWorkflowStatus, annualFeeDueDate),
     currentRecommendation: recommendation,
     businessOpinionDecision,
-    executiveApprovalDecision: getExecutiveApproval(reviewWorkflowStatus, legalActionResult),
+    executiveApprovalDecision,
     legalActionResult,
     summary: {
       summaryText: `${row.title || row.draftTitle}은(는) ${row.businessArea || "미분류"} 분야의 ${row.technologyArea || "관련 기술"} 특허입니다. ${productName ? `관련 제품은 ${productName}입니다.` : "관련 제품 정보는 비어 있습니다."}`,
@@ -155,7 +155,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
     },
     finalDecisionRecord: {
       decisionId: legalActionResult ? `DEC-${row.managementNumber}` : null,
-      decision: legalActionResult,
+      decision: executiveApprovalDecision,
       reason: legalActionResult ? `${getLegalActionText(legalActionResult)} 결과가 데모 데이터로 입력되었습니다.` : null,
       decidedAt: legalActionResult ? "2026-05-01T11:10:00+09:00" : null,
     },
@@ -167,6 +167,19 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
       submittedAt: businessOpinionDecision ? "2026-05-01T14:20:00+09:00" : null,
     },
   };
+}
+
+function getExecutiveApprovalDecision(legalActionResult: LegalActionResult | null): ExecutiveApprovalDecision | null {
+  if (legalActionResult === "ABANDONED") {
+    return "APPROVED_ABANDON";
+  }
+  if (legalActionResult === "SOLD") {
+    return "APPROVED_SELL";
+  }
+  if (legalActionResult === "MAINTAINED") {
+    return "APPROVED_MAINTAIN";
+  }
+  return null;
 }
 
 function normalizeProductName(productName: string) {
@@ -184,7 +197,7 @@ function getMockReviewWorkflowStatus(index: number): ReviewWorkflowStatus {
 
 /**
  * @relatedFR FR-001, FR-009
- * @relatedUI UI-002, UI-006
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-BUS-01, UI-BUS-02
  * @description 검토 workflow 대상 특허의 데모 마감 기한은 중간발표 시점에 가까운 날짜로 보정한다.
  */
 function getMockDeadlineDate(registrationDate: string, status: ReviewWorkflowStatus, index: number) {
@@ -209,9 +222,9 @@ function getReviewReason(status: ReviewWorkflowStatus, annualFeeDueDate: string)
     REPORT_GENERATED: "이번 분기 납부 대상이며 AI 특허 평가 레포트가 생성되었습니다.",
     MAIL_READY: "AI 특허 평가 레포트가 생성되었고 관리자 메일 발송 명령이 필요합니다.",
     WAITING_BUSINESS_RESPONSE: "메일과 레포트를 발송했고 사업부서 담당자의 응답을 기다리고 있습니다.",
-    BUSINESS_RESPONSE_RECEIVED: "사업부서 담당자의 응답이 제출되었습니다.",
-    WAITING_EXECUTIVE_APPROVAL: "사업부 의견 확인 후 임원 결재 대기 중입니다.",
-    APPROVAL_COMPLETED: "임원 결재가 완료되어 법적 액션 결과 입력이 필요합니다.",
+    BUSINESS_RESPONSE_RECEIVED: "사업부서 담당자의 응답이 제출되어 최종 처리 결과 입력이 필요합니다.",
+    WAITING_EXECUTIVE_APPROVAL: "사업부 의견이 제출되어 임원 승인 대기 중입니다.",
+    APPROVAL_COMPLETED: "임원 승인이 완료되어 법무 처리 결과 기록이 필요합니다.",
     LEGAL_ACTION_RECORDED: "최종 처리 결과가 입력되어 이번 검토 workflow가 완료되었습니다.",
   };
   return reasonMap[status];
@@ -243,8 +256,6 @@ function getBusinessOpinion(
 ): BusinessOpinionDecision | null {
   const respondedStatuses: ReviewWorkflowStatus[] = [
     "BUSINESS_RESPONSE_RECEIVED",
-    "WAITING_EXECUTIVE_APPROVAL",
-    "APPROVAL_COMPLETED",
     "LEGAL_ACTION_RECORDED",
   ];
 
@@ -253,26 +264,6 @@ function getBusinessOpinion(
   }
 
   return recommendation === "ABANDON" || recommendation === "SALES_CANDIDATE" ? "ABANDON" : "MAINTAIN";
-}
-
-function getExecutiveApproval(status: ReviewWorkflowStatus, legalActionResult: LegalActionResult | null) {
-  if (status === "APPROVAL_COMPLETED" && !legalActionResult) {
-    return "APPROVED_MAINTAIN" as const;
-  }
-
-  if (status !== "LEGAL_ACTION_RECORDED" || !legalActionResult) {
-    return null;
-  }
-
-  if (legalActionResult === "SOLD") {
-    return "APPROVED_SELL";
-  }
-
-  if (legalActionResult === "ABANDONED") {
-    return "APPROVED_ABANDON";
-  }
-
-  return "APPROVED_MAINTAIN";
 }
 
 function getLegalActionResult(

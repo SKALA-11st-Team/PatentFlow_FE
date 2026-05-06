@@ -73,7 +73,7 @@ export interface AiEvaluationReport {
 
 export interface FinalDecisionRecord {
   decisionId: string | null;
-  decision: LegalActionResult | null;
+  decision: ExecutiveApprovalDecision | null;
   reason: string | null;
   decidedAt: string | null;
 }

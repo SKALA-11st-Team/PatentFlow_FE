@@ -3,17 +3,24 @@ import {
   requestJson,
   toQueryString,
   type ApiEnvelope,
+  type PageMeta,
   type PaginatedApiEnvelope,
 } from "./client";
 import { PATENT_CONTEXT_CATEGORY_OPTIONS } from "../constants/status";
 import { patentDetails, patentHistory, patents } from "../mocks/patents.mock";
 import { skaxPatentRows } from "../mocks/skaxPatents.raw";
 import type {
+  AiEvaluationReport,
+  BusinessOpinion,
   PatentBibliographicInfo,
   PatentDetail,
+  EvaluationScore,
+  FinalDecisionRecord,
   ExecutiveApprovalDecision,
+  LegalActionResult,
   PatentHistoryItem,
   PatentListItem,
+  PatentSummary,
   PatentUpsertPayload,
   ReviewWorkflowStatus,
 } from "../types/patent";
@@ -27,10 +34,9 @@ export interface PatentListQuery {
   sort?: string;
 }
 
-export interface BulkExecutiveApprovalResult {
-  decision: ExecutiveApprovalDecision;
-  updatedCount: number;
-  updatedPatentIds: string[];
+export interface PatentListPage {
+  items: PatentListItem[];
+  page: PageMeta;
 }
 
 export interface BulkMailingResult {
@@ -50,15 +56,109 @@ export interface PatentContextSuggestion {
   technologyArea: string;
 }
 
+type BackendPatentListItem = Omit<
+  PatentListItem,
+  | "applicationNumber"
+  | "draftTitle"
+  | "businessArea"
+  | "technologyArea"
+  | "productName"
+  | "country"
+  | "coApplicants"
+  | "applicationDate"
+  | "registrationDate"
+  | "expectedExpirationDate"
+  | "annualFeeDueDate"
+> & {
+  applicationNumber: string | null;
+  draftTitle: string | null;
+  businessArea: string | null;
+  technologyArea: string | null;
+  productName: string | null;
+  country: string | null;
+  coApplicants: string | null;
+  applicationDate: string | null;
+  registrationDate: string | null;
+  expectedExpirationDate: string | null;
+  annualFeeDueDate: string | null;
+};
+
+interface BackendPatentDetail extends BackendPatentListItem {
+  summary: {
+    summaryText: string;
+    problemSolved: string;
+    coreTechnicalPoints: string[];
+    claimsSummary: string;
+    missingFields: string[];
+  };
+  aiEvaluationReport: {
+    reportId: string;
+    createdAt: string;
+    recommendation: PatentDetail["aiEvaluationReport"]["recommendation"];
+    recommendationReason: string;
+    totalScore: number;
+    scores: Array<{
+      category: EvaluationScore["category"];
+      score: number | null;
+      evidence: string;
+    }>;
+    missingInformation: string[];
+  };
+  finalDecisionRecord: {
+    decisionId: string | null;
+    decision: ExecutiveApprovalDecision | null;
+    reason: string | null;
+    decidedAt: string | null;
+  };
+  businessOpinion: {
+    decision: BusinessOpinion["opinion"];
+    reason: string | null;
+    submittedAt: string | null;
+  };
+}
+
+type BackendPatentBibliographicInfo = Omit<
+  PatentBibliographicInfo,
+  "applicationDate" | "coApplicants" | "country" | "registrationDate" | "applicationNumber" | "expectedExpirationDate"
+> & {
+  applicationDate: string | null;
+  coApplicants: string | null;
+  country: string | null;
+  registrationDate: string | null;
+  applicationNumber: string | null;
+  expectedExpirationDate: string | null;
+};
+
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-002, UI-006
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-BUS-01, UI-BUS-02
  * @description 특허 목록을 조회한다. 백엔드 URL이 없으면 데모 mock 데이터를 동일 인터페이스로 반환한다.
  */
 export async function getPatents(query: PatentListQuery = {}): Promise<PatentListItem[]> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<PaginatedApiEnvelope<PatentListItem>>(
-      `/api/v1/patents${toQueryString({
+    const firstPage = await getPatentPage({ ...query, page: query.page ?? 1, size: query.size ?? 20 });
+    const patentItems = [...firstPage.items];
+
+    for (let page = firstPage.page.page + 1; page <= firstPage.page.totalPages; page += 1) {
+      const nextPage = await getPatentPage({ ...query, page, size: firstPage.page.size });
+      patentItems.push(...nextPage.items);
+    }
+
+    return patentItems;
+  }
+
+  return getFilteredMockPatents(query);
+}
+
+/**
+ * @relatedFR FR-001, FR-002
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-BUS-01, UI-BUS-02
+ * @description 특허 목록 단일 페이지와 페이지 메타데이터를 조회한다.
+ */
+export async function getPatentPage(query: PatentListQuery = {}): Promise<PatentListPage> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<PaginatedApiEnvelope<BackendPatentListItem>>(
+      `/patents${toQueryString({
         departmentId: query.departmentId,
         keyword: query.keyword,
         page: query.page,
@@ -68,22 +168,25 @@ export async function getPatents(query: PatentListQuery = {}): Promise<PatentLis
       })}`,
     );
 
-    return response.data;
+    return {
+      items: (response.data ?? []).map(mapBackendPatentListItem),
+      page: response.page,
+    };
   }
 
-  return getMockPatents(query);
+  return getMockPatentPage(query);
 }
 
 /**
  * @relatedFR FR-005, FR-006, FR-007, FR-008, FR-011, FR-012
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 특허 상세와 AI 평가 레포트, 최종 판단 정보를 조회한다.
  */
 export async function getPatentDetail(patentId: string): Promise<PatentDetail | undefined> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<PatentDetail>>(`/api/v1/patents/${patentId}`);
+    const response = await requestJson<ApiEnvelope<BackendPatentDetail>>(`/patents/${patentId}`);
 
-    return response.data;
+    return response.data ? mapBackendPatentDetail(response.data) : undefined;
   }
 
   return patentDetails.find((patent) => patent.patentId === patentId);
@@ -91,56 +194,32 @@ export async function getPatentDetail(patentId: string): Promise<PatentDetail | 
 
 /**
  * @relatedFR FR-013
- * @relatedUI UI-005, UI-009
+ * @relatedUI UI-LEGAL-05, UI-BUS-04, UI-BUS-05
  * @description 특허 평가/판단 이력을 조회한다.
  */
 export async function getPatentHistory(patentId: string): Promise<PatentHistoryItem[]> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<PatentHistoryItem[]>>(`/api/v1/patents/${patentId}/history`);
+    const response = await requestJson<ApiEnvelope<PatentHistoryItem[]>>(`/patents/${patentId}/history`);
 
-    return response.data;
+    return response.data ?? [];
   }
 
   return patentHistory[patentId] ?? [];
 }
 
 /**
- * @relatedFR FR-011, FR-012
- * @relatedUI UI-002, UI-005
- * @description 결재 대기 상태의 선택 특허에 유지/포기 결재 결정을 일괄 기록한다.
- */
-export async function decideExecutiveApprovals(
-  patentIds: string[],
-  decision: Extract<ExecutiveApprovalDecision, "APPROVED_MAINTAIN" | "APPROVED_ABANDON">,
-): Promise<BulkExecutiveApprovalResult> {
-  if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<BulkExecutiveApprovalResult>>(
-      "/api/v1/patents/executive-approvals/bulk-decision",
-      {
-        body: JSON.stringify({ decision, patentIds }),
-        method: "POST",
-      },
-    );
-
-    return response.data;
-  }
-
-  return decideMockExecutiveApprovals(patentIds, decision);
-}
-
-/**
  * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-002, UI-007
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-06
  * @description 메일 발송 대기 상태의 선택 특허에 사업부 검토 요청 메일 발송 처리를 일괄 기록한다.
  */
 export async function sendBusinessReviewMails(patentIds: string[]): Promise<BulkMailingResult> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<BulkMailingResult>>("/api/v1/mailings/send", {
+    const response = await requestJson<ApiEnvelope<BulkMailingResult>>("/mailings/send", {
       body: JSON.stringify({ patentIds }),
       method: "POST",
     });
 
-    return response.data;
+    return response.data ?? { updatedCount: 0, updatedPatentIds: [] };
   }
 
   return sendMockBusinessReviewMails(patentIds);
@@ -148,21 +227,21 @@ export async function sendBusinessReviewMails(patentIds: string[]): Promise<Bulk
 
 /**
  * @relatedFR FR-003
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description 관리번호로 KIPRIS 우선 검색 후 결과가 없으면 Google Patents 검색을 요청한다.
  */
 export async function lookupPatentBibliographicInfo(managementNumber: string): Promise<PatentBibliographicInfo | null> {
   const normalizedManagementNumber = managementNumber.trim();
 
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<PatentBibliographicInfo | null>>(
-      `/api/v1/patents/external-lookup${toQueryString({
+    const response = await requestJson<ApiEnvelope<BackendPatentBibliographicInfo | null>>(
+      `/patents/external-lookup${toQueryString({
         managementNumber: normalizedManagementNumber,
         sourcePriority: "KIPRIS,GOOGLE_PATENTS",
       })}`,
     );
 
-    return response.data;
+    return response.data ? normalizeBibliographicInfo(response.data) : null;
   }
 
   return lookupMockPatentBibliographicInfo(normalizedManagementNumber);
@@ -170,17 +249,17 @@ export async function lookupPatentBibliographicInfo(managementNumber: string): P
 
 /**
  * @relatedFR FR-003, FR-004
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description 외부 검색 메타데이터와 사용자가 입력한 회사 컨텍스트를 조합해 특허를 등록한다.
  */
 export async function createPatent(payload: PatentUpsertPayload): Promise<PatentSaveResult> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<PatentSaveResult>>("/api/v1/patents", {
+    const response = await requestJson<ApiEnvelope<PatentSaveResult>>("/patents", {
       body: JSON.stringify(payload),
       method: "POST",
     });
 
-    return response.data;
+    return response.data ?? { patentId: payload.managementNumber, mode: "CREATED" };
   }
 
   return {
@@ -191,17 +270,17 @@ export async function createPatent(payload: PatentUpsertPayload): Promise<Patent
 
 /**
  * @relatedFR FR-003, FR-004
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description 특허 기본 정보와 회사 컨텍스트를 수정한다.
  */
 export async function updatePatent(patentId: string, payload: PatentUpsertPayload): Promise<PatentSaveResult> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<PatentSaveResult>>(`/api/v1/patents/${patentId}`, {
+    const response = await requestJson<ApiEnvelope<PatentSaveResult>>(`/patents/${patentId}`, {
       body: JSON.stringify(payload),
       method: "PUT",
     });
 
-    return response.data;
+    return response.data ?? { patentId, mode: "UPDATED" };
   }
 
   updateMockPatent(patentId, payload);
@@ -214,7 +293,7 @@ export async function updatePatent(patentId: string, payload: PatentUpsertPayloa
 
 /**
  * @relatedFR FR-003, FR-004
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description 특허명, 관련제품, 현재 회사 컨텍스트를 바탕으로 기존 특허 데이터에서 가장 가까운 관련사업/관련기술 분야를 추천한다.
  */
 export async function suggestPatentContextFields(
@@ -222,7 +301,7 @@ export async function suggestPatentContextFields(
 ): Promise<PatentContextSuggestion | null> {
   if (isBackendApiEnabled()) {
     const response = await requestJson<ApiEnvelope<PatentContextSuggestion | null>>(
-      "/api/v1/patents/context-suggestions",
+      "/patents/context-suggestions",
       {
         body: JSON.stringify(payload),
         method: "POST",
@@ -236,8 +315,104 @@ export async function suggestPatentContextFields(
 }
 
 /**
+ * @relatedFR FR-001, FR-002
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-BUS-01, UI-BUS-02
+ * @description 백엔드 특허 목록 DTO의 null 허용 필드를 현재 화면 모델에 맞는 표시값으로 변환한다.
+ */
+function mapBackendPatentListItem(patent: BackendPatentListItem): PatentListItem {
+  return {
+    ...patent,
+    applicationNumber: patent.applicationNumber ?? "",
+    draftTitle: patent.draftTitle ?? patent.title,
+    businessArea: patent.businessArea ?? "N/A",
+    technologyArea: patent.technologyArea ?? "N/A",
+    productName: patent.productName ?? "",
+    country: patent.country ?? "N/A",
+    coApplicants: patent.coApplicants ?? "",
+    applicationDate: patent.applicationDate ?? "",
+    registrationDate: patent.registrationDate ?? "",
+    expectedExpirationDate: patent.expectedExpirationDate ?? "",
+    annualFeeDueDate: patent.annualFeeDueDate ?? "",
+  };
+}
+
+/**
+ * @relatedFR FR-005, FR-006, FR-007, FR-008, FR-011, FR-012
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @description 백엔드 특허 상세 DTO를 AI 평가 레포트, 최종 판단, 사업부 의견이 분리된 화면 모델로 변환한다.
+ */
+function mapBackendPatentDetail(patent: BackendPatentDetail): PatentDetail {
+  return {
+    ...mapBackendPatentListItem(patent),
+    summary: mapBackendSummary(patent.summary),
+    aiEvaluationReport: mapBackendAiEvaluationReport(patent.aiEvaluationReport),
+    finalDecisionRecord: mapBackendFinalDecisionRecord(patent.finalDecisionRecord),
+    businessOpinion: mapBackendBusinessOpinion(patent.businessOpinion),
+  };
+}
+
+function mapBackendSummary(summary: BackendPatentDetail["summary"]): PatentSummary {
+  return {
+    summaryText: summary.summaryText,
+    problemSolved: summary.problemSolved,
+    coreTechnicalPoints: summary.coreTechnicalPoints,
+    claimsSummary: summary.claimsSummary,
+    missingFields: summary.missingFields,
+  };
+}
+
+function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationReport"]): AiEvaluationReport {
+  return {
+    evaluationId: report.reportId,
+    createdAt: report.createdAt,
+    recommendation: report.recommendation,
+    recommendationText: report.recommendationReason,
+    totalScore: report.totalScore,
+    scores: report.scores.map((score) => ({
+      category: score.category,
+      score: score.score,
+      evidenceSummary: score.evidence,
+    })),
+    missingInformation: report.missingInformation,
+  };
+}
+
+function mapBackendFinalDecisionRecord(
+  finalDecisionRecord: BackendPatentDetail["finalDecisionRecord"],
+): FinalDecisionRecord {
+  return {
+    decisionId: finalDecisionRecord.decisionId,
+    decision: finalDecisionRecord.decision,
+    reason: finalDecisionRecord.reason,
+    decidedAt: finalDecisionRecord.decidedAt,
+  };
+}
+
+
+function mapBackendBusinessOpinion(businessOpinion: BackendPatentDetail["businessOpinion"]): BusinessOpinion {
+  return {
+    opinion: businessOpinion.decision,
+    comment: businessOpinion.reason,
+    submittedAt: businessOpinion.submittedAt,
+  };
+}
+
+function normalizeBibliographicInfo(info: BackendPatentBibliographicInfo): PatentBibliographicInfo {
+  return {
+    ...info,
+    applicationDate: info.applicationDate ?? "",
+    coApplicants: info.coApplicants ?? "",
+    country: info.country ?? "",
+    registrationDate: info.registrationDate ?? "",
+    applicationNumber: info.applicationNumber ?? "",
+    registrationNumber: info.registrationNumber ?? null,
+    expectedExpirationDate: info.expectedExpirationDate ?? "",
+  };
+}
+
+/**
  * @relatedFR FR-003, FR-004
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description mock 특허 목록과 상세 데이터에 특허 기본 정보 수정 결과를 반영한다.
  */
 function updateMockPatent(patentId: string, payload: PatentUpsertPayload) {
@@ -271,7 +446,7 @@ function applyPatentPayload(patent: PatentListItem, payload: PatentUpsertPayload
 
 /**
  * @relatedFR FR-003, FR-004
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description 기존 특허 메타데이터와 입력 특허의 키워드 유사도를 비교해 mock 관련 분야 추천값을 만든다.
  */
 function suggestMockPatentContextFields(payload: PatentUpsertPayload): PatentContextSuggestion | null {
@@ -388,7 +563,7 @@ function normalizeTechnologyArea(value: string) {
 
 /**
  * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-002, UI-007
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-06
  * @description mock 데이터에서 메일 발송 대기 특허를 사업부 응답 대기 상태로 갱신한다.
  */
 function sendMockBusinessReviewMails(patentIds: string[]): BulkMailingResult {
@@ -420,6 +595,32 @@ function sendMockBusinessReviewMails(patentIds: string[]): BulkMailingResult {
 }
 
 function getMockPatents(query: PatentListQuery) {
+  if (query.page !== undefined && query.size !== undefined) {
+    return getMockPatentPage(query).items;
+  }
+
+  return getFilteredMockPatents(query);
+}
+
+function getMockPatentPage(query: PatentListQuery): PatentListPage {
+  const filteredPatents = getFilteredMockPatents(query);
+  const page = Math.max(query.page ?? 1, 1);
+  const size = Math.min(Math.max(query.size ?? 20, 1), 20);
+  const startIndex = (page - 1) * size;
+  const totalPages = Math.ceil(filteredPatents.length / size);
+
+  return {
+    items: filteredPatents.slice(startIndex, startIndex + size),
+    page: {
+      page,
+      size,
+      totalElements: filteredPatents.length,
+      totalPages,
+    },
+  };
+}
+
+function getFilteredMockPatents(query: PatentListQuery) {
   const keyword = query.keyword?.trim().toLowerCase() ?? "";
   let filteredPatents = patents.filter((patent) => {
     const matchesKeyword =
@@ -438,18 +639,12 @@ function getMockPatents(query: PatentListQuery) {
     filteredPatents = sortMockPatents(filteredPatents, query.sort);
   }
 
-  if (query.page !== undefined && query.size !== undefined) {
-    const startIndex = Math.max(0, query.page - 1) * query.size;
-
-    return filteredPatents.slice(startIndex, startIndex + query.size);
-  }
-
   return filteredPatents;
 }
 
 /**
  * @relatedFR FR-003
- * @relatedUI UI-004
+ * @relatedUI UI-LEGAL-04
  * @description docs/skax_patents_list.md 기반 mock 데이터에서 KIPRIS 검색 결과를 흉내낸다.
  */
 function lookupMockPatentBibliographicInfo(managementNumber: string): PatentBibliographicInfo | null {
@@ -476,44 +671,6 @@ function lookupMockPatentBibliographicInfo(managementNumber: string): PatentBibl
     registrationNumber: matchedPatent.registrationNumber,
     expectedExpirationDate: matchedPatent.expectedExpirationDate,
     source: "KIPRIS",
-  };
-}
-
-/**
- * @relatedFR FR-011, FR-012
- * @relatedUI UI-002, UI-005
- * @description mock 데이터에서 결재 대기 특허만 선택된 유지/포기 결재 결정으로 갱신한다.
- */
-function decideMockExecutiveApprovals(
-  patentIds: string[],
-  decision: Extract<ExecutiveApprovalDecision, "APPROVED_MAINTAIN" | "APPROVED_ABANDON">,
-): BulkExecutiveApprovalResult {
-  const targetIds = new Set(patentIds);
-  const updatedPatentIds: string[] = [];
-  const decisionText = decision === "APPROVED_MAINTAIN" ? "유지" : "포기";
-  const completedReviewReason = `임원 결재에서 ${decisionText} 결정이 완료되어 법적 액션 결과 입력이 필요합니다.`;
-
-  patents.forEach((patent) => {
-    if (targetIds.has(patent.patentId) && patent.reviewWorkflowStatus === "WAITING_EXECUTIVE_APPROVAL") {
-      patent.reviewWorkflowStatus = "APPROVAL_COMPLETED";
-      patent.executiveApprovalDecision = decision;
-      patent.reviewReason = completedReviewReason;
-      updatedPatentIds.push(patent.patentId);
-    }
-  });
-
-  patentDetails.forEach((patent) => {
-    if (updatedPatentIds.includes(patent.patentId)) {
-      patent.reviewWorkflowStatus = "APPROVAL_COMPLETED";
-      patent.executiveApprovalDecision = decision;
-      patent.reviewReason = completedReviewReason;
-    }
-  });
-
-  return {
-    decision,
-    updatedCount: updatedPatentIds.length,
-    updatedPatentIds,
   };
 }
 
