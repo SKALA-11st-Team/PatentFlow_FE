@@ -7,7 +7,7 @@ import type { PatentDetail } from "../types/patent";
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-005, UI-006
+ * @relatedUI UI-LEGAL-05, UI-BUS-02, UI-BUS-03
  * @description docs/business_evaluavte_checklist.md 기반 사업부 평가 체크리스트 정의
  */
 export const businessChecklistItems: BusinessChecklistItem[] = [
@@ -63,7 +63,7 @@ export const businessChecklistItems: BusinessChecklistItem[] = [
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-005, UI-006
+ * @relatedUI UI-LEGAL-05, UI-BUS-02, UI-BUS-03
  * @description AI 평가 레포트를 참고해 사업부 체크리스트의 초기 제안 점수를 만든다.
  */
 export function createBusinessChecklistDraft(patent: PatentDetail): BusinessChecklistSubmission {
@@ -96,7 +96,7 @@ export function createBusinessChecklistDraft(patent: PatentDetail): BusinessChec
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-005, UI-006
+ * @relatedUI UI-LEGAL-05, UI-BUS-02, UI-BUS-03
  * @description 체크리스트 응답 총점을 계산한다.
  */
 export function getBusinessChecklistTotal(submission: BusinessChecklistSubmission) {
@@ -106,7 +106,7 @@ export function getBusinessChecklistTotal(submission: BusinessChecklistSubmissio
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-005, UI-006
+ * @relatedUI UI-LEGAL-05, UI-BUS-02, UI-BUS-03
  * @description 항목 ID 기준 응답을 찾는다.
  */
 export function getChecklistResponse(submission: BusinessChecklistSubmission, itemId: string): BusinessChecklistResponse {

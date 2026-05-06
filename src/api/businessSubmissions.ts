@@ -4,22 +4,27 @@ import {
   getLatestBusinessSubmission as getMockLatestBusinessSubmission,
   type BusinessSubmissionVersion,
 } from "../mocks/businessSubmissions.mock";
-import type { PatentDetail, PatentListItem } from "../types/patent";
+import type { BusinessOpinionDecision, PatentDetail, PatentListItem, Recommendation } from "../types/patent";
+
+interface BackendBusinessSubmissionVersion extends Omit<BusinessSubmissionVersion, "opinion"> {
+  decision: BusinessOpinionDecision;
+  aiRecommendation: Recommendation;
+}
 
 /**
  * @relatedFR FR-009, FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-04, UI-BUS-05
  * @description 특허별 사업부 제출 이력 목록을 조회한다.
  */
 export async function getBusinessSubmissionVersions(
   patent: PatentDetail | PatentListItem,
 ): Promise<BusinessSubmissionVersion[]> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<BusinessSubmissionVersion[]>>(
-      `/api/v1/patents/${patent.patentId}/business-submissions`,
+    const response = await requestJson<ApiEnvelope<BackendBusinessSubmissionVersion[]>>(
+      `/patents/${patent.patentId}/business-submissions`,
     );
 
-    return response.data;
+    return (response.data ?? []).map(mapBackendBusinessSubmission);
   }
 
   return getMockBusinessSubmissionVersions(patent);
@@ -27,7 +32,7 @@ export async function getBusinessSubmissionVersions(
 
 /**
  * @relatedFR FR-009, FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-04, UI-BUS-05
  * @description 특허별 최신 사업부 제출 이력을 조회한다.
  */
 export async function getLatestBusinessSubmission(
@@ -40,4 +45,13 @@ export async function getLatestBusinessSubmission(
   }
 
   return getMockLatestBusinessSubmission(patent);
+}
+
+function mapBackendBusinessSubmission(submission: BackendBusinessSubmissionVersion): BusinessSubmissionVersion {
+  const { decision, ...restSubmission } = submission;
+
+  return {
+    ...restSubmission,
+    opinion: decision,
+  };
 }

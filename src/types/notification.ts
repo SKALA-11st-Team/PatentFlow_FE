@@ -4,7 +4,7 @@ export type NotificationTargetRole = UserRole | "COMMON";
 
 /**
  * @relatedFR N/A
- * @relatedUI COMMON
+ * @relatedUI UI-COM-03
  * @description 공통 헤더 알림 창에서 사용하는 알림 도메인 타입
  */
 export interface AppNotification {
