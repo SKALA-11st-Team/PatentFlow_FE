@@ -1,23 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { submitBusinessChecklist } from "../../api/businessChecklist";
+import { getPatentDetail, getPatentHistory } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
 import { Section } from "../../components/common/Section";
 import {
-  businessChecklistItems,
   createBusinessChecklistDraft,
   getBusinessChecklistTotal,
   getChecklistResponse,
 } from "../../mocks/businessChecklist.mock";
-import { patentDetails, patentHistory } from "../../mocks/patents.mock";
-import type { BusinessChecklistSubmission } from "../../types/businessChecklist";
-import type { PatentLifecycleStatus, ReviewWorkflowStatus, UserRole } from "../../types/patent";
+import { useBusinessChecklistItems } from "../../hooks/useBusinessChecklistItems";
+import type { BusinessChecklistItem, BusinessChecklistSubmission } from "../../types/businessChecklist";
+import type { PatentDetail, PatentLifecycleStatus, PatentHistoryItem, ReviewWorkflowStatus, UserRole } from "../../types/patent";
 import {
   businessOpinionLabels,
   evaluationCategoryLabels,
-  legalActionResultLabels,
+  executiveApprovalLabels,
   lifecycleStatusLabels,
   recommendationLabels,
   reviewWorkflowStatusLabels,
@@ -25,39 +26,91 @@ import {
 
 /**
  * @relatedFR FR-005, FR-006, FR-007, FR-008, FR-011, FR-012, FR-013, FR-017
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 관리자와 사업부 사용자가 각 역할에 맞게 특허 상세, AI 특허 평가 레포트, 의견/판단 정보를 확인하는 화면
  */
 export function PatentDetailPage({ role }: { role: UserRole }) {
   const { patentId } = useParams();
   const [isChecklistOpen, setIsChecklistOpen] = useState(false);
-  const patent = useMemo(
-    () => patentDetails.find((item) => item.patentId === patentId) ?? patentDetails[0],
-    [patentId],
-  );
+  const [patent, setPatent] = useState<PatentDetail | null>(null);
+  const [history, setHistory] = useState<PatentHistoryItem[]>([]);
+  const [loadMessage, setLoadMessage] = useState("특허 상세 정보를 불러오는 중입니다.");
   const [businessChecklistSubmission, setBusinessChecklistSubmission] = useState<BusinessChecklistSubmission>(() =>
-    createBusinessChecklistDraft(patent),
+    createEmptyBusinessChecklistDraft(patentId ?? ""),
   );
-  const history = patentHistory[patent.patentId] ?? [];
+  const { items: businessChecklistItems } = useBusinessChecklistItems();
   const isAdmin = role === "ADMIN";
   const [hasSubmittedBusinessChecklist, setHasSubmittedBusinessChecklist] = useState(() =>
-    hasPersistedBusinessOpinion(patent),
+    false,
   );
   const checklistTotal = getBusinessChecklistTotal(businessChecklistSubmission);
-  const displayedBusinessOpinionLabel = hasSubmittedBusinessChecklist
-    ? businessOpinionLabels[businessChecklistSubmission.finalOpinion]
-    : patent.businessOpinion.opinion
-      ? businessOpinionLabels[patent.businessOpinion.opinion]
-      : null;
-  const displayedBusinessOpinionComment = hasSubmittedBusinessChecklist
-    ? businessChecklistSubmission.finalReason || patent.businessOpinion.comment
-    : patent.businessOpinion.comment;
+  const displayedBusinessOpinionLabel = patent
+    ? hasSubmittedBusinessChecklist
+      ? businessOpinionLabels[businessChecklistSubmission.finalOpinion]
+      : patent.businessOpinion.opinion
+        ? businessOpinionLabels[patent.businessOpinion.opinion]
+        : null
+    : null;
+  const displayedBusinessOpinionComment = patent
+    ? hasSubmittedBusinessChecklist
+      ? businessChecklistSubmission.finalReason || patent.businessOpinion.comment
+      : patent.businessOpinion.comment
+    : null;
 
   useEffect(() => {
-    const nextSubmission = createBusinessChecklistDraft(patent);
-    setBusinessChecklistSubmission(nextSubmission);
-    setHasSubmittedBusinessChecklist(hasPersistedBusinessOpinion(patent));
-  }, [patent]);
+    let isMounted = true;
+
+    async function loadPatentDetail() {
+      if (!patentId) {
+        setLoadMessage("특허 ID가 없습니다.");
+        return;
+      }
+
+      setLoadMessage("특허 상세 정보를 불러오는 중입니다.");
+
+      try {
+        const [nextPatent, nextHistory] = await Promise.all([
+          getPatentDetail(patentId),
+          getPatentHistory(patentId),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (!nextPatent) {
+          setLoadMessage("특허 상세 정보를 찾지 못했습니다.");
+          return;
+        }
+
+        setPatent(nextPatent);
+        setHistory(nextHistory);
+        setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
+        setHasSubmittedBusinessChecklist(hasPersistedBusinessOpinion(nextPatent));
+        setLoadMessage("");
+      } catch {
+        if (isMounted) {
+          setLoadMessage("특허 상세 정보를 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
+        }
+      }
+    }
+
+    loadPatentDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [patentId]);
+
+  if (!patent) {
+    return (
+      <AppLayout role={role} title="특허 상세" description="특허 상세 정보를 준비하고 있습니다.">
+        <section className="section">
+          <p className="empty-state">{loadMessage}</p>
+        </section>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout
@@ -172,10 +225,10 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
         <aside className="detail-side">
           {isAdmin ? (
-            <Section title="처리 결과" description="결재 이후 유지, 포기, 매각 등 최종 처리 결과를 관리합니다.">
+            <Section title="처리 결과" description="유지, 포기, 매각 등 최종 처리 결과를 관리합니다.">
               {patent.finalDecisionRecord.decision ? (
                 <div className="decision-box">
-                  <Badge tone="success">{legalActionResultLabels[patent.finalDecisionRecord.decision]}</Badge>
+                  <Badge tone="success">{executiveApprovalLabels[patent.finalDecisionRecord.decision]}</Badge>
                   <p>{patent.finalDecisionRecord.reason}</p>
                   <small>{patent.finalDecisionRecord.decidedAt?.slice(0, 10)}</small>
                 </div>
@@ -201,11 +254,14 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         <BusinessChecklistModal
           initialSubmission={businessChecklistSubmission}
           onClose={() => setIsChecklistOpen(false)}
-          onSubmit={(submission) => {
-            setBusinessChecklistSubmission(submission);
-            setHasSubmittedBusinessChecklist(hasCompleteBusinessChecklistSubmission(submission));
+          onSubmit={async (submission) => {
+            const savedSubmission = await submitBusinessChecklist(patent.patentId, submission);
+
+            setBusinessChecklistSubmission(savedSubmission);
+            setHasSubmittedBusinessChecklist(hasCompleteBusinessChecklistSubmission(savedSubmission));
             setIsChecklistOpen(false);
           }}
+          businessChecklistItems={businessChecklistItems}
           patentTitle={patent.title}
         />
       ) : null}
@@ -267,7 +323,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-005, UI-006
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 사업부 의견 제출 완료 여부를 체크리스트, 정성 평가, 사업부 의견 수신 상태 기준으로 판정한다.
  */
 function hasPersistedBusinessOpinion(patent: { businessOpinion: { opinion: unknown; submittedAt: string | null } }) {
@@ -276,7 +332,26 @@ function hasPersistedBusinessOpinion(patent: { businessOpinion: { opinion: unkno
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-005, UI-006
+ * @relatedUI UI-BUS-03
+ * @description 특허 상세 API 응답 전 체크리스트 상태 초기화를 위한 빈 제출 초안을 만든다.
+ */
+function createEmptyBusinessChecklistDraft(patentId: string): BusinessChecklistSubmission {
+  return {
+    patentId,
+    evaluatorName: "",
+    evaluatedAt: "",
+    responses: [],
+    qualitativeScore: 0,
+    qualitativeMemo: "",
+    finalOpinion: "MAINTAIN",
+    finalReason: "",
+    additionalNeeds: "",
+  };
+}
+
+/**
+ * @relatedFR FR-009
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 체크리스트, 정성 평가, 사업부 의견이 모두 있는지 확인해 사업부 의견 전달 완료 여부를 판정한다.
  */
 function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSubmission) {
@@ -289,19 +364,21 @@ function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSub
 }
 
 /**
- * @relatedFR FR-009, FR-010
- * @relatedUI UI-005, UI-006
+ * @relatedFR FR-009
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 사업부 담당자가 AI 제안 점수를 참고해 평가 체크리스트를 작성하고 관리자에게 전달하는 모달
  */
 function BusinessChecklistModal({
+  businessChecklistItems,
   initialSubmission,
   onClose,
   onSubmit,
   patentTitle,
 }: {
+  businessChecklistItems: BusinessChecklistItem[];
   initialSubmission: BusinessChecklistSubmission;
   onClose: () => void;
-  onSubmit: (submission: BusinessChecklistSubmission) => void;
+  onSubmit: (submission: BusinessChecklistSubmission) => void | Promise<void>;
   patentTitle: string;
 }) {
   const [draft, setDraft] = useState(initialSubmission);
@@ -422,7 +499,7 @@ function BusinessChecklistModal({
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-005, UI-006
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 사업부 체크리스트 항목 점수를 갱신한다.
  */
 function updateChecklistScore(submission: BusinessChecklistSubmission, itemId: string, score: number) {
@@ -450,7 +527,7 @@ function getScoreOptionClassName(selectedScore: number | null, aiSuggestedScore:
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-005, UI-006
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 사업부 체크리스트 항목별 평가 입력 메모를 갱신한다.
  */
 function updateChecklistMemo(submission: BusinessChecklistSubmission, itemId: string, memo: string) {
@@ -464,7 +541,7 @@ function updateChecklistMemo(submission: BusinessChecklistSubmission, itemId: st
 
 /**
  * @relatedFR FR-005
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 특허 상세 상단 영역에 PatentLifecycleStatus 기준 상태 색상을 적용한다.
  */
 function getLifecycleHeroClassName(lifecycleStatus: PatentLifecycleStatus) {
@@ -491,7 +568,7 @@ function SummaryBlock({ title, content }: { title: string; content: string }) {
 
 /**
  * @relatedFR FR-012
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 관리자 특허 상세의 현재 workflow 단계에 맞는 액션 제목을 반환한다.
  */
 function getAdminActionTitle(workflowStatus: ReviewWorkflowStatus) {
@@ -503,11 +580,7 @@ function getAdminActionTitle(workflowStatus: ReviewWorkflowStatus) {
     return "사업부 응답 대기";
   }
 
-  if (workflowStatus === "WAITING_EXECUTIVE_APPROVAL") {
-    return "임원 결재 대기";
-  }
-
-  if (workflowStatus === "APPROVAL_COMPLETED") {
+  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") {
     return "처리 결과 입력 필요";
   }
 
@@ -516,7 +589,7 @@ function getAdminActionTitle(workflowStatus: ReviewWorkflowStatus) {
 
 /**
  * @relatedFR FR-012
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 관리자 특허 상세의 현재 workflow 단계에 맞는 액션 설명을 반환한다.
  */
 function getAdminActionDescription(workflowStatus: ReviewWorkflowStatus) {
@@ -528,12 +601,8 @@ function getAdminActionDescription(workflowStatus: ReviewWorkflowStatus) {
     return "사업부서 담당자의 유지/포기 의견 제출을 기다리는 중입니다.";
   }
 
-  if (workflowStatus === "WAITING_EXECUTIVE_APPROVAL") {
-    return "사업부 의견 확인 후 임원 결재가 진행 중입니다.";
-  }
-
-  if (workflowStatus === "APPROVAL_COMPLETED") {
-    return "결재 결과에 따라 유지, 포기, 매각 중 실제 처리 결과를 입력해야 합니다.";
+  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") {
+    return "사업부 의견을 확인한 뒤 유지, 포기, 매각 중 실제 처리 결과를 입력해야 합니다.";
   }
 
   return "아직 입력된 최종 처리 결과가 없습니다.";
@@ -541,7 +610,7 @@ function getAdminActionDescription(workflowStatus: ReviewWorkflowStatus) {
 
 /**
  * @relatedFR FR-012
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 관리자 특허 상세의 현재 workflow 단계에 맞는 버튼 라벨을 반환한다.
  */
 function getAdminActionButtonLabel(workflowStatus: ReviewWorkflowStatus) {
@@ -553,11 +622,7 @@ function getAdminActionButtonLabel(workflowStatus: ReviewWorkflowStatus) {
     return "메일 발송 내역 보기";
   }
 
-  if (workflowStatus === "WAITING_EXECUTIVE_APPROVAL") {
-    return "결재 현황 보기";
-  }
-
-  if (workflowStatus === "APPROVAL_COMPLETED") {
+  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") {
     return "처리 결과 입력";
   }
 
@@ -566,7 +631,7 @@ function getAdminActionButtonLabel(workflowStatus: ReviewWorkflowStatus) {
 
 /**
  * @relatedFR FR-001, FR-005
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 특허 상세 마감 기한을 yy-mm-dd 형식으로 표시한다.
  */
 function formatShortDate(dateText: string) {
@@ -575,7 +640,7 @@ function formatShortDate(dateText: string) {
 
 /**
  * @relatedFR FR-006, FR-011
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description AI 특허 평가 레포트 작성일을 yyyy-mm-dd 형식으로 표시한다.
  */
 function formatDate(dateText: string) {
