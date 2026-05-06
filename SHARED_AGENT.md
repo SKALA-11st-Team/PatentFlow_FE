@@ -117,57 +117,94 @@ If evaluation summaries, recommendations, business opinions, or history are not 
 
 ## Shared Status And Enum Guidance
 
-Prefer explicit domain values and keep Korean labels at the display layer.
+Prefer explicit domain values and keep Korean labels at the display layer. Frontend status values must match `src/constants/status.ts`.
 
-Suggested shared domain values:
+Use source arrays and derived union types instead of duplicating ad hoc string values in page components:
 
 ```ts
-type PatentLifecycleStatus =
-  | "ACTIVE"
-  | "ABANDONED"
-  | "SOLD"
-  | "EXPIRED";
+const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "SOLD", "EXPIRED"] as const;
 
-type ReviewWorkflowStatus =
-  | "NOT_IN_REVIEW_QUARTER"
-  | "REVIEW_QUARTER_STARTED"
-  | "REPORT_GENERATED"
-  | "MAIL_READY"
-  | "WAITING_BUSINESS_RESPONSE"
-  | "BUSINESS_RESPONSE_RECEIVED"
-  | "WAITING_EXECUTIVE_APPROVAL"
-  | "APPROVAL_COMPLETED"
-  | "LEGAL_ACTION_RECORDED";
+const REVIEW_WORKFLOW_STATUSES = [
+  "NOT_IN_REVIEW_QUARTER",
+  "REVIEW_QUARTER_STARTED",
+  "REPORT_GENERATED",
+  "MAIL_READY",
+  "WAITING_BUSINESS_RESPONSE",
+  "BUSINESS_RESPONSE_RECEIVED",
+  "WAITING_EXECUTIVE_APPROVAL",
+  "APPROVAL_COMPLETED",
+  "LEGAL_ACTION_RECORDED",
+] as const;
 
-type Recommendation =
-  | "MAINTAIN"
-  | "REVIEW_AGAIN"
-  | "ABANDON"
-  | "SALES_CANDIDATE"
-  | "HOLD";
+const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "SALES_CANDIDATE", "HOLD"] as const;
 
-type BusinessOpinionDecision =
-  | "MAINTAIN"
-  | "ABANDON";
+const BUSINESS_OPINION_DECISIONS = ["MAINTAIN", "ABANDON"] as const;
 
-type ExecutiveApprovalDecision =
-  | "APPROVED_MAINTAIN"
-  | "APPROVED_ABANDON"
-  | "APPROVED_SELL"
-  | "REJECTED"
-  | "REQUEST_CHANGES";
+const EXECUTIVE_APPROVAL_DECISIONS = [
+  "APPROVED_MAINTAIN",
+  "APPROVED_ABANDON",
+  "APPROVED_SELL",
+  "REJECTED",
+  "REQUEST_CHANGES",
+] as const;
 
-type LegalActionResult =
-  | "MAINTAINED"
-  | "ABANDONED"
-  | "SOLD";
+const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const;
 
-type EvaluationCategory =
-  | "RIGHTS"
-  | "TECHNOLOGY"
-  | "MARKET"
-  | "LIFECYCLE_ECONOMICS";
+const EVALUATION_CATEGORIES = ["RIGHTS", "TECHNOLOGY", "MARKET", "LIFECYCLE_ECONOMICS"] as const;
 ```
+
+Current display labels include:
+
+| Group | Value | Label |
+|---|---|---|
+| PatentLifecycleStatus | `ACTIVE` | 보유 중 |
+| PatentLifecycleStatus | `ABANDONED` | 포기 완료 |
+| PatentLifecycleStatus | `SOLD` | 매각 완료 |
+| PatentLifecycleStatus | `EXPIRED` | 소멸 |
+| ReviewWorkflowStatus | `NOT_IN_REVIEW_QUARTER` | 검토 분기 아님 |
+| ReviewWorkflowStatus | `REVIEW_QUARTER_STARTED` | 이번 분기 납부 대상 |
+| ReviewWorkflowStatus | `REPORT_GENERATED` | 레포트 생성 완료 |
+| ReviewWorkflowStatus | `MAIL_READY` | 메일 발송 대기 |
+| ReviewWorkflowStatus | `WAITING_BUSINESS_RESPONSE` | 사업부 응답 대기 |
+| ReviewWorkflowStatus | `BUSINESS_RESPONSE_RECEIVED` | 사업부 응답 완료 |
+| ReviewWorkflowStatus | `WAITING_EXECUTIVE_APPROVAL` | 결재 대기 |
+| ReviewWorkflowStatus | `APPROVAL_COMPLETED` | 결재 완료 |
+| ReviewWorkflowStatus | `LEGAL_ACTION_RECORDED` | 처리 완료 |
+| Recommendation | `MAINTAIN` | 유지 권고 |
+| Recommendation | `REVIEW_AGAIN` | 추가 정보 필요 |
+| Recommendation | `ABANDON` | 포기 검토 |
+| Recommendation | `SALES_CANDIDATE` | 포기 검토 |
+| Recommendation | `HOLD` | 추가 정보 필요 |
+| BusinessOpinionDecision | `MAINTAIN` | 유지 |
+| BusinessOpinionDecision | `ABANDON` | 포기 |
+| ExecutiveApprovalDecision | `APPROVED_MAINTAIN` | 유지 승인 |
+| ExecutiveApprovalDecision | `APPROVED_ABANDON` | 포기 승인 |
+| ExecutiveApprovalDecision | `APPROVED_SELL` | 매각 승인 |
+| ExecutiveApprovalDecision | `REJECTED` | 반려 |
+| ExecutiveApprovalDecision | `REQUEST_CHANGES` | 수정 요청 |
+| LegalActionResult | `MAINTAINED` | 유지 처리 |
+| LegalActionResult | `ABANDONED` | 포기 처리 |
+| LegalActionResult | `SOLD` | 매각 처리 |
+| EvaluationCategory | `RIGHTS` | 권리성 |
+| EvaluationCategory | `TECHNOLOGY` | 기술성 |
+| EvaluationCategory | `MARKET` | 시장성 |
+| EvaluationCategory | `LIFECYCLE_ECONOMICS` | 라이프사이클 경제성 |
+
+Workflow progress visualization currently uses this subset and order:
+
+```ts
+const REVIEW_WORKFLOW_PROGRESS_STATUSES = [
+  "REVIEW_QUARTER_STARTED",
+  "MAIL_READY",
+  "WAITING_BUSINESS_RESPONSE",
+  "BUSINESS_RESPONSE_RECEIVED",
+  "WAITING_EXECUTIVE_APPROVAL",
+  "APPROVAL_COMPLETED",
+  "LEGAL_ACTION_RECORDED",
+] as const;
+```
+
+Filter options are `ALL` plus every `REVIEW_WORKFLOW_STATUSES` value. Badge tone values are `neutral`, `primary`, `warning`, `success`, and `danger`.
 
 ## Shared API Expectations
 
@@ -212,19 +249,27 @@ Important frontend pages, backend APIs, AI-agent prompts, test fixtures, mock da
 
 When a UI relationship is relevant, also include the official UI ID.
 
-Official UI IDs:
+Official UI IDs are maintained in `docs/UI.md`.
 
 | UI ID | 화면명 | 사용자 | 설명 |
 |---|---|---|---|
-| UI-001 | 로그인 | 공통 | 관리자/사업부 사용자가 로그인하고 역할에 따라 화면 진입 |
-| UI-002 | 대시보드 | 관리자 | 검토 대상 특허, 만료 임박 특허, 상태 요약 확인 |
-| UI-003 | 특허관리 | 관리자 | 전체 특허 목록 조회, 검색, 필터링, 정렬, 일괄 업로드 |
-| UI-004 | 특허 등록/수정 | 관리자 | 특허 기본 정보, 회사 컨텍스트 정보 등록 및 수정 |
-| UI-005 | 특허상세 | 관리자, 사업부 사용자 | 특허 요약, AI 평가 결과, 근거, 권고안, 최종 판단을 확인하는 상세 화면 |
-| UI-006 | 사업부 마이페이지 | 사업부 사용자 | 사업부가 검토 요청받은 특허 목록을 확인하고 의견을 입력하는 화면 |
-| UI-007 | 메일링 | 관리자 | 메일 미리보기, 수신자 매핑, 발송 내역 조회 |
-| UI-008 | 설정 | 관리자 | 운영 기준, 평가 기준, 메일링 매핑 정보 설정 |
-| UI-009 | 레포트 | 관리자, 사업부 사용자 | 평가 이력, 최종 판단 이력, 매각 후보 리스트, AI 피드백 조회 |
+| UI-COM-01 | 로그인 | 공통 | 관리자/사업부 사용자가 로그인하고 역할에 따라 화면 진입 |
+| UI-COM-02 | 공통 앱 레이아웃 | 공통 | 역할별 내비게이션, 페이지 헤더, 알림 진입점 제공 |
+| UI-COM-03 | 알림 패널 | 공통 | 역할 대상 알림을 그룹별로 표시하고 읽음 상태 변경 |
+| UI-LEGAL-01 | 관리자 대시보드 | 관리자 | 검토 대상 특허, 상태 요약, KPI, 관련 사업별 현황 확인 |
+| UI-LEGAL-02 | 검토 대상 특허 목록 / 일괄 처리 | 관리자 | KPI 드릴다운, 검색/필터/정렬, 메일/결재 일괄 처리 |
+| UI-LEGAL-03 | 특허관리 | 관리자 | 특허 등록, 전체 특허 목록 조회, 검색, 필터링, 정렬 |
+| UI-LEGAL-04 | 특허 등록/수정 상세 | 관리자 | 특허 기본 정보와 회사 컨텍스트 정보 수정 |
+| UI-LEGAL-05 | 관리자 특허 상세 | 관리자 | 특허 요약, AI 평가 레포트, 근거, 사업부 의견, 최종 판단 확인 |
+| UI-LEGAL-06 | AI 레포트 메일 발송 | 관리자 | 메일 미리보기, 수신자 매핑, 발송 이력 조회 |
+| UI-LEGAL-07 | 매각 후보 관리 | 관리자 | 매각 후보 권고 또는 매각 완료 특허 목록 조회 |
+| UI-LEGAL-08 | 관리자 설정 | 관리자 | 운영 기준, 평가 기준, 메일링 매핑 정보 설정 |
+| UI-BUS-01 | 사업부서 대시보드 | 사업부 | 의견 요청 특허와 제출 상태 확인 |
+| UI-BUS-02 | 의견 요청 특허 / 의견 제출 | 사업부 | 요청 특허 목록, 체크리스트, 정성 평가, 의견 제출 |
+| UI-BUS-03 | 사업부 특허 상세 | 사업부 | 특허 내용, AI 평가 레포트, 근거, 의견 입력 영역 확인 |
+| UI-BUS-04 | 제출 이력 | 사업부 | 사업부가 제출한 특허별 의견 이력 조회 |
+| UI-BUS-05 | 제출 이력 상세 | 사업부 | 과거 의견 사유, 당시 AI 레포트, 체크리스트 이력, 처리 타임라인 확인 |
+| UI-BUS-06 | 사업부 설정 | 사업부 | 알림, 의견 템플릿, 담당자 정보 설정 |
 
 Do not invent another final UI ID system. If the UI ID is unknown, use `TODO-UI-ID`.
 
@@ -233,7 +278,7 @@ Example comment:
 ```ts
 /**
  * @relatedFR FR-006, FR-007, FR-008
- * @relatedUI UI-005
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description AI 특허 평가 레포트와 평가 근거를 조회한다.
  */
 ```

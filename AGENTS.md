@@ -63,7 +63,7 @@ The business user can:
 - Enter business-side opinions
 - Upload internal documents for re-evaluation
 - View re-evaluation results
-- Submit maintain / abandon / re-review opinions
+- Submit maintain / abandon opinions
 
 ## Technology Stack
 
@@ -89,6 +89,7 @@ Use the project documents in `docs/` as the managed reference set for frontend w
 Before creating or changing UI, layout, shared components, page styling, global CSS, mock data, API contracts, evaluation screens, or business review flows, check the relevant docs first:
 
 - `docs/DESIGN_SYSTEM.md`: UI tone, design tokens, layout principles, component styling, and interaction states.
+- `docs/UI.md`: official frontend UI ID list, screen composition, workflow procedure, constraints, and FR-to-UI traceability mapping.
 - `docs/skax_patents_list.md`: primary source for demo patent metadata and patent list fixtures.
 - `docs/patent_evaluation_criteria.md`: official PatentFlow patent evaluation criteria, evaluation axes, final comprehensive indicator, and final judgment categories.
 - `docs/business_evaluavte_checklist.md`: business-side checklist reference for business relevance and internal review inputs.
@@ -474,57 +475,102 @@ Frontend status values, enum-like value arrays, Korean labels, workflow display 
 
 Do not duplicate status labels or workflow ordering inside page components. Import from `src/constants/status.ts` instead.
 
-Suggested domain types:
+Current FE status values must match `src/constants/status.ts`.
+
+Use these source arrays and derived union types instead of duplicating ad hoc string values in page components:
 
 ```ts
-type PatentLifecycleStatus =
-  | "ACTIVE"
-  | "ABANDONED"
-  | "SOLD"
-  | "EXPIRED";
+const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "SOLD", "EXPIRED"] as const;
 
-type ReviewWorkflowStatus =
-  | "NOT_IN_REVIEW_QUARTER"
-  | "REVIEW_QUARTER_STARTED"
-  | "REPORT_GENERATED"
-  | "MAIL_READY"
-  | "WAITING_BUSINESS_RESPONSE"
-  | "BUSINESS_RESPONSE_RECEIVED"
-  | "WAITING_EXECUTIVE_APPROVAL"
-  | "APPROVAL_COMPLETED"
-  | "LEGAL_ACTION_RECORDED";
+const REVIEW_WORKFLOW_STATUSES = [
+  "NOT_IN_REVIEW_QUARTER",
+  "REVIEW_QUARTER_STARTED",
+  "REPORT_GENERATED",
+  "MAIL_READY",
+  "WAITING_BUSINESS_RESPONSE",
+  "BUSINESS_RESPONSE_RECEIVED",
+  "WAITING_EXECUTIVE_APPROVAL",
+  "APPROVAL_COMPLETED",
+  "LEGAL_ACTION_RECORDED",
+] as const;
 
-type Recommendation =
-  | "MAINTAIN"
-  | "REVIEW_AGAIN"
-  | "ABANDON"
-  | "SALES_CANDIDATE"
-  | "HOLD";
+const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "SALES_CANDIDATE", "HOLD"] as const;
 
-type BusinessOpinionDecision =
-  | "MAINTAIN"
-  | "ABANDON";
+const BUSINESS_OPINION_DECISIONS = ["MAINTAIN", "ABANDON"] as const;
 
-type ExecutiveApprovalDecision =
-  | "APPROVED_MAINTAIN"
-  | "APPROVED_ABANDON"
-  | "APPROVED_SELL"
-  | "REJECTED"
-  | "REQUEST_CHANGES";
+const EXECUTIVE_APPROVAL_DECISIONS = [
+  "APPROVED_MAINTAIN",
+  "APPROVED_ABANDON",
+  "APPROVED_SELL",
+  "REJECTED",
+  "REQUEST_CHANGES",
+] as const;
 
-type LegalActionResult =
-  | "MAINTAINED"
-  | "ABANDONED"
-  | "SOLD";
+const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const;
 
-type EvaluationCategory =
-  | "RIGHTS"
-  | "TECHNOLOGY"
-  | "MARKET"
-  | "LIFECYCLE_ECONOMICS";
+const EVALUATION_CATEGORIES = ["RIGHTS", "TECHNOLOGY", "MARKET", "LIFECYCLE_ECONOMICS"] as const;
 ```
 
-Korean labels can be mapped at the UI layer.
+Current Korean display labels:
+
+| Group | Value | Label |
+|---|---|---|
+| PatentLifecycleStatus | `ACTIVE` | 보유 중 |
+| PatentLifecycleStatus | `ABANDONED` | 포기 완료 |
+| PatentLifecycleStatus | `SOLD` | 매각 완료 |
+| PatentLifecycleStatus | `EXPIRED` | 소멸 |
+| ReviewWorkflowStatus | `NOT_IN_REVIEW_QUARTER` | 검토 분기 아님 |
+| ReviewWorkflowStatus | `REVIEW_QUARTER_STARTED` | 이번 분기 납부 대상 |
+| ReviewWorkflowStatus | `REPORT_GENERATED` | 레포트 생성 완료 |
+| ReviewWorkflowStatus | `MAIL_READY` | 메일 발송 대기 |
+| ReviewWorkflowStatus | `WAITING_BUSINESS_RESPONSE` | 사업부 응답 대기 |
+| ReviewWorkflowStatus | `BUSINESS_RESPONSE_RECEIVED` | 사업부 응답 완료 |
+| ReviewWorkflowStatus | `WAITING_EXECUTIVE_APPROVAL` | 결재 대기 |
+| ReviewWorkflowStatus | `APPROVAL_COMPLETED` | 결재 완료 |
+| ReviewWorkflowStatus | `LEGAL_ACTION_RECORDED` | 처리 완료 |
+| Recommendation | `MAINTAIN` | 유지 권고 |
+| Recommendation | `REVIEW_AGAIN` | 추가 정보 필요 |
+| Recommendation | `ABANDON` | 포기 검토 |
+| Recommendation | `SALES_CANDIDATE` | 포기 검토 |
+| Recommendation | `HOLD` | 추가 정보 필요 |
+| BusinessOpinionDecision | `MAINTAIN` | 유지 |
+| BusinessOpinionDecision | `ABANDON` | 포기 |
+| ExecutiveApprovalDecision | `APPROVED_MAINTAIN` | 유지 승인 |
+| ExecutiveApprovalDecision | `APPROVED_ABANDON` | 포기 승인 |
+| ExecutiveApprovalDecision | `APPROVED_SELL` | 매각 승인 |
+| ExecutiveApprovalDecision | `REJECTED` | 반려 |
+| ExecutiveApprovalDecision | `REQUEST_CHANGES` | 수정 요청 |
+| LegalActionResult | `MAINTAINED` | 유지 처리 |
+| LegalActionResult | `ABANDONED` | 포기 처리 |
+| LegalActionResult | `SOLD` | 매각 처리 |
+| EvaluationCategory | `RIGHTS` | 권리성 |
+| EvaluationCategory | `TECHNOLOGY` | 기술성 |
+| EvaluationCategory | `MARKET` | 시장성 |
+| EvaluationCategory | `LIFECYCLE_ECONOMICS` | 라이프사이클 경제성 |
+
+Current workflow progress visualization uses this subset and order:
+
+```ts
+const REVIEW_WORKFLOW_PROGRESS_STATUSES = [
+  "REVIEW_QUARTER_STARTED",
+  "MAIL_READY",
+  "WAITING_BUSINESS_RESPONSE",
+  "BUSINESS_RESPONSE_RECEIVED",
+  "WAITING_EXECUTIVE_APPROVAL",
+  "APPROVAL_COMPLETED",
+  "LEGAL_ACTION_RECORDED",
+] as const;
+```
+
+Current filter options are `ALL` plus every `REVIEW_WORKFLOW_STATUSES` value.
+
+Current badge tone values are:
+
+```ts
+type StatusTone = "neutral" | "primary" | "warning" | "success" | "danger";
+```
+
+Korean labels, short labels, workflow actions, bottleneck descriptions, urgency rank, and badge tone metadata belong in `src/constants/status.ts`.
 
 ## Styling Guidance
 
@@ -565,19 +611,37 @@ Use this rule for:
 
 ### Official UI ID Mapping
 
-Use the following official UI IDs. Do not invent a different UI ID system.
+Use the official UI IDs defined in `docs/UI.md`. Do not invent a different final UI ID system.
+
+UI ID namespaces:
+
+| Namespace | 사용자 | 설명 |
+|---|---|---|
+| `UI-COM-NN` | 공통 | 로그인, 공통 레이아웃, 알림처럼 관리자와 사업부서팀이 함께 쓰는 UI |
+| `UI-LEGAL-NN` | 관리자 / Legal Team | 관리자 대시보드, 검토 대상, 특허관리, 특허 상세, 메일링, 매각 후보, 설정 UI |
+| `UI-BUS-NN` | 사업부서팀 | 사업부 대시보드, 의견 요청, 특허 상세, 제출 이력, 설정 UI |
+
+Current official UI IDs:
 
 | UI ID | 화면명 | 사용자 | 설명 |
 |---|---|---|---|
-| UI-001 | 로그인 | 공통 | 관리자/사업부 사용자가 로그인하고 역할에 따라 화면 진입 |
-| UI-002 | 대시보드 | 관리자 | 검토 대상 특허, 만료 임박 특허, 상태 요약 확인 |
-| UI-003 | 특허관리 | 관리자 | 전체 특허 목록 조회, 검색, 필터링, 정렬, 일괄 업로드 |
-| UI-004 | 특허 등록/수정 | 관리자 | 특허 기본 정보, 회사 컨텍스트 정보 등록 및 수정 |
-| UI-005 | 특허상세 | 관리자, 사업부 사용자 | 특허 요약, AI 평가 결과, 근거, 권고안, 최종 판단을 확인하는 상세 화면 |
-| UI-006 | 사업부 마이페이지 | 사업부 사용자 | 사업부가 검토 요청받은 특허 목록을 확인하고 의견을 입력하는 화면 |
-| UI-007 | 메일링 | 관리자 | 메일 미리보기, 수신자 매핑, 발송 내역 조회 |
-| UI-008 | 설정 | 관리자 | 운영 기준, 평가 기준, 메일링 매핑 정보 설정 |
-| UI-009 | 레포트 | 관리자, 사업부 사용자 | 평가 이력, 최종 판단 이력, 매각 후보 리스트, AI 피드백 조회 |
+| `UI-COM-01` | 로그인 | 공통 | 관리자/사업부서 사용자가 역할을 선택하고 역할별 화면으로 진입 |
+| `UI-COM-02` | 공통 앱 레이아웃 | 공통 | 역할별 내비게이션, 페이지 헤더, 알림 진입점 제공 |
+| `UI-COM-03` | 알림 패널 | 공통 | 역할 대상 알림을 그룹별로 보여주고 읽음 상태를 변경 |
+| `UI-LEGAL-01` | 관리자 대시보드 | 관리자 | 검토 대상 특허, 상태 요약, KPI, 관련 사업별 현황 확인 |
+| `UI-LEGAL-02` | 검토 대상 특허 목록 / 일괄 처리 | 관리자 | KPI 드릴다운, 검토 대상 검색/필터/정렬, 메일/결재 일괄 처리 |
+| `UI-LEGAL-03` | 특허관리 | 관리자 | 특허 등록, 전체 특허 목록 조회, 검색, 필터링, 정렬 |
+| `UI-LEGAL-04` | 특허 등록/수정 상세 | 관리자 | 특허 기본 정보와 회사 컨텍스트 정보 수정 |
+| `UI-LEGAL-05` | 관리자 특허 상세 | 관리자 | 특허 요약, AI 평가 레포트, 근거, 사업부 의견, 최종 판단 확인 |
+| `UI-LEGAL-06` | AI 레포트 메일 발송 | 관리자 | 메일 미리보기, 수신자 매핑, 발송 이력 조회 |
+| `UI-LEGAL-07` | 매각 후보 관리 | 관리자 | 매각 후보 권고 또는 매각 완료 특허 목록 조회 |
+| `UI-LEGAL-08` | 관리자 설정 | 관리자 | 운영 기준, 평가 기준, 메일링 매핑 정보 설정 |
+| `UI-BUS-01` | 사업부서 대시보드 | 사업부서팀 | 의견 요청 특허와 제출 상태를 현재 작업 중심으로 확인 |
+| `UI-BUS-02` | 의견 요청 특허 / 의견 제출 | 사업부서팀 | 요청 특허 목록, 체크리스트, 정성 평가, 유지/포기 의견 제출 |
+| `UI-BUS-03` | 사업부 특허 상세 | 사업부서팀 | 특허 내용, AI 평가 레포트, 근거, 사업부 의견 입력 영역 확인 |
+| `UI-BUS-04` | 제출 이력 | 사업부서팀 | 사업부가 제출한 특허별 의견 이력 조회 |
+| `UI-BUS-05` | 제출 이력 상세 | 사업부서팀 | 과거 의견 사유, 당시 AI 레포트, 체크리스트 이력, 처리 타임라인 확인 |
+| `UI-BUS-06` | 사업부 설정 | 사업부서팀 | 알림, 의견 템플릿, 담당자 정보 설정 |
 
 ### Required Comment Format
 
@@ -588,7 +652,7 @@ Example:
 ```tsx
 /**
  * @relatedFR FR-001, FR-002
- * @relatedUI UI-003
+ * @relatedUI UI-LEGAL-03
  * @description 관리자 특허 목록 조회, 검색, 필터링, 정렬 화면
  */
 ```
@@ -600,7 +664,7 @@ Example:
 ```ts
 /**
  * @relatedFR FR-001
- * @relatedUI UI-002
+ * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드에서 검토 대상 특허 목록을 조회한다.
  */
 export async function getReviewTargetPatents() {
@@ -615,7 +679,7 @@ Example:
 ```tsx
 /**
  * @relatedFR FR-001, FR-002, FR-013
- * @relatedUI UI-002, UI-003, UI-009
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-03, UI-BUS-04
  * @description 특허 목록, 대시보드 목록, 이력 목록에서 사용하는 공통 테이블 컴포넌트
  */
 ```
@@ -638,23 +702,23 @@ Use this mapping as the default traceability guide.
 
 | FR ID | Requirement | Primary UI ID |
 |---|---|---|
-| FR-001 | 검토 대상 특허 조회 | UI-002, UI-003, UI-006 |
-| FR-002 | 특허 목록 검색/필터링/정렬 | UI-003 |
-| FR-003 | 특허 기본 정보 등록 | UI-004 |
-| FR-004 | 회사 컨텍스트 입력/수정 | UI-004 |
-| FR-005 | 특허 내용 요약 생성 | UI-005 |
-| FR-006 | AI 기반 특허 가치 재평가 수행 | UI-005, UI-006 |
-| FR-007 | 평가 근거 제공 | UI-005 |
-| FR-008 | 종합 권고안 생성 | UI-005 |
-| FR-009 | 사업부 의견 입력 | UI-006, UI-005 |
-| FR-010 | 내부 문서 반영 재평가 | UI-006, UI-005 |
-| FR-011 | AI 특허 평가 레포트와 최종 판단 분리 조회/수정 | UI-005 |
-| FR-012 | 최종 의사결정 기록 | UI-005, UI-009 |
-| FR-013 | 평가/판단 이력 조회 | UI-005, UI-009 |
-| FR-014 | 부서별 수신자 및 메일링 매핑 등록/수정 | UI-007, UI-008 |
-| FR-015 | 메일 미리보기 | UI-007 |
-| FR-016 | 메일 발송 이력 저장/조회 | UI-007, UI-009 |
-| FR-017 | 포기 특허를 매각 후보 리스트로 분류/조회 | UI-009, UI-005 |
+| FR-001 | 검토 대상 특허 조회 | `UI-LEGAL-01`, `UI-LEGAL-02`, `UI-LEGAL-03`, `UI-BUS-01`, `UI-BUS-02` |
+| FR-002 | 특허 목록 검색/필터링/정렬 | `UI-LEGAL-01`, `UI-LEGAL-02`, `UI-LEGAL-03`, `UI-BUS-01`, `UI-BUS-02` |
+| FR-003 | 특허 기본 정보 등록 | `UI-LEGAL-03`, `UI-LEGAL-04` |
+| FR-004 | 회사 컨텍스트 입력/수정 | `UI-LEGAL-03`, `UI-LEGAL-04` |
+| FR-005 | 특허 내용 요약 생성 | `UI-LEGAL-05`, `UI-BUS-03` |
+| FR-006 | AI 기반 특허 가치 재평가 수행 | `UI-LEGAL-05`, `UI-BUS-02`, `UI-BUS-03`, `UI-BUS-05` |
+| FR-007 | 평가 근거 제공 | `UI-LEGAL-05`, `UI-BUS-03`, `UI-BUS-05` |
+| FR-008 | 종합 권고안 생성 | `UI-LEGAL-05`, `UI-BUS-03`, `UI-BUS-05` |
+| FR-009 | 사업부 의견 입력 | `UI-BUS-01`, `UI-BUS-02`, `UI-BUS-03`, `UI-LEGAL-05` |
+| FR-010 | 내부 문서 반영 재평가 | 현재 구현 화면 없음 |
+| FR-011 | AI 특허 평가 레포트와 최종 판단 분리 조회/수정 | `UI-LEGAL-02`, `UI-LEGAL-05`, `UI-BUS-03` |
+| FR-012 | 최종 의사결정 기록 | `UI-LEGAL-01`, `UI-LEGAL-02`, `UI-LEGAL-05`, `UI-BUS-05` |
+| FR-013 | 평가/판단 이력 조회 | `UI-LEGAL-05`, `UI-BUS-04`, `UI-BUS-05` |
+| FR-014 | 부서별 수신자 및 메일링 매핑 등록/수정 | `UI-LEGAL-06`, `UI-LEGAL-08` |
+| FR-015 | 메일 미리보기 | `UI-LEGAL-06` |
+| FR-016 | 메일 발송 이력 저장/조회 | `UI-LEGAL-02`, `UI-LEGAL-06` |
+| FR-017 | 포기 특허를 매각 후보 리스트로 분류/조회 | `UI-LEGAL-05`, `UI-LEGAL-07` |
 
 For FR-018~FR-022, inspect the project requirement document before assigning UI IDs. Do not guess.
 
@@ -664,7 +728,7 @@ Do not change existing FR numbers.
 
 Do not assign unrelated FR IDs just to fill the comment.
 
-Do not use old temporary UI IDs such as `UI-ADM-DASHBOARD` or `UI-BIZ-PATENT-LIST` unless the user explicitly reintroduces them.
+Do not use old UI IDs such as `UI-001`, `UI-002`, `UI-005`, `UI-009`, `UI-ADM-DASHBOARD`, or `UI-BIZ-PATENT-LIST` unless the user explicitly reintroduces them.
 
 If a component has no direct FR relationship, use:
 
@@ -758,6 +822,17 @@ Do not claim tests passed unless they were actually run.
 If tests cannot be run, explain why.
 
 ## Git Workflow
+
+### Private Docs Safety
+
+The `docs/` directory may contain private project reference files.
+
+- Do not commit files under `docs/`.
+- Keep `docs/` ignored in `.gitignore`.
+- Do not delete, rewrite, clean, prune, or garbage-collect local `docs/` files while trying to remove them from Git tracking.
+- If `docs/` was accidentally staged or committed, first preserve the local files, then remove only Git tracking with `git rm -r --cached docs`.
+- Do not run history-rewrite cleanup commands such as `git filter-branch`, `git filter-repo`, `git reflog expire`, or `git gc --prune=now` for `docs/` without explicit user approval and a confirmed external backup.
+- If sensitive files were pushed to a remote, stop and ask the user before rewriting remote history.
 
 ### Branch Strategy
 
