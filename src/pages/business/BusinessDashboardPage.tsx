@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { KpiCard } from "../../components/common/KpiCard";
+import { PaginationControls } from "../../components/common/PaginationControls";
 import { QuarterCompletionDonut } from "../../components/dashboard/QuarterCompletionDonut";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
-import { patents } from "../../mocks/patents.mock";
+import { useClientPagination } from "../../hooks/useClientPagination";
+import { usePatentList } from "../../hooks/usePatentList";
 import type { PatentListItem, Recommendation } from "../../types/patent";
 import { businessOpinionLabels, recommendationLabels } from "../../constants/status";
 
@@ -30,7 +32,7 @@ const sortLabels: Record<SortKey, string> = {
 
 /**
  * @relatedFR FR-001, FR-002, FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-01
  * @description 사업부 대시보드에서 이번 분기 의견 요청 특허를 검색, 필터링, 정렬한다.
  */
 export function BusinessDashboardPage() {
@@ -38,9 +40,10 @@ export function BusinessDashboardPage() {
   const [opinionFilter, setOpinionFilter] = useState<OpinionFilter>("ALL");
   const [recommendationFilter, setRecommendationFilter] = useState<RecommendationFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
+  const { errorMessage, isLoading, patents } = usePatentList();
   const assigned = useMemo(
-    () => patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER").slice(0, 10),
-    [],
+    () => patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER"),
+    [patents],
   );
   const pending = assigned.filter((patent) => !patent.businessOpinionDecision);
   const submitted = assigned.filter((patent) => patent.businessOpinionDecision);
@@ -48,6 +51,14 @@ export function BusinessDashboardPage() {
     () => getFilteredAndSortedPatents(assigned, searchKeyword, opinionFilter, recommendationFilter, sortKey),
     [assigned, opinionFilter, recommendationFilter, searchKeyword, sortKey],
   );
+  const {
+    currentPage,
+    pageSize,
+    pagedItems: displayedPatents,
+    setCurrentPage,
+    totalItems,
+    totalPages,
+  } = useClientPagination(filteredPatents, [opinionFilter, recommendationFilter, searchKeyword, sortKey]);
 
   return (
     <AppLayout
@@ -58,7 +69,7 @@ export function BusinessDashboardPage() {
       <section className="dashboard-kpi-overview">
         <QuarterCompletionDonut
           completed={submitted.length}
-          helper="배정 특허 수 대비 사업부 의견 제출 완료"
+          helper=""
           label="의견 제출 완료"
           total={assigned.length}
         />
@@ -91,7 +102,7 @@ export function BusinessDashboardPage() {
         <div className="section-header">
           <div>
             <h2>의견 요청 특허</h2>
-            <p>사업 적용 여부와 유지 필요성을 확인해야 하는 특허입니다.</p>
+            <p>{errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "사업 적용 여부와 유지 필요성을 확인해야 하는 특허입니다.")}</p>
           </div>
         </div>
         <div className="filter-bar business-filter-bar">
@@ -148,7 +159,7 @@ export function BusinessDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredPatents.map((patent) => (
+              {displayedPatents.map((patent) => (
                 <tr key={patent.patentId}>
                   <td>
                     <Link className="text-link table-title-link" to={`/business/patents/${patent.patentId}`}>
@@ -186,6 +197,13 @@ export function BusinessDashboardPage() {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+        />
       </section>
     </AppLayout>
   );
@@ -193,7 +211,7 @@ export function BusinessDashboardPage() {
 
 /**
  * @relatedFR FR-001, FR-002, FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-01
  * @description 사업부 의견 요청 특허 목록에 검색, 의견 상태 필터, AI 권고 필터, 정렬을 적용한다.
  */
 function getFilteredAndSortedPatents(
@@ -226,7 +244,7 @@ function getFilteredAndSortedPatents(
 
 /**
  * @relatedFR FR-002, FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-01
  * @description 사업부 의견 요청 특허 목록의 정렬 순서를 계산한다.
  */
 function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
@@ -243,7 +261,7 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
 
 /**
  * @relatedFR FR-001, FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-01
  * @description 사업부 대시보드 테이블에서 값이 없거나 N/A인 항목은 공란으로 표시한다.
  */
 function formatOptionalTableText(value: string) {

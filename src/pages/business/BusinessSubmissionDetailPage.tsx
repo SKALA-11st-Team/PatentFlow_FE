@@ -1,22 +1,22 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { getPatentDetail } from "../../api/patents";
+import {
+  getBusinessSubmissionVersions,
+  getLatestBusinessSubmission,
+} from "../../api/businessSubmissions";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
 import { Section } from "../../components/common/Section";
-import { businessChecklistItems } from "../../mocks/businessChecklist.mock";
-import {
-  getBusinessSubmissionVersions,
-  getLatestBusinessSubmission,
-  type BusinessSubmissionVersion,
-} from "../../mocks/businessSubmissions.mock";
-import { patentDetails } from "../../mocks/patents.mock";
+import { useBusinessChecklistItems } from "../../hooks/useBusinessChecklistItems";
+import type { BusinessSubmissionVersion } from "../../mocks/businessSubmissions.mock";
+import type { BusinessChecklistItem } from "../../types/businessChecklist";
 import type { PatentDetail } from "../../types/patent";
 import {
   businessOpinionLabels,
   evaluationCategoryLabels,
-  executiveApprovalLabels,
   legalActionResultLabels,
   recommendationLabels,
 } from "../../constants/status";
@@ -31,20 +31,74 @@ interface SubmissionLogItem {
 }
 
 /**
- * @relatedFR FR-009, FR-010, FR-013
- * @relatedUI UI-009
+ * @relatedFR FR-009, FR-013
+ * @relatedUI UI-BUS-05
  * @description 사업부 사용자가 과거 제출 의견의 판단 이유, 당시 AI 레포트, 처리 로그를 확인하는 상세 화면
  */
 export function BusinessSubmissionDetailPage() {
   const { patentId } = useParams();
+  const [patent, setPatent] = useState<PatentDetail | null>(null);
+  const [submissionVersions, setSubmissionVersions] = useState<BusinessSubmissionVersion[]>([]);
+  const [latestSubmission, setLatestSubmission] = useState<BusinessSubmissionVersion | null>(null);
+  const [loadMessage, setLoadMessage] = useState("제출 이력 상세를 불러오는 중입니다.");
   const [aiReportSubmission, setAiReportSubmission] = useState<BusinessSubmissionVersion | null>(null);
   const [evaluationHistorySubmission, setEvaluationHistorySubmission] = useState<BusinessSubmissionVersion | null>(null);
-  const patent = useMemo(
-    () => patentDetails.find((item) => item.patentId === patentId) ?? patentDetails[0],
-    [patentId],
-  );
-  const submissionVersions = getBusinessSubmissionVersions(patent);
-  const latestSubmission = getLatestBusinessSubmission(patent);
+  const { items: businessChecklistItems } = useBusinessChecklistItems();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSubmissionDetail() {
+      if (!patentId) {
+        setLoadMessage("특허 ID가 없습니다.");
+        return;
+      }
+
+      try {
+        const detail = await getPatentDetail(patentId);
+
+        if (!detail) {
+          if (isMounted) {
+            setLoadMessage("특허 상세 정보를 찾지 못했습니다.");
+          }
+          return;
+        }
+
+        const [versions, latest] = await Promise.all([
+          getBusinessSubmissionVersions(detail),
+          getLatestBusinessSubmission(detail),
+        ]);
+
+        if (isMounted) {
+          setPatent(detail);
+          setSubmissionVersions(versions);
+          setLatestSubmission(latest);
+          setLoadMessage("");
+        }
+      } catch {
+        if (isMounted) {
+          setLoadMessage("제출 이력 상세를 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
+        }
+      }
+    }
+
+    loadSubmissionDetail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [patentId]);
+
+  if (!patent) {
+    return (
+      <AppLayout role="BUSINESS" title="제출 이력 상세" description="제출 이력 상세를 준비하고 있습니다.">
+        <section className="section">
+          <p className="empty-state">{loadMessage}</p>
+        </section>
+      </AppLayout>
+    );
+  }
+
   const submissionLogs = getSubmissionLogs(patent, submissionVersions);
 
   return (
@@ -155,7 +209,7 @@ export function BusinessSubmissionDetailPage() {
             </div>
           </Section>
 
-          <Section title="처리 로그" description="요청, 의견 제시, 임원 승인, 법적 액션을 작은 타임라인으로 확인합니다.">
+          <Section title="처리 로그" description="요청, 의견 제시, 법적 액션을 작은 타임라인으로 확인합니다.">
             <ol className="branch-timeline submission-log-list">
               {submissionLogs.map((log) => (
                 <li className={`branch-node ${log.status}`} key={log.id}>
@@ -176,15 +230,16 @@ export function BusinessSubmissionDetailPage() {
         <aside className="detail-side">
           <Section title="현재 처리 결과">
             <div className="decision-box">
-              {patent.executiveApprovalDecision ? (
-                <Badge tone="success">{executiveApprovalLabels[patent.executiveApprovalDecision]}</Badge>
-              ) : (
-                <Badge tone="warning">승인 대기</Badge>
-              )}
               {patent.legalActionResult ? (
-                <p>{legalActionResultLabels[patent.legalActionResult]}까지 반영된 상태입니다.</p>
+                <>
+                  <Badge tone="success">{legalActionResultLabels[patent.legalActionResult]}</Badge>
+                  <p>최종 법적 액션까지 반영된 상태입니다.</p>
+                </>
               ) : (
-                <p>아직 최종 법적 액션은 입력되지 않았습니다.</p>
+                <>
+                  <Badge tone="warning">처리 대기</Badge>
+                  <p>아직 최종 법적 액션은 입력되지 않았습니다.</p>
+                </>
               )}
             </div>
           </Section>
@@ -207,6 +262,7 @@ export function BusinessSubmissionDetailPage() {
       ) : null}
       {evaluationHistorySubmission ? (
         <EvaluationHistoryModal
+          businessChecklistItems={businessChecklistItems}
           patent={patent}
           submission={evaluationHistorySubmission}
           onClose={() => setEvaluationHistorySubmission(null)}
@@ -218,7 +274,7 @@ export function BusinessSubmissionDetailPage() {
 
 /**
  * @relatedFR FR-006, FR-007, FR-008, FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-05
  * @description 제출 당시 AI 특허 평가 레포트를 화면 위 모달로 표시한다.
  */
 function AiReportModal({
@@ -270,14 +326,16 @@ function AiReportModal({
 
 /**
  * @relatedFR FR-007, FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-05
  * @description 제출 이력 상세에서 사업부 체크리스트 총점과 항목별 점수를 같은 기준으로 표시한다.
  */
 function EvaluationHistoryModal({
+  businessChecklistItems,
   patent,
   submission,
   onClose,
 }: {
+  businessChecklistItems: BusinessChecklistItem[];
   patent: PatentDetail;
   submission: BusinessSubmissionVersion;
   onClose: () => void;
@@ -332,7 +390,7 @@ function Meta({ label, value }: { label: string; value: string }) {
 
 /**
  * @relatedFR FR-007, FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-05
  * @description 평가 이력 모달에서 점수를 간단한 판단 라벨로 변환한다.
  */
 function getEvaluationJudgement(score: number) {
@@ -353,7 +411,7 @@ function getEvaluationJudgement(score: number) {
 
 /**
  * @relatedFR FR-009, FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-05
  * @description 사업부 제출 이후의 업무 로그를 제출 이력 상세용 타임라인 데이터로 변환한다.
  */
 function getSubmissionLogs(
@@ -383,22 +441,11 @@ function getSubmissionLogs(
   });
 
   logs.push({
-    id: "APPROVAL",
-    title: patent.executiveApprovalDecision ? "임원 승인" : "임원 승인 대기",
-    description: patent.executiveApprovalDecision
-      ? `${executiveApprovalLabels[patent.executiveApprovalDecision]} 상태로 처리되었습니다.`
-      : "사업부 의견 확인 후 임원 승인 단계가 남아 있습니다.",
-    actorName: patent.executiveApprovalDecision ? "임원 승인권자" : "관리자",
-    createdAt: "2026-05-01T16:00:00+09:00",
-    status: patent.executiveApprovalDecision ? "completed" : "pending",
-  });
-
-  logs.push({
     id: "LEGAL_ACTION",
     title: patent.legalActionResult ? "법적 액션 반영" : "법적 액션 대기",
     description: patent.legalActionResult
       ? `${legalActionResultLabels[patent.legalActionResult]} 결과가 기록되었습니다.`
-      : "승인 후 유지, 포기, 매각 등 법적 액션 결과가 입력됩니다.",
+      : "유지, 포기, 매각 등 법적 액션 결과가 입력됩니다.",
     actorName: "관리자",
     createdAt: "2026-05-01T17:30:00+09:00",
     status: patent.legalActionResult ? "completed" : "pending",
@@ -409,7 +456,7 @@ function getSubmissionLogs(
 
 /**
  * @relatedFR FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-05
  * @description 다음 연차료 납부 기한 기준으로 다음 결정 분기를 표시한다.
  */
 function getNextDecisionQuarter(annualFeeDueDate: string) {
@@ -419,7 +466,7 @@ function getNextDecisionQuarter(annualFeeDueDate: string) {
 
 /**
  * @relatedFR FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-05
  * @description 제출 이력 상세에서 날짜를 yyyy-mm-dd 형식으로 표시한다.
  */
 function formatDate(dateText: string | null) {

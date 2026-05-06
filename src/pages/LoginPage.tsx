@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/common/Button";
 import type { UserRole } from "../types/patent";
 
+/**
+ * @relatedFR N/A
+ * @relatedUI UI-COM-01
+ * @description 관리자/사업부서 사용자가 역할을 선택해 PatentFlow 데모 화면에 진입하는 로그인 화면
+ */
 export function LoginPage() {
   const [role, setRole] = useState<UserRole>("ADMIN");
   const navigate = useNavigate();

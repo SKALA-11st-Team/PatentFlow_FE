@@ -1,21 +1,24 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
+import { getPatentDetail } from "../../api/patents";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
+import { PaginationControls } from "../../components/common/PaginationControls";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import {
-  businessChecklistItems,
   createBusinessChecklistDraft,
   getBusinessChecklistTotal,
   getChecklistResponse,
 } from "../../mocks/businessChecklist.mock";
-import { patentDetails } from "../../mocks/patents.mock";
+import { useBusinessChecklistItems } from "../../hooks/useBusinessChecklistItems";
+import { useClientPagination } from "../../hooks/useClientPagination";
+import { usePatentList } from "../../hooks/usePatentList";
 import { businessOpinionLabels, recommendationLabels } from "../../constants/status";
 import type { BusinessChecklistSubmission } from "../../types/businessChecklist";
-import type { PatentDetail, Recommendation } from "../../types/patent";
+import type { PatentDetail, PatentListItem, Recommendation } from "../../types/patent";
 
 type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
 type RecommendationFilter = "ALL" | Recommendation;
@@ -37,8 +40,8 @@ const sortLabels: Record<SortKey, string> = {
 };
 
 /**
- * @relatedFR FR-001, FR-002, FR-009, FR-010
- * @relatedUI UI-006
+ * @relatedFR FR-001, FR-002, FR-009
+ * @relatedUI UI-BUS-02
  * @description 사업부 KPI 카드에서 진입하는 의견 요청 특허 전용 조회와 의견 등록 모달 화면
  */
 export function BusinessReviewRequestPage() {
@@ -48,10 +51,12 @@ export function BusinessReviewRequestPage() {
   const [recommendationFilter, setRecommendationFilter] = useState<RecommendationFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const [selectedPatent, setSelectedPatent] = useState<PatentDetail | null>(null);
+  const [detailMessage, setDetailMessage] = useState("");
   const [submittedOpinions, setSubmittedOpinions] = useState<Record<string, BusinessChecklistSubmission>>({});
+  const { errorMessage, isLoading, patents } = usePatentList();
   const assigned = useMemo(
-    () => patentDetails.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER").slice(0, 10),
-    [],
+    () => patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER"),
+    [patents],
   );
   const filteredPatents = useMemo(
     () =>
@@ -65,6 +70,14 @@ export function BusinessReviewRequestPage() {
       ),
     [assigned, opinionFilter, recommendationFilter, searchKeyword, sortKey, submittedOpinions],
   );
+  const {
+    currentPage,
+    pageSize,
+    pagedItems: displayedPatents,
+    setCurrentPage,
+    totalItems,
+    totalPages,
+  } = useClientPagination(filteredPatents, [opinionFilter, recommendationFilter, searchKeyword, sortKey, submittedOpinions]);
 
   return (
     <AppLayout
@@ -76,7 +89,7 @@ export function BusinessReviewRequestPage() {
         <div className="section-header">
           <div>
             <h2>의견 요청 특허</h2>
-            <p>{filteredPatents.length}건의 특허가 조회되었습니다. 행을 선택하면 의견 등록 모달이 열립니다.</p>
+            <p>{detailMessage || errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : `${filteredPatents.length}건의 특허가 조회되었습니다. 행을 선택하면 의견 등록 모달이 열립니다.`)}</p>
           </div>
         </div>
         <div className="filter-bar business-filter-bar">
@@ -133,7 +146,7 @@ export function BusinessReviewRequestPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredPatents.map((patent) => {
+              {displayedPatents.map((patent) => {
                 const submittedOpinion = submittedOpinions[patent.patentId]?.finalOpinion;
                 const displayedOpinion = submittedOpinion ?? patent.businessOpinionDecision;
 
@@ -141,11 +154,11 @@ export function BusinessReviewRequestPage() {
                   <tr
                     className="clickable-row"
                     key={patent.patentId}
-                    onClick={() => setSelectedPatent(patent)}
+                    onClick={() => handleSelectPatent(patent.patentId)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        setSelectedPatent(patent);
+                        handleSelectPatent(patent.patentId);
                       }
                     }}
                     role="button"
@@ -186,6 +199,13 @@ export function BusinessReviewRequestPage() {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+        />
       </section>
 
       {selectedPatent ? (
@@ -205,11 +225,28 @@ export function BusinessReviewRequestPage() {
       ) : null}
     </AppLayout>
   );
+
+  async function handleSelectPatent(selectedPatentId: string) {
+    setDetailMessage("");
+
+    try {
+      const detail = await getPatentDetail(selectedPatentId);
+
+      if (!detail) {
+        setDetailMessage("특허 상세 정보를 불러오지 못했습니다.");
+        return;
+      }
+
+      setSelectedPatent(detail);
+    } catch {
+      setDetailMessage("특허 상세 정보를 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
+    }
+  }
 }
 
 /**
  * @relatedFR FR-001, FR-002, FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-02
  * @description KPI query parameter를 사업부 의견 상태 필터 초기값으로 변환한다.
  */
 function getInitialOpinionFilter(searchParams: URLSearchParams): OpinionFilter {
@@ -220,11 +257,11 @@ function getInitialOpinionFilter(searchParams: URLSearchParams): OpinionFilter {
 
 /**
  * @relatedFR FR-001, FR-002, FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-02
  * @description 사업부 의견 요청 특허 목록에 검색, 의견 상태, AI 권고, 정렬 조건을 적용한다.
  */
 function getFilteredAndSortedPatents(
-  patentList: PatentDetail[],
+  patentList: PatentListItem[],
   searchKeyword: string,
   opinionFilter: OpinionFilter,
   recommendationFilter: RecommendationFilter,
@@ -255,10 +292,10 @@ function getFilteredAndSortedPatents(
 
 /**
  * @relatedFR FR-002, FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-02
  * @description 사업부 의견 요청 특허 목록의 정렬 순서를 계산한다.
  */
-function comparePatents(firstPatent: PatentDetail, secondPatent: PatentDetail, sortKey: SortKey) {
+function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
   if (sortKey === "DUE_DATE_DESC") {
     return secondPatent.annualFeeDueDate.localeCompare(firstPatent.annualFeeDueDate);
   }
@@ -271,8 +308,8 @@ function comparePatents(firstPatent: PatentDetail, secondPatent: PatentDetail, s
 }
 
 /**
- * @relatedFR FR-009, FR-010
- * @relatedUI UI-006
+ * @relatedFR FR-009
+ * @relatedUI UI-BUS-02
  * @description 사업부 의견 요청 특허 row 선택 시 체크리스트, 정성 평가, 최종 의견을 입력하는 모달
  */
 function BusinessOpinionModal({
@@ -288,6 +325,7 @@ function BusinessOpinionModal({
 }) {
   const [draft, setDraft] = useState(initialSubmission);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { errorMessage: checklistErrorMessage, items: businessChecklistItems } = useBusinessChecklistItems();
   const total = getBusinessChecklistTotal(draft);
 
   async function handleSubmit() {
@@ -320,6 +358,7 @@ function BusinessOpinionModal({
       </div>
 
       <div className="checklist-form">
+        {checklistErrorMessage ? <p className="notice">{checklistErrorMessage}</p> : null}
         {businessChecklistItems.map((item) => {
           const response = getChecklistResponse(draft, item.id);
 
@@ -415,7 +454,7 @@ function BusinessOpinionModal({
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-02
  * @description 사업부 체크리스트 항목 점수를 갱신한다.
  */
 function updateChecklistScore(submission: BusinessChecklistSubmission, itemId: string, score: number) {
@@ -429,7 +468,7 @@ function updateChecklistScore(submission: BusinessChecklistSubmission, itemId: s
 
 /**
  * @relatedFR FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-02
  * @description 사업부 체크리스트 항목별 평가 입력 메모를 갱신한다.
  */
 function updateChecklistMemo(submission: BusinessChecklistSubmission, itemId: string, memo: string) {
@@ -469,7 +508,7 @@ function getPageTitle(opinionFilter: OpinionFilter) {
 
 /**
  * @relatedFR FR-001, FR-009
- * @relatedUI UI-006
+ * @relatedUI UI-BUS-02
  * @description 사업부 테이블에서 값이 없거나 N/A인 항목은 공란으로 표시한다.
  */
 function formatOptionalTableText(value: string) {

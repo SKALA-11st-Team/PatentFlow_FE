@@ -1,19 +1,51 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
+import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
-import { getBusinessSubmissionVersions, getLatestBusinessSubmission } from "../../mocks/businessSubmissions.mock";
-import { patents } from "../../mocks/patents.mock";
+import { getBusinessSubmissionVersions, getLatestBusinessSubmission } from "../../api/businessSubmissions";
+import { useClientPagination } from "../../hooks/useClientPagination";
+import { usePatentList } from "../../hooks/usePatentList";
 import { businessOpinionLabels, reviewWorkflowStatusLabels } from "../../constants/status";
+import type { BusinessSubmissionVersion } from "../../mocks/businessSubmissions.mock";
 
 /**
- * @relatedFR FR-009, FR-010, FR-013
- * @relatedUI UI-009
- * @description 사업부 사용자가 제출한 의견과 재평가 요청 이력을 확인하는 화면
+ * @relatedFR FR-009, FR-013
+ * @relatedUI UI-BUS-04
+ * @description 사업부 사용자가 제출한 의견 이력을 확인하는 화면
  */
 export function BusinessSubmissionHistoryPage() {
   const navigate = useNavigate();
+  const { errorMessage, isLoading, patents } = usePatentList();
+  const [submissionData, setSubmissionData] = useState<Record<string, { versions: BusinessSubmissionVersion[], latest: BusinessSubmissionVersion | null }>>({});
   const submittedPatents = patents.filter((patent) => patent.businessOpinionDecision);
+  const {
+    currentPage,
+    pageSize,
+    pagedItems: displayedPatents,
+    setCurrentPage,
+    totalItems,
+    totalPages,
+  } = useClientPagination(submittedPatents, [submittedPatents.length]);
+
+  useEffect(() => {
+    async function loadSubmissions() {
+      const data: Record<string, { versions: BusinessSubmissionVersion[], latest: BusinessSubmissionVersion | null }> = {};
+
+      for (const patent of submittedPatents) {
+        const versions = await getBusinessSubmissionVersions(patent);
+        const latest = await getLatestBusinessSubmission(patent);
+        data[patent.patentId] = { versions, latest };
+      }
+
+      setSubmissionData(data);
+    }
+
+    if (submittedPatents.length > 0) {
+      loadSubmissions();
+    }
+  }, [submittedPatents]);
 
   return (
     <AppLayout
@@ -23,7 +55,7 @@ export function BusinessSubmissionHistoryPage() {
     >
       <Section
         title="특허별 의견 제출 이력"
-        description="행을 선택하면 해당 특허의 제출 의견, 당시 AI 레포트, 평가 이력을 확인합니다."
+        description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "행을 선택하면 해당 특허의 제출 의견, 당시 AI 레포트, 평가 이력을 확인합니다.")}
       >
         <div className="table-wrap">
           <table>
@@ -38,9 +70,10 @@ export function BusinessSubmissionHistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {submittedPatents.map((patent) => {
-                const latestSubmission = getLatestBusinessSubmission(patent);
-                const submissionCount = getBusinessSubmissionVersions(patent).length;
+              {displayedPatents.map((patent) => {
+                const data = submissionData[patent.patentId];
+                const latestSubmission = data?.latest;
+                const submissionCount = data?.versions.length ?? 0;
 
                 return (
                   <tr
@@ -86,6 +119,13 @@ export function BusinessSubmissionHistoryPage() {
             </tbody>
           </table>
         </div>
+        <PaginationControls
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          totalItems={totalItems}
+          totalPages={totalPages}
+        />
       </Section>
     </AppLayout>
   );
@@ -93,7 +133,7 @@ export function BusinessSubmissionHistoryPage() {
 
 /**
  * @relatedFR FR-009, FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-04
  * @description 다음 연차료 납부 기한 기준으로 사업부가 다시 판단해야 할 분기를 표시한다.
  */
 function getNextDecisionQuarter(annualFeeDueDate: string) {
@@ -107,7 +147,7 @@ function formatDate(dateText: string) {
 
 /**
  * @relatedFR FR-013
- * @relatedUI UI-009
+ * @relatedUI UI-BUS-04
  * @description 제출 이력 목록에서 긴 특허명을 안정적으로 축약해 표시한다.
  */
 function truncateTitle(title: string) {

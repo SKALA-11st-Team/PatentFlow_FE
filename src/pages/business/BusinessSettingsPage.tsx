@@ -2,8 +2,8 @@ import { AppLayout } from "../../components/layout/AppLayout";
 import { Section } from "../../components/common/Section";
 
 /**
- * @relatedFR FR-009, FR-010, FR-014
- * @relatedUI UI-008
+ * @relatedFR FR-009, FR-014
+ * @relatedUI UI-BUS-06
  * @description 사업부 사용자의 알림, 의견 템플릿, 담당자 정보를 설정하는 화면
  */
 export function BusinessSettingsPage() {
