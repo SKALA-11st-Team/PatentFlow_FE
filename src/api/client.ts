@@ -1,9 +1,10 @@
 const importMetaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
-const API_BASE_URL = (importMetaEnv?.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const API_BASE_URL = normalizeApiBaseUrl(importMetaEnv?.VITE_API_BASE_URL ?? "");
+const USE_MOCK_API = importMetaEnv?.VITE_USE_MOCK_API === "true";
 
 export interface ApiEnvelope<T> {
-  data: T;
-  message?: string;
+  data: T | null;
+  message: "OK";
   timestamp?: string;
 }
 
@@ -24,7 +25,7 @@ export interface PaginatedApiEnvelope<T> extends ApiEnvelope<T[]> {
  * @description VITE_API_BASE_URL 설정 여부로 실제 백엔드 API 사용 가능 상태를 확인한다.
  */
 export function isBackendApiEnabled() {
-  return API_BASE_URL.length > 0;
+  return !USE_MOCK_API && API_BASE_URL.length > 0;
 }
 
 /**
@@ -47,6 +48,16 @@ export async function requestJson<T>(path: string, init: RequestInit = {}): Prom
   }
 
   return response.json() as Promise<T>;
+}
+
+function normalizeApiBaseUrl(value: string) {
+  const trimmedValue = value.trim().replace(/\/$/, "");
+
+  if (!trimmedValue) {
+    return "";
+  }
+
+  return trimmedValue.endsWith("/api/v1") ? trimmedValue : `${trimmedValue}/api/v1`;
 }
 
 export function toQueryString(params: Record<string, string | number | null | undefined>) {
