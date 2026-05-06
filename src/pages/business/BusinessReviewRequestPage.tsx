@@ -325,14 +325,23 @@ function BusinessOpinionModal({
 }) {
   const [draft, setDraft] = useState(initialSubmission);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState("");
   const { errorMessage: checklistErrorMessage, items: businessChecklistItems } = useBusinessChecklistItems();
   const total = getBusinessChecklistTotal(draft);
 
   async function handleSubmit() {
+    if (!hasCompleteBusinessChecklistSubmission(draft)) {
+      setSubmitMessage("모든 체크리스트 점수와 사업부 의견을 입력해 주세요.");
+      return;
+    }
+
     setIsSubmitting(true);
+    setSubmitMessage("");
 
     try {
       await onSubmit({ ...draft, evaluatedAt: "2026-05-04" });
+    } catch (error) {
+      setSubmitMessage(error instanceof Error ? error.message : "사업부 의견 제출에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -438,6 +447,7 @@ function BusinessOpinionModal({
             value={draft.additionalNeeds}
           />
         </label>
+        {submitMessage ? <p className="notice">{submitMessage}</p> : null}
       </div>
 
       <div className="modal-actions">
@@ -449,6 +459,15 @@ function BusinessOpinionModal({
         </Button>
       </div>
     </Modal>
+  );
+}
+
+function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSubmission) {
+  return Boolean(
+    submission.responses.length > 0 &&
+      submission.responses.every((response) => response.score !== null && response.score > 0) &&
+      Number.isFinite(submission.qualitativeScore) &&
+      submission.finalOpinion,
   );
 }
 

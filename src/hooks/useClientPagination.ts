@@ -13,6 +13,8 @@ export function useClientPagination<T>(items: T[], resetKeys: unknown[], pageSiz
 
   useEffect(() => {
     setCurrentPage(1);
+    // resetKeys는 각 화면의 필터 조합을 그대로 전달받는 동적 dependency 목록입니다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, resetKeys);
 
   useEffect(() => {

@@ -19,6 +19,27 @@ export interface PaginatedApiEnvelope<T> extends ApiEnvelope<T[]> {
   page: PageMeta;
 }
 
+export interface ErrorEnvelope {
+  code: string;
+  details?: Record<string, unknown>;
+  message: string;
+  timestamp?: string;
+}
+
+export class ApiRequestError extends Error {
+  code?: string;
+  details?: Record<string, unknown>;
+  status: number;
+
+  constructor(status: number, statusText: string, error?: ErrorEnvelope) {
+    super(error?.message ?? `API request failed: ${status} ${statusText}`);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.code = error?.code;
+    this.details = error?.details;
+  }
+}
+
 /**
  * @relatedFR N/A
  * @relatedUI COMMON
@@ -44,10 +65,18 @@ export async function requestJson<T>(path: string, init: RequestInit = {}): Prom
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    throw new ApiRequestError(response.status, response.statusText, await parseErrorEnvelope(response));
   }
 
   return response.json() as Promise<T>;
+}
+
+export function getApiErrorMessage(error: unknown, fallbackMessage: string) {
+  if (error instanceof ApiRequestError) {
+    return error.message || fallbackMessage;
+  }
+
+  return fallbackMessage;
 }
 
 function normalizeApiBaseUrl(value: string) {
@@ -72,4 +101,12 @@ export function toQueryString(params: Record<string, string | number | null | un
   const queryString = query.toString();
 
   return queryString ? `?${queryString}` : "";
+}
+
+async function parseErrorEnvelope(response: Response) {
+  try {
+    return (await response.clone().json()) as ErrorEnvelope;
+  } catch {
+    return undefined;
+  }
 }

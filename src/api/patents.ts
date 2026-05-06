@@ -40,6 +40,13 @@ export interface PatentListPage {
 }
 
 export interface BulkMailingResult {
+  skippedPatentIds?: string[];
+  updatedCount: number;
+  updatedPatentIds: string[];
+}
+
+export interface ExecutiveApprovalResult {
+  decision: ExecutiveApprovalDecision;
   updatedCount: number;
   updatedPatentIds: string[];
 }
@@ -136,6 +143,10 @@ type BackendPatentBibliographicInfo = Omit<
  */
 export async function getPatents(query: PatentListQuery = {}): Promise<PatentListItem[]> {
   if (isBackendApiEnabled()) {
+    if (query.page !== undefined || query.size !== undefined) {
+      return (await getPatentPage(query)).items;
+    }
+
     const firstPage = await getPatentPage({ ...query, page: query.page ?? 1, size: query.size ?? 20 });
     const patentItems = [...firstPage.items];
 
@@ -219,10 +230,34 @@ export async function sendBusinessReviewMails(patentIds: string[]): Promise<Bulk
       method: "POST",
     });
 
-    return response.data ?? { updatedCount: 0, updatedPatentIds: [] };
+    return response.data ?? { skippedPatentIds: [], updatedCount: 0, updatedPatentIds: [] };
   }
 
   return sendMockBusinessReviewMails(patentIds);
+}
+
+/**
+ * @relatedFR FR-011, FR-012
+ * @relatedUI UI-LEGAL-05
+ * @description 관리자 최종 판단을 단건 또는 일괄 특허에 반영한다.
+ */
+export async function applyExecutiveApprovalDecision(
+  patentIds: string[],
+  decision: ExecutiveApprovalDecision,
+): Promise<ExecutiveApprovalResult> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<ExecutiveApprovalResult>>(
+      "/patents/executive-approvals/bulk-decision",
+      {
+        body: JSON.stringify({ decision, patentIds }),
+        method: "POST",
+      },
+    );
+
+    return response.data ?? { decision, updatedCount: 0, updatedPatentIds: [] };
+  }
+
+  return applyMockExecutiveApprovalDecision(patentIds, decision);
 }
 
 /**
@@ -569,6 +604,7 @@ function normalizeTechnologyArea(value: string) {
 function sendMockBusinessReviewMails(patentIds: string[]): BulkMailingResult {
   const targetIds = new Set(patentIds);
   const updatedPatentIds: string[] = [];
+  const skippedPatentIds: string[] = [];
   const mailedReviewReason = "사업부 검토 요청 메일을 발송했고 담당자 응답을 기다리고 있습니다.";
 
   patents.forEach((patent) => {
@@ -576,6 +612,8 @@ function sendMockBusinessReviewMails(patentIds: string[]): BulkMailingResult {
       patent.reviewWorkflowStatus = "WAITING_BUSINESS_RESPONSE";
       patent.reviewReason = mailedReviewReason;
       updatedPatentIds.push(patent.patentId);
+    } else if (targetIds.has(patent.patentId)) {
+      skippedPatentIds.push(patent.patentId);
     }
   });
 
@@ -589,17 +627,80 @@ function sendMockBusinessReviewMails(patentIds: string[]): BulkMailingResult {
   });
 
   return {
+    skippedPatentIds,
     updatedCount: updatedPatentIds.length,
     updatedPatentIds,
   };
 }
 
-function getMockPatents(query: PatentListQuery) {
-  if (query.page !== undefined && query.size !== undefined) {
-    return getMockPatentPage(query).items;
+function applyMockExecutiveApprovalDecision(
+  patentIds: string[],
+  decision: ExecutiveApprovalDecision,
+): ExecutiveApprovalResult {
+  const targetIds = new Set(patentIds);
+  const updatedPatentIds: string[] = [];
+  const decidedAt = new Date().toISOString();
+
+  patents.forEach((patent) => {
+    if (targetIds.has(patent.patentId)) {
+      patent.reviewWorkflowStatus = "APPROVAL_COMPLETED";
+      patent.executiveApprovalDecision = decision;
+      patent.legalActionResult = getLegalActionResult(decision);
+      updatedPatentIds.push(patent.patentId);
+    }
+  });
+
+  patentDetails.forEach((patent) => {
+    if (targetIds.has(patent.patentId)) {
+      patent.reviewWorkflowStatus = "APPROVAL_COMPLETED";
+      patent.executiveApprovalDecision = decision;
+      patent.legalActionResult = getLegalActionResult(decision);
+      patent.finalDecisionRecord = {
+        decision,
+        decidedAt,
+        decisionId: `${patent.patentId}-DEC-01`,
+        reason: getExecutiveApprovalReason(decision),
+      };
+    }
+  });
+
+  return {
+    decision,
+    updatedCount: updatedPatentIds.length,
+    updatedPatentIds,
+  };
+}
+
+function getLegalActionResult(decision: ExecutiveApprovalDecision): LegalActionResult | null {
+  if (decision === "APPROVED_ABANDON") {
+    return "ABANDONED";
   }
 
-  return getFilteredMockPatents(query);
+  if (decision === "APPROVED_SELL") {
+    return "SOLD";
+  }
+
+  if (decision === "APPROVED_MAINTAIN") {
+    return "MAINTAINED";
+  }
+
+  return null;
+}
+
+function getExecutiveApprovalReason(decision: ExecutiveApprovalDecision) {
+  if (decision === "APPROVED_MAINTAIN") {
+    return "사업부 의견과 AI 평가 근거를 검토해 유지 처리했습니다.";
+  }
+
+  if (decision === "APPROVED_ABANDON") {
+    return "사업 활용성과 유지 필요성이 낮아 포기 처리했습니다.";
+  }
+
+  if (decision === "APPROVED_SELL") {
+    return "외부 활용 가능성이 있어 매각 후보로 처리했습니다.";
+  }
+
+  return "추가 검토가 필요해 최종 처리 완료 전 단계로 기록했습니다.";
 }
 
 function getMockPatentPage(query: PatentListQuery): PatentListPage {

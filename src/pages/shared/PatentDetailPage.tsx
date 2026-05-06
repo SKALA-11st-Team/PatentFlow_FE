@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
-import { getPatentDetail, getPatentHistory } from "../../api/patents";
+import { applyExecutiveApprovalDecision, getPatentDetail, getPatentHistory } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
@@ -14,10 +14,18 @@ import {
 } from "../../mocks/businessChecklist.mock";
 import { useBusinessChecklistItems } from "../../hooks/useBusinessChecklistItems";
 import type { BusinessChecklistItem, BusinessChecklistSubmission } from "../../types/businessChecklist";
-import type { PatentDetail, PatentLifecycleStatus, PatentHistoryItem, ReviewWorkflowStatus, UserRole } from "../../types/patent";
+import type {
+  ExecutiveApprovalDecision,
+  PatentDetail,
+  PatentLifecycleStatus,
+  PatentHistoryItem,
+  ReviewWorkflowStatus,
+  UserRole,
+} from "../../types/patent";
 import {
   businessOpinionLabels,
   evaluationCategoryLabels,
+  EXECUTIVE_APPROVAL_DECISIONS,
   executiveApprovalLabels,
   lifecycleStatusLabels,
   recommendationLabels,
@@ -40,10 +48,13 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
   );
   const { items: businessChecklistItems } = useBusinessChecklistItems();
   const isAdmin = role === "ADMIN";
-  const [hasSubmittedBusinessChecklist, setHasSubmittedBusinessChecklist] = useState(() =>
-    false,
-  );
+  const [hasSubmittedBusinessChecklist, setHasSubmittedBusinessChecklist] = useState(() => false);
+  const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
+  const [decisionDraft, setDecisionDraft] = useState<ExecutiveApprovalDecision>("APPROVED_MAINTAIN");
+  const [decisionMessage, setDecisionMessage] = useState("");
+  const [isApplyingDecision, setIsApplyingDecision] = useState(false);
   const checklistTotal = getBusinessChecklistTotal(businessChecklistSubmission);
+  const canApplyExecutiveApproval = patent?.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED";
   const displayedBusinessOpinionLabel = patent
     ? hasSubmittedBusinessChecklist
       ? businessOpinionLabels[businessChecklistSubmission.finalOpinion]
@@ -229,14 +240,25 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
               {patent.finalDecisionRecord.decision ? (
                 <div className="decision-box">
                   <Badge tone="success">{executiveApprovalLabels[patent.finalDecisionRecord.decision]}</Badge>
-                  <p>{patent.finalDecisionRecord.reason}</p>
+                  <p>{patent.finalDecisionRecord.reason ?? "최종 처리 결과가 반영되었습니다."}</p>
                   <small>{patent.finalDecisionRecord.decidedAt?.slice(0, 10)}</small>
                 </div>
               ) : (
                 <div className="decision-box empty">
                   <strong>{getAdminActionTitle(patent.reviewWorkflowStatus)}</strong>
                   <p>{getAdminActionDescription(patent.reviewWorkflowStatus)}</p>
-                  <Button type="button">{getAdminActionButtonLabel(patent.reviewWorkflowStatus)}</Button>
+                  {decisionMessage ? <p className="notice">{decisionMessage}</p> : null}
+                  <Button
+                    disabled={!canApplyExecutiveApproval}
+                    onClick={() => {
+                      setDecisionDraft(getDefaultDecision(patent.businessOpinion.opinion));
+                      setDecisionMessage("");
+                      setIsDecisionModalOpen(true);
+                    }}
+                    type="button"
+                  >
+                    {getAdminActionButtonLabel(patent.reviewWorkflowStatus)}
+                  </Button>
                 </div>
               )}
             </Section>
@@ -259,14 +281,56 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
             setBusinessChecklistSubmission(savedSubmission);
             setHasSubmittedBusinessChecklist(hasCompleteBusinessChecklistSubmission(savedSubmission));
+            setPatent((await getPatentDetail(patent.patentId)) ?? patent);
             setIsChecklistOpen(false);
           }}
           businessChecklistItems={businessChecklistItems}
           patentTitle={patent.title}
         />
       ) : null}
+
+      {isDecisionModalOpen ? (
+        <ExecutiveApprovalModal
+          decision={decisionDraft}
+          isSubmitting={isApplyingDecision}
+          onChange={setDecisionDraft}
+          onClose={() => setIsDecisionModalOpen(false)}
+          onSubmit={handleApplyExecutiveApproval}
+          patentTitle={patent.title}
+        />
+      ) : null}
     </AppLayout>
   );
+
+  async function handleApplyExecutiveApproval() {
+    if (!patent) {
+      return;
+    }
+
+    const currentPatent = patent;
+    setIsApplyingDecision(true);
+    setDecisionMessage("");
+
+    try {
+      const result = await applyExecutiveApprovalDecision([currentPatent.patentId], decisionDraft);
+      const [nextPatent, nextHistory] = await Promise.all([
+        getPatentDetail(currentPatent.patentId),
+        getPatentHistory(currentPatent.patentId),
+      ]);
+
+      if (nextPatent) {
+        setPatent(nextPatent);
+      }
+
+      setHistory(nextHistory);
+      setDecisionMessage(`${result.updatedCount}건의 최종 처리 결과를 저장했습니다.`);
+      setIsDecisionModalOpen(false);
+    } catch (error) {
+      setDecisionMessage(error instanceof Error ? error.message : "최종 처리 결과를 저장하지 못했습니다.");
+    } finally {
+      setIsApplyingDecision(false);
+    }
+  }
 
   function BusinessOpinionSection({ isAdmin }: { isAdmin: boolean }) {
     return (
@@ -363,6 +427,63 @@ function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSub
   );
 }
 
+function ExecutiveApprovalModal({
+  decision,
+  isSubmitting,
+  onChange,
+  onClose,
+  onSubmit,
+  patentTitle,
+}: {
+  decision: ExecutiveApprovalDecision;
+  isSubmitting: boolean;
+  onChange: (decision: ExecutiveApprovalDecision) => void;
+  onClose: () => void;
+  onSubmit: () => void | Promise<void>;
+  patentTitle: string;
+}) {
+  return (
+    <Modal ariaLabel="최종 처리 결과 입력" className="business-checklist-modal" onClose={onClose}>
+      <div className="modal-header">
+        <div>
+          <p className="eyebrow">최종 처리 결과</p>
+          <h2>관리자 판단 입력</h2>
+          <p>{patentTitle}</p>
+        </div>
+        <button aria-label="최종 처리 결과 닫기" className="modal-close-button" onClick={onClose} type="button">
+          ×
+        </button>
+      </div>
+
+      <div className="checklist-final-grid">
+        <label>
+          <span>처리 결과</span>
+          <select onChange={(event) => onChange(event.target.value as ExecutiveApprovalDecision)} value={decision}>
+            {EXECUTIVE_APPROVAL_DECISIONS.map((option) => (
+              <option key={option} value={option}>
+                {executiveApprovalLabels[option]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div className="modal-actions">
+        <Button onClick={onClose} type="button" variant="secondary">
+          취소
+        </Button>
+        <Button disabled={isSubmitting} onClick={onSubmit} type="button">
+          {isSubmitting ? "저장 중" : "처리 결과 저장"}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+function getDefaultDecision(opinion: PatentDetail["businessOpinion"]["opinion"]): ExecutiveApprovalDecision {
+  return opinion === "ABANDON" ? "APPROVED_ABANDON" : "APPROVED_MAINTAIN";
+}
+
 /**
  * @relatedFR FR-009
  * @relatedUI UI-LEGAL-05, UI-BUS-03
@@ -382,6 +503,7 @@ function BusinessChecklistModal({
   patentTitle: string;
 }) {
   const [draft, setDraft] = useState(initialSubmission);
+  const [submitMessage, setSubmitMessage] = useState("");
   const total = getBusinessChecklistTotal(draft);
 
   return (
@@ -483,13 +605,25 @@ function BusinessChecklistModal({
               value={draft.additionalNeeds}
             />
           </label>
+          {submitMessage ? <p className="notice">{submitMessage}</p> : null}
         </div>
 
         <div className="modal-actions">
           <Button type="button" variant="secondary" onClick={onClose}>
             취소
           </Button>
-          <Button type="button" onClick={() => onSubmit({ ...draft, evaluatedAt: "2026-05-03" })}>
+          <Button
+            type="button"
+            onClick={() => {
+              if (!hasCompleteBusinessChecklistSubmission(draft)) {
+                setSubmitMessage("모든 체크리스트 점수와 사업부 의견을 입력해 주세요.");
+                return;
+              }
+
+              setSubmitMessage("");
+              onSubmit({ ...draft, evaluatedAt: "2026-05-03" });
+            }}
+          >
             관리자에게 전달
           </Button>
         </div>

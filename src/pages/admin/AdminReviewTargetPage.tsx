@@ -99,14 +99,17 @@ export function AdminReviewTargetPage() {
 
     try {
       const result = await sendBusinessReviewMails(selectedPatentIds);
+      const skippedCount = result.skippedPatentIds?.length ?? 0;
 
-      setPatentList(await getPatents({ page: 1, size: 20 }));
+      setPatentList(await getPatents());
       setSelectedPatentIds([]);
       setActionMessage(
         result.updatedCount > 0
-          ? `${result.updatedCount}건의 사업부 검토 요청 메일을 발송했습니다. 상태가 사업부 응답 대기로 변경되었습니다.`
+          ? `${result.updatedCount}건의 사업부 검토 요청 메일을 발송했습니다.${skippedCount > 0 ? ` ${skippedCount}건은 현재 단계가 맞지 않아 건너뛰었습니다.` : ""}`
           : "메일 발송 처리할 선택 건이 없습니다.",
       );
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : "메일 발송 처리에 실패했습니다.");
     } finally {
       setIsProcessing(false);
     }

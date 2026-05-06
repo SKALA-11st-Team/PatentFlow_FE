@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getPatents, type PatentListQuery } from "../api/patents";
+import { getApiErrorMessage } from "../api/client";
 import type { PatentListItem } from "../types/patent";
 
 /**
@@ -25,9 +26,9 @@ export function usePatentList(query: PatentListQuery = {}) {
           setPatents(items);
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (isMounted) {
-          setErrorMessage("특허 목록을 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
+          setErrorMessage(getApiErrorMessage(error, "특허 목록을 불러오지 못했습니다. BE 실행 상태를 확인해 주세요."));
         }
       })
       .finally(() => {
