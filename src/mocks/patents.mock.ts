@@ -203,20 +203,25 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
   const legalActionResult = getLegalActionResult(reviewWorkflowStatus, recommendation);
   const executiveApprovalDecision = getExecutiveApprovalDecision(legalActionResult);
   const annualFeeDueDate = getMockDeadlineDate(row.registrationDate, reviewWorkflowStatus, index);
+  const title = normalizeDisplayText(row.title || row.draftTitle || row.managementNumber);
+  const draftTitle = normalizeDisplayText(row.draftTitle || row.title || row.managementNumber);
+  const businessArea = normalizeDisplayText(row.businessArea || "N/A");
+  const technologyArea = normalizeDisplayText(row.technologyArea || "N/A");
   const productName = normalizeProductName(row.productName);
+  const coApplicants = normalizeDisplayText(row.coApplicants);
 
   return {
     patentId: row.managementNumber,
     managementNumber: row.managementNumber,
     applicationNumber: row.applicationNumber,
     registrationNumber: row.registrationNumber,
-    title: row.title || row.draftTitle || row.managementNumber,
-    draftTitle: row.draftTitle || row.title || row.managementNumber,
-    businessArea: row.businessArea || "N/A",
-    technologyArea: row.technologyArea || "N/A",
+    title,
+    draftTitle,
+    businessArea,
+    technologyArea,
     productName,
     country: row.country || "N/A",
-    coApplicants: row.coApplicants,
+    coApplicants,
     applicationDate: row.applicationDate,
     registrationDate: row.registrationDate,
     expectedExpirationDate: row.expectedExpirationDate,
@@ -231,14 +236,14 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
     executiveApprovalDecision,
     legalActionResult,
     summary: {
-      summaryText: `${row.title || row.draftTitle}은(는) ${row.businessArea || "미분류"} 분야의 ${row.technologyArea || "관련 기술"} 특허입니다. ${productName ? `관련 제품은 ${productName}입니다.` : "관련 제품 정보는 비어 있습니다."}`,
-      problemSolved: `${row.technologyArea || "해당 기술"} 영역에서 ${productName || "관련 제품"}의 운영, 성능, 관리 효율을 높이기 위한 문제를 다룹니다.`,
+      summaryText: `${title}은(는) ${businessArea} 분야의 ${technologyArea} 특허입니다. ${productName ? `관련 제품은 ${productName}입니다.` : "관련 제품 정보는 비어 있습니다."}`,
+      problemSolved: `${technologyArea} 영역에서 ${productName || "관련 제품"}의 운영, 성능, 관리 효율을 높이기 위한 문제를 다룹니다.`,
       coreTechnicalPoints: [
-        row.technologyArea || "관련 기술",
+        technologyArea,
         productName ? `${productName} 적용 가능성` : "제품 적용 여부 확인 필요",
         row.isJointApplication ? "공동출원 권리 관계 확인 필요" : "단독 출원 특허",
       ],
-      claimsSummary: `${row.title || row.draftTitle}의 시스템 또는 방법 구성을 중심으로 권리를 주장합니다.`,
+      claimsSummary: `${title}의 시스템 또는 방법 구성을 중심으로 권리를 주장합니다.`,
       missingFields: getMissingFields(row),
     },
     aiEvaluationReport: getAiEvaluationReport(row, recommendation, index),
@@ -272,7 +277,21 @@ function getExecutiveApprovalDecision(legalActionResult: LegalActionResult | nul
 }
 
 function normalizeProductName(productName: string) {
-  return productName && productName !== "해당사항없음" ? productName : "";
+  const normalizedProductName = normalizeDisplayText(productName);
+
+  return normalizedProductName && normalizedProductName !== "해당사항없음" ? normalizedProductName : "";
+}
+
+/**
+ * @relatedFR FR-001, FR-005
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-05, UI-BUS-03
+ * @description 원천 특허 목록에 섞인 전각 영문/숫자/괄호와 중복 공백을 화면 표시용 문자열로 정규화한다.
+ */
+function normalizeDisplayText(value: string) {
+  return value
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function getMockReviewWorkflowStatus(index: number): ReviewWorkflowStatus {
