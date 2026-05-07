@@ -158,6 +158,46 @@ export const recommendationLabels: Record<Recommendation, string> = {
   HOLD: "추가 정보 필요",
 };
 
+export const RECOMMENDATION_FILTER_OPTIONS = [
+  {
+    label: "전체",
+    recommendations: RECOMMENDATIONS,
+    value: "ALL",
+  },
+  {
+    label: recommendationLabels.MAINTAIN,
+    recommendations: ["MAINTAIN"],
+    value: "MAINTAIN",
+  },
+  {
+    label: recommendationLabels.REVIEW_AGAIN,
+    recommendations: ["REVIEW_AGAIN", "HOLD"],
+    value: "REVIEW_AGAIN_OR_HOLD",
+  },
+  {
+    label: recommendationLabels.ABANDON,
+    recommendations: ["ABANDON", "SALES_CANDIDATE"],
+    value: "ABANDON_OR_SALES_CANDIDATE",
+  },
+] as const satisfies readonly {
+  label: string;
+  recommendations: readonly Recommendation[];
+  value: string;
+}[];
+
+export type RecommendationFilter = (typeof RECOMMENDATION_FILTER_OPTIONS)[number]["value"];
+
+/**
+ * @relatedFR FR-001, FR-002, FR-006, FR-009
+ * @relatedUI UI-BUS-01, UI-BUS-02
+ * @description 같은 표시 라벨을 공유하는 AI 권고값을 화면 필터용 그룹으로 변환한다.
+ */
+export function getRecommendationsByFilter(recommendationFilter: RecommendationFilter): readonly Recommendation[] {
+  const matchedOption = RECOMMENDATION_FILTER_OPTIONS.find((option) => option.value === recommendationFilter);
+
+  return matchedOption ? (matchedOption.recommendations as readonly Recommendation[]) : RECOMMENDATIONS;
+}
+
 export const businessOpinionLabels: Record<BusinessOpinionDecision, string> = {
   MAINTAIN: "유지",
   ABANDON: "포기",

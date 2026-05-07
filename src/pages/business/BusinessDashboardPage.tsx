@@ -8,21 +8,17 @@ import { QuarterCompletionDonut } from "../../components/dashboard/QuarterComple
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
-import type { PatentListItem, Recommendation } from "../../types/patent";
-import { businessOpinionLabels, recommendationLabels } from "../../constants/status";
+import type { PatentListItem } from "../../types/patent";
+import {
+  RECOMMENDATION_FILTER_OPTIONS,
+  businessOpinionLabels,
+  getRecommendationsByFilter,
+  recommendationLabels,
+  type RecommendationFilter,
+} from "../../constants/status";
 
 type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
-type RecommendationFilter = "ALL" | Recommendation;
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
-
-const recommendationFilterOptions: RecommendationFilter[] = [
-  "ALL",
-  "MAINTAIN",
-  "REVIEW_AGAIN",
-  "ABANDON",
-  "SALES_CANDIDATE",
-  "HOLD",
-];
 
 const sortLabels: Record<SortKey, string> = {
   DUE_DATE_ASC: "마감 기한 빠른순",
@@ -129,9 +125,9 @@ export function BusinessDashboardPage() {
               onChange={(event) => setRecommendationFilter(event.target.value as RecommendationFilter)}
               value={recommendationFilter}
             >
-              {recommendationFilterOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option === "ALL" ? "전체" : recommendationLabels[option]}
+              {RECOMMENDATION_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -234,8 +230,9 @@ function getFilteredAndSortedPatents(
         opinionFilter === "ALL" ||
         (opinionFilter === "PENDING" && !patent.businessOpinionDecision) ||
         (opinionFilter === "SUBMITTED" && Boolean(patent.businessOpinionDecision));
-      const matchesRecommendation =
-        recommendationFilter === "ALL" || patent.currentRecommendation === recommendationFilter;
+      const matchesRecommendation = getRecommendationsByFilter(recommendationFilter).includes(
+        patent.currentRecommendation,
+      );
 
       return matchesKeyword && matchesOpinion && matchesRecommendation;
     })

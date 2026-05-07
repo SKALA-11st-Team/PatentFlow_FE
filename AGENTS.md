@@ -20,6 +20,7 @@ PatentFlow is an internal patent management AI workflow system.
 - Product role: AI-assisted patent review workflow
 - Goal: Help legal/patent management teams and business departments review company-owned patents around annual fee payment points.
 - Product nature: Human-in-the-loop decision-support workflow system, not a simple report generator.
+- Current deployed frontend URL: `https://patentflow.live`
 
 Core workflow:
 

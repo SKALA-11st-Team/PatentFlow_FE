@@ -16,22 +16,18 @@ import {
 import { useBusinessChecklistItems } from "../../hooks/useBusinessChecklistItems";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
-import { businessOpinionLabels, recommendationLabels } from "../../constants/status";
+import {
+  RECOMMENDATION_FILTER_OPTIONS,
+  businessOpinionLabels,
+  getRecommendationsByFilter,
+  recommendationLabels,
+  type RecommendationFilter,
+} from "../../constants/status";
 import type { BusinessChecklistSubmission } from "../../types/businessChecklist";
-import type { PatentDetail, PatentListItem, Recommendation } from "../../types/patent";
+import type { PatentDetail, PatentListItem } from "../../types/patent";
 
 type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
-type RecommendationFilter = "ALL" | Recommendation;
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
-
-const recommendationFilterOptions: RecommendationFilter[] = [
-  "ALL",
-  "MAINTAIN",
-  "REVIEW_AGAIN",
-  "ABANDON",
-  "SALES_CANDIDATE",
-  "HOLD",
-];
 
 const sortLabels: Record<SortKey, string> = {
   DUE_DATE_ASC: "마감 기한 빠른순",
@@ -116,9 +112,9 @@ export function BusinessReviewRequestPage() {
               onChange={(event) => setRecommendationFilter(event.target.value as RecommendationFilter)}
               value={recommendationFilter}
             >
-              {recommendationFilterOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option === "ALL" ? "전체" : recommendationLabels[option]}
+              {RECOMMENDATION_FILTER_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>
@@ -282,8 +278,9 @@ function getFilteredAndSortedPatents(
         opinionFilter === "ALL" ||
         (opinionFilter === "PENDING" && !hasSubmittedOpinion) ||
         (opinionFilter === "SUBMITTED" && hasSubmittedOpinion);
-      const matchesRecommendation =
-        recommendationFilter === "ALL" || patent.currentRecommendation === recommendationFilter;
+      const matchesRecommendation = getRecommendationsByFilter(recommendationFilter).includes(
+        patent.currentRecommendation,
+      );
 
       return matchesKeyword && matchesOpinion && matchesRecommendation;
     })
