@@ -1,4 +1,5 @@
 import type {
+  AiEvaluationReport,
   BusinessOpinionDecision,
   EvaluationCategory,
   ExecutiveApprovalDecision,
@@ -144,15 +145,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
       claimsSummary: `${row.title || row.draftTitle}의 시스템 또는 방법 구성을 중심으로 권리를 주장합니다.`,
       missingFields: getMissingFields(row),
     },
-    aiEvaluationReport: {
-      evaluationId: `EVAL-${row.managementNumber}`,
-      createdAt: getAiReportCreatedAt(index),
-      recommendation,
-      recommendationText: getRecommendationText(recommendation, row),
-      totalScore: getTotalScore(recommendation, index),
-      scores: getScores(row, recommendation, index),
-      missingInformation: getMissingFields(row),
-    },
+    aiEvaluationReport: getAiEvaluationReport(row, recommendation, index),
     finalDecisionRecord: {
       decisionId: legalActionResult ? `DEC-${row.managementNumber}` : null,
       decision: executiveApprovalDecision,
@@ -311,6 +304,125 @@ function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRo
 
   return textMap[recommendation];
 }
+
+/**
+ * @relatedFR FR-005, FR-006, FR-007, FR-008
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @description 발표에서 바로 보여줄 수 있는 대표 특허의 작성 완료 AI 평가 레포트를 반환한다.
+ */
+function getAiEvaluationReport(row: SkaxPatentRow, recommendation: Recommendation, index: number): AiEvaluationReport {
+  const demoReport = demoAiEvaluationReports[row.managementNumber];
+
+  if (demoReport) {
+    return demoReport;
+  }
+
+  return {
+    evaluationId: `EVAL-${row.managementNumber}`,
+    createdAt: getAiReportCreatedAt(index),
+    recommendation,
+    recommendationText: getRecommendationText(recommendation, row),
+    totalScore: getTotalScore(recommendation, index),
+    scores: getScores(row, recommendation, index),
+    missingInformation: getMissingFields(row),
+  };
+}
+
+const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
+  "P202405001-KR0": {
+    evaluationId: "EVAL-P202405001-KR0",
+    createdAt: "2026-05-01T09:00:00+09:00",
+    recommendation: "MAINTAIN",
+    recommendationText:
+      "로보어드바이저 자산배분 엔진에 직접 연결 가능한 강화학습 기반 예측 기술로, 현재 제품 적용 가능성과 잔여 권리기간을 고려할 때 유지 권고가 타당합니다.",
+    totalScore: 86,
+    scores: [
+      createScore(
+        "RIGHTS",
+        82,
+        "단독 출원이며 자산배분 시스템과 방법 청구항이 함께 구성되어 서비스 구현 방어 범위가 비교적 명확합니다.",
+      ),
+      createScore(
+        "TECHNOLOGY",
+        88,
+        "상품 트렌드 예측과 강화학습 기반 의사결정을 결합해 금융 AI 제품의 핵심 알고리즘 차별화 근거로 활용할 수 있습니다.",
+      ),
+      createScore(
+        "MARKET",
+        84,
+        "로보어드바이저와 금융 상품 추천 시장에서 개인화 투자, 자동 리밸런싱 수요가 지속되어 사업 활용성이 높습니다.",
+      ),
+      createScore(
+        "LIFECYCLE_ECONOMICS",
+        90,
+        "등록 초기 특허로 잔여 보호기간이 길고 유지 비용 대비 제품/제안서 차별화 효과가 큽니다.",
+      ),
+    ],
+    missingInformation: ["실제 서비스 적용 모듈", "최근 1년 제안서 활용 여부"],
+  },
+  "P202307002-KR0": {
+    evaluationId: "EVAL-P202307002-KR0",
+    createdAt: "2026-05-02T09:00:00+09:00",
+    recommendation: "MAINTAIN",
+    recommendationText:
+      "ChainZ 합의 성능 개선과 직접 관련된 서명 검증 최적화 특허입니다. 블록체인 플랫폼의 처리량 개선 근거로 활용 가능해 유지 권고합니다.",
+    totalScore: 83,
+    scores: [
+      createScore(
+        "RIGHTS",
+        79,
+        "합의 과정의 서명 검증 절차를 시스템 관점에서 보호하고 있어 플랫폼 내부 구현 방어에 활용 가능합니다.",
+      ),
+      createScore(
+        "TECHNOLOGY",
+        86,
+        "블록체인 합의 병목인 검증 비용을 줄이는 기술로 ChainZ 성능 개선 설명과 연결성이 높습니다.",
+      ),
+      createScore(
+        "MARKET",
+        78,
+        "엔터프라이즈 블록체인 수요는 제한적이나 인증, 추적, 정산 영역에서 성능 안정성 요구가 유지되고 있습니다.",
+      ),
+      createScore(
+        "LIFECYCLE_ECONOMICS",
+        88,
+        "등록 초기 특허이며 플랫폼 핵심 성능 지표와 연결되어 유지 비용 대비 방어 가치가 있습니다.",
+      ),
+    ],
+    missingInformation: ["ChainZ 현재 적용 여부", "외부 고객 PoC 활용 사례"],
+  },
+  "P202301010-KR0": {
+    evaluationId: "EVAL-P202301010-KR0",
+    createdAt: "2026-05-03T09:00:00+09:00",
+    recommendation: "REVIEW_AGAIN",
+    recommendationText:
+      "CMP Pad 물류 관리 영역의 현장 적용성은 있으나 공동출원 특허이므로 권리 행사 조건과 현재 제품 활용 여부를 추가 확인한 뒤 유지 여부를 결정해야 합니다.",
+    totalScore: 69,
+    scores: [
+      createScore(
+        "RIGHTS",
+        58,
+        "공동출원인 플로소프트와의 권리 행사, 비용 분담, 처분 조건 확인이 필요합니다.",
+      ),
+      createScore(
+        "TECHNOLOGY",
+        74,
+        "CMP Pad 물류 흐름 최적화라는 제조 현장 문제와 직접 연결되어 기술 적용성은 확인됩니다.",
+      ),
+      createScore(
+        "MARKET",
+        66,
+        "반도체 제조 물류 자동화 수요는 있으나 내부 장비/고객 적용 범위 확인이 필요합니다.",
+      ),
+      createScore(
+        "LIFECYCLE_ECONOMICS",
+        78,
+        "잔여 보호기간은 충분하지만 공동출원 관리 비용과 실제 사용 여부에 따라 경제성이 달라질 수 있습니다.",
+      ),
+    ],
+    missingInformation: ["공동출원인 협의 조건", "CMP Pad 물류 시스템 현재 운영 여부", "유지 비용 분담 기준"],
+  },
+};
 
 function getAiReportCreatedAt(index: number) {
   const day = 1 + (index % 5);
