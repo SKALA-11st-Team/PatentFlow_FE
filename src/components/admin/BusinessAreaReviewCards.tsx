@@ -1,4 +1,5 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { PaginationControls } from "../common/PaginationControls";
 import type { PatentListItem } from "../../types/patent";
 
 interface BusinessAreaReviewCardsProps {
@@ -35,6 +36,7 @@ type PatentContextDimensionKey = "BUSINESS_AREA" | "TECHNOLOGY_AREA" | "PRODUCT"
 type PatentContextQueryParam = "businessArea" | "technologyArea" | "productName";
 
 const businessAreaChartColors = ["#EA002C", "#009A93", "#F47725", "#5B5F97", "#2F80ED", "#8A5CF6", "#5A6B2F"];
+const contextCardPageSize = 8;
 
 const patentContextDimensions: PatentContextDimension[] = [
   {
@@ -76,9 +78,20 @@ export function BusinessAreaReviewCards({
   patents,
 }: BusinessAreaReviewCardsProps) {
   const [activeDimensionKey, setActiveDimensionKey] = useState<PatentContextDimensionKey>("BUSINESS_AREA");
+  const [currentPage, setCurrentPage] = useState(1);
   const activeDimension =
     patentContextDimensions.find((dimension) => dimension.key === activeDimensionKey) ?? patentContextDimensions[0];
   const summaries = getPatentContextSummaries(patents, activeDimension);
+  const shouldShowDistributionChart = activeDimension.key === "BUSINESS_AREA";
+  const shouldPaginateCards = activeDimension.key !== "BUSINESS_AREA";
+  const totalPages = Math.max(1, Math.ceil(summaries.length / contextCardPageSize));
+  const pagedSummaries = shouldPaginateCards
+    ? summaries.slice((currentPage - 1) * contextCardPageSize, currentPage * contextCardPageSize)
+    : summaries;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeDimensionKey]);
 
   return (
     <section className="section business-area-review-section">
@@ -103,41 +116,59 @@ export function BusinessAreaReviewCards({
         </div>
       </div>
       <div className="business-area-overview">
-        <div className="business-area-chart-panel">
-          <div aria-label={`${activeDimension.label}별 특허 수 비중`} className="business-area-distribution-chart">
-            {summaries.map((summary, index) => (
+        {shouldShowDistributionChart ? (
+          <div className="business-area-chart-panel">
+            <div aria-label={`${activeDimension.label}별 특허 수 비중`} className="business-area-distribution-chart">
+              {summaries.map((summary, index) => (
+                <button
+                  aria-label={`${summary.value} ${summary.totalCount}건, ${summary.share}%`}
+                  className="business-area-chart-segment"
+                  key={summary.value}
+                  onClick={() => onSelectContext(toPatentContextSelection(activeDimension, summary.value))}
+                  style={getSegmentStyle(summary, summaries.slice(0, index))}
+                  title={`${summary.value} ${summary.totalCount}건`}
+                  type="button"
+                />
+              ))}
+            </div>
+            <div className="business-area-chart-total">
+              <strong>{patents.length}</strong>
+              <span>전체 특허</span>
+            </div>
+          </div>
+        ) : (
+          <div className="context-summary-panel">
+            <strong>{patents.length}</strong>
+            <span>{`${summaries.length}개 ${activeDimension.label} 분류`}</span>
+          </div>
+        )}
+        <div className="business-area-list-panel">
+          <div className="business-area-list">
+            {pagedSummaries.map((summary) => (
               <button
-                aria-label={`${summary.value} ${summary.totalCount}건, ${summary.share}%`}
-                className="business-area-chart-segment"
+                className="business-area-card"
                 key={summary.value}
                 onClick={() => onSelectContext(toPatentContextSelection(activeDimension, summary.value))}
-                style={getSegmentStyle(summary, summaries.slice(0, index))}
-                title={`${summary.value} ${summary.totalCount}건`}
                 type="button"
-              />
+              >
+                <span className="business-area-dot" style={{ background: summary.color }} />
+                <div>
+                  <strong>{summary.value}</strong>
+                  <span>{`${activeDimension.secondaryLabel}: ${formatRelatedLabels(summary.relatedLabels)}`}</span>
+                </div>
+                <b>{summary.totalCount}</b>
+              </button>
             ))}
           </div>
-          <div className="business-area-chart-total">
-            <strong>{patents.length}</strong>
-            <span>전체 특허</span>
-          </div>
-        </div>
-        <div className="business-area-list">
-          {summaries.map((summary) => (
-            <button
-              className="business-area-card"
-              key={summary.value}
-              onClick={() => onSelectContext(toPatentContextSelection(activeDimension, summary.value))}
-              type="button"
-            >
-              <span className="business-area-dot" style={{ background: summary.color }} />
-              <div>
-                <strong>{summary.value}</strong>
-                <span>{`${activeDimension.secondaryLabel}: ${formatRelatedLabels(summary.relatedLabels)}`}</span>
-              </div>
-              <b>{summary.totalCount}</b>
-            </button>
-          ))}
+          {shouldPaginateCards && summaries.length > contextCardPageSize ? (
+            <PaginationControls
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              pageSize={contextCardPageSize}
+              totalItems={summaries.length}
+              totalPages={totalPages}
+            />
+          ) : null}
         </div>
       </div>
     </section>
