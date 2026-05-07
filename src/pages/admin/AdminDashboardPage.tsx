@@ -57,7 +57,7 @@ export function AdminDashboardPage() {
   return (
     <AppLayout
       role="ADMIN"
-      title="관리자 대시보드"
+      title="Legal팀 대시보드"
       description="이번 분기 연차료 검토 진행 상태와 담당 액션을 한눈에 확인합니다."
     >
       <section className="dashboard-kpi-overview">
@@ -114,8 +114,8 @@ export function AdminDashboardPage() {
       */}
 
       <BusinessAreaReviewCards
-        onSelectBusinessArea={(businessArea) =>
-          navigate(`/admin/review-targets?businessArea=${encodeURIComponent(businessArea)}`)
+        onSelectContext={(context) =>
+          navigate(`/admin/review-targets?${context.queryParam}=${encodeURIComponent(context.value)}`)
         }
         patents={patents}
       />

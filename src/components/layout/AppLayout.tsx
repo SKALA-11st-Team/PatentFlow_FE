@@ -75,7 +75,7 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
       <main className="main-content">
         <header className="page-header">
           <div>
-            <p className="eyebrow">{isAdmin ? "관리자 워크스페이스" : "사업부서 워크스페이스"}</p>
+            <p className="eyebrow">{isAdmin ? "Legal팀 워크스페이스" : "사업부서 워크스페이스"}</p>
             <h1>{title}</h1>
             {description ? <p>{description}</p> : null}
           </div>

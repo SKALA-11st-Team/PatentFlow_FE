@@ -719,6 +719,40 @@ textarea {
   gap: var(--spacing-lg);
 }
 
+.context-tabs {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--spacing-xs);
+  grid-template-columns: repeat(3, minmax(86px, 1fr));
+  min-width: 300px;
+  padding: var(--spacing-xs);
+}
+
+.context-tabs button {
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  height: 36px;
+  padding: 0 var(--spacing-md);
+  white-space: nowrap;
+}
+
+.context-tabs button:hover,
+.context-tabs button:focus-visible {
+  color: var(--color-text-dark);
+  outline: none;
+}
+
+.context-tabs .selected {
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-dark);
+  font-weight: 700;
+}
+
 .business-area-overview {
   align-items: stretch;
   display: grid;
@@ -1003,7 +1037,7 @@ textarea {
 }
 
 .filter-bar.review-target-filter-bar {
-  grid-template-columns: minmax(240px, 1fr) 180px 200px 200px;
+  grid-template-columns: minmax(240px, 1fr) 150px 180px 200px 200px;
 }
 
 .filter-bar label {
@@ -2119,6 +2153,11 @@ tbody tr:hover {
   .submission-version-card {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .context-tabs {
+    min-width: 0;
+    width: 100%;
   }
 
   .submission-version-side {

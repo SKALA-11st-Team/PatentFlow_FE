@@ -17,6 +17,13 @@ import type { PatentListItem, ReviewWorkflowStatus } from "../../types/patent";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
 type ReviewTargetScope = "ALL" | "QUARTER";
+type ContextFilterKey = "businessArea" | "technologyArea" | "productName";
+
+interface ContextFilterConfig {
+  key: ContextFilterKey;
+  label: string;
+  getValue: (patent: PatentListItem) => string;
+}
 
 const sortLabels: Record<SortKey, string> = {
   DUE_DATE_ASC: "마감 기한 빠른순",
@@ -24,6 +31,24 @@ const sortLabels: Record<SortKey, string> = {
   TITLE_ASC: "특허명 가나다순",
   DEPARTMENT_ASC: "부서명 가나다순",
 };
+
+const contextFilterConfigs: ContextFilterConfig[] = [
+  {
+    getValue: (patent) => patent.businessArea,
+    key: "businessArea",
+    label: "관련사업 분야",
+  },
+  {
+    getValue: (patent) => patent.technologyArea,
+    key: "technologyArea",
+    label: "관련기술 분야",
+  },
+  {
+    getValue: (patent) => patent.productName,
+    key: "productName",
+    label: "관련제품",
+  },
+];
 
 /**
  * @relatedFR FR-001, FR-002, FR-011, FR-012, FR-014, FR-015, FR-016, FR-017
@@ -35,18 +60,29 @@ export function AdminReviewTargetPage() {
   const [searchParams] = useSearchParams();
   const initialWorkflow = getInitialWorkflowFilter(searchParams.get("workflow"));
   const scope = getReviewTargetScope(searchParams.get("scope"));
-  const initialBusinessArea = searchParams.get("businessArea") ?? "ALL";
+  const initialContextFilter = getInitialContextFilter(searchParams);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>(initialWorkflow);
-  const [businessAreaFilter, setBusinessAreaFilter] = useState(initialBusinessArea);
+  const [contextFilterKey, setContextFilterKey] = useState<ContextFilterKey>(initialContextFilter.key);
+  const [contextFilterValue, setContextFilterValue] = useState(initialContextFilter.value);
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [selectedPatentIds, setSelectedPatentIds] = useState<string[]>([]);
   const [actionMessage, setActionMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const activeContextConfig = getContextFilterConfig(contextFilterKey);
   const filteredPatents = useMemo(
-    () => getFilteredAndSortedReviewTargets(patentList, searchKeyword, workflowFilter, businessAreaFilter, scope, sortKey),
-    [businessAreaFilter, patentList, scope, searchKeyword, sortKey, workflowFilter],
+    () =>
+      getFilteredAndSortedReviewTargets(
+        patentList,
+        searchKeyword,
+        workflowFilter,
+        contextFilterKey,
+        contextFilterValue,
+        scope,
+        sortKey,
+      ),
+    [contextFilterKey, contextFilterValue, patentList, scope, searchKeyword, sortKey, workflowFilter],
   );
   const {
     currentPage,
@@ -55,16 +91,16 @@ export function AdminReviewTargetPage() {
     setCurrentPage,
     totalItems,
     totalPages,
-  } = useClientPagination(filteredPatents, [businessAreaFilter, scope, searchKeyword, sortKey, workflowFilter]);
-  const businessAreaOptions = useMemo(
+  } = useClientPagination(filteredPatents, [contextFilterKey, contextFilterValue, scope, searchKeyword, sortKey, workflowFilter]);
+  const contextFilterOptions = useMemo(
     () =>
-      Array.from(new Set(patentList.map((patent) => patent.businessArea))).sort((first, second) =>
-        first.localeCompare(second, "ko"),
+      Array.from(new Set(patentList.map((patent) => getDisplayValue(activeContextConfig.getValue(patent))))).sort(
+        (first, second) => first.localeCompare(second, "ko"),
       ),
-    [patentList],
+    [activeContextConfig, patentList],
   );
-  const pageTitle = getReviewTargetPageTitle(scope, initialWorkflow, businessAreaFilter);
-  const sectionTitle = getReviewTargetSectionTitle(scope, workflowFilter, businessAreaFilter);
+  const pageTitle = getReviewTargetPageTitle(scope, initialWorkflow, contextFilterValue);
+  const sectionTitle = getReviewTargetSectionTitle(scope, workflowFilter, activeContextConfig.label, contextFilterValue);
   const isActionableMailList = workflowFilter === "MAIL_READY";
   const canSelectRows = isActionableMailList;
   const shouldShowWorkflowColumn = workflowFilter === "ALL";
@@ -91,6 +127,11 @@ export function AdminReviewTargetPage() {
 
   function handleToggleAllRows() {
     setSelectedPatentIds(areAllRowsSelected ? [] : selectablePatentIds);
+  }
+
+  function handleContextFilterKeyChange(nextKey: ContextFilterKey) {
+    setContextFilterKey(nextKey);
+    setContextFilterValue("ALL");
   }
 
   async function handleSendMails() {
@@ -151,12 +192,22 @@ export function AdminReviewTargetPage() {
             />
           </label>
           <label>
-            <span>관련사업 분야</span>
-            <select onChange={(event) => setBusinessAreaFilter(event.target.value)} value={businessAreaFilter}>
+            <span>분류 기준</span>
+            <select onChange={(event) => handleContextFilterKeyChange(event.target.value as ContextFilterKey)} value={contextFilterKey}>
+              {contextFilterConfigs.map((config) => (
+                <option key={config.key} value={config.key}>
+                  {config.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>{activeContextConfig.label}</span>
+            <select onChange={(event) => setContextFilterValue(event.target.value)} value={contextFilterValue}>
               <option value="ALL">전체</option>
-              {businessAreaOptions.map((businessArea) => (
-                <option key={businessArea} value={businessArea}>
-                  {businessArea}
+              {contextFilterOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
                 </option>
               ))}
             </select>
@@ -309,30 +360,53 @@ function getReviewTargetScope(scope: string | null): ReviewTargetScope {
 /**
  * @relatedFR FR-001, FR-002
  * @relatedUI UI-LEGAL-02
+ * @description 대시보드 관련 사업/기술/제품 query parameter를 검토 대상 컨텍스트 필터 초기값으로 변환한다.
+ */
+function getInitialContextFilter(searchParams: URLSearchParams) {
+  const matchedConfig = contextFilterConfigs.find((config) => searchParams.get(config.key));
+
+  return {
+    key: matchedConfig?.key ?? "businessArea",
+    value: matchedConfig ? getDisplayValue(searchParams.get(matchedConfig.key) ?? "") : "ALL",
+  };
+}
+
+/**
+ * @relatedFR FR-001, FR-002
+ * @relatedUI UI-LEGAL-02
  * @description KPI 조건과 사용자가 입력한 검색/필터/정렬 조건을 적용한 특허 조회 결과를 반환한다.
  */
 function getFilteredAndSortedReviewTargets(
   patentList: PatentListItem[],
   searchKeyword: string,
   workflowFilter: ReviewWorkflowFilter,
-  businessAreaFilter: string,
+  contextFilterKey: ContextFilterKey,
+  contextFilterValue: string,
   scope: ReviewTargetScope,
   sortKey: SortKey,
 ) {
   const normalizedKeyword = searchKeyword.trim().toLowerCase();
+  const contextConfig = getContextFilterConfig(contextFilterKey);
 
   return patentList
     .filter((patent) => {
       const matchesKeyword =
         normalizedKeyword.length === 0 ||
-        [patent.title, patent.applicationNumber, patent.managementNumber, patent.departmentName, patent.businessArea].some(
-          (value) => value.toLowerCase().includes(normalizedKeyword),
-        );
+        [
+          patent.title,
+          patent.applicationNumber,
+          patent.managementNumber,
+          patent.departmentName,
+          patent.businessArea,
+          patent.technologyArea,
+          patent.productName,
+        ].some((value) => value.toLowerCase().includes(normalizedKeyword));
       const matchesWorkflow = workflowFilter === "ALL" || patent.reviewWorkflowStatus === workflowFilter;
-      const matchesBusinessArea = businessAreaFilter === "ALL" || patent.businessArea === businessAreaFilter;
+      const matchesContext =
+        contextFilterValue === "ALL" || getDisplayValue(contextConfig.getValue(patent)) === contextFilterValue;
       const matchesScope = scope === "ALL" || patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER";
 
-      return matchesKeyword && matchesWorkflow && matchesBusinessArea && matchesScope;
+      return matchesKeyword && matchesWorkflow && matchesContext && matchesScope;
     })
     .sort((firstPatent, secondPatent) => comparePatents(firstPatent, secondPatent, sortKey));
 }
@@ -363,9 +437,13 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
  * @relatedUI UI-LEGAL-02
  * @description KPI 조회 결과 화면 제목을 선택 조건에 맞게 표시한다.
  */
-function getReviewTargetPageTitle(scope: ReviewTargetScope, workflowFilter: ReviewWorkflowFilter, businessArea: string) {
-  if (businessArea !== "ALL") {
-    return `${businessArea} 특허 현황`;
+function getReviewTargetPageTitle(
+  scope: ReviewTargetScope,
+  workflowFilter: ReviewWorkflowFilter,
+  contextFilterValue: string,
+) {
+  if (contextFilterValue !== "ALL") {
+    return `${contextFilterValue} 특허 현황`;
   }
 
   if (workflowFilter !== "ALL") {
@@ -380,9 +458,14 @@ function getReviewTargetPageTitle(scope: ReviewTargetScope, workflowFilter: Revi
  * @relatedUI UI-LEGAL-02
  * @description 특허 조회 결과 대신 현재 검토 단계 상태를 목록 제목으로 표시한다.
  */
-function getReviewTargetSectionTitle(scope: ReviewTargetScope, workflowFilter: ReviewWorkflowFilter, businessArea: string) {
-  if (businessArea !== "ALL") {
-    return `${businessArea} 특허 리스트`;
+function getReviewTargetSectionTitle(
+  scope: ReviewTargetScope,
+  workflowFilter: ReviewWorkflowFilter,
+  contextFilterLabel: string,
+  contextFilterValue: string,
+) {
+  if (contextFilterValue !== "ALL") {
+    return `${contextFilterLabel}: ${contextFilterValue} 특허 리스트`;
   }
 
   if (workflowFilter !== "ALL") {
@@ -413,4 +496,24 @@ function getDepartmentRecipient(patent: PatentListItem) {
  */
 function truncatePatentTitle(title: string) {
   return title.length > 30 ? `${title.slice(0, 29)}...` : title;
+}
+
+/**
+ * @relatedFR FR-001, FR-002
+ * @relatedUI UI-LEGAL-02
+ * @description 선택된 컨텍스트 필터 기준의 설정을 반환한다.
+ */
+function getContextFilterConfig(contextFilterKey: ContextFilterKey) {
+  return contextFilterConfigs.find((config) => config.key === contextFilterKey) ?? contextFilterConfigs[0];
+}
+
+/**
+ * @relatedFR FR-001
+ * @relatedUI UI-LEGAL-02
+ * @description 특허 컨텍스트 필터값이 비어 있을 때 목록 필터 표시용 문구를 반환한다.
+ */
+function getDisplayValue(value: string) {
+  const normalizedValue = value.trim();
+
+  return normalizedValue && normalizedValue !== "N/A" ? normalizedValue : "미분류";
 }
