@@ -252,16 +252,6 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                 </div>
               ))}
             </div>
-            {patent.aiEvaluationReport.missingInformation.length ? (
-              <div className="report-block">
-                <h3>정보 부족 / 추가 확인 필요</h3>
-                <ul className="clean-list warning-list">
-                  {patent.aiEvaluationReport.missingInformation.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
             {patent.aiEvaluationReport.businessCheckRequests?.length ? (
               <div className="report-block">
                 <h3>사업부 확인 요청 사항</h3>
@@ -272,6 +262,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                 </ul>
               </div>
             ) : null}
+            <RawMarkdownBlock title="AI 특허 평가 레포트 원문" content={patent.aiEvaluationReport.rawMarkdown} />
         </Section>
 
         <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
@@ -287,6 +278,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                 </ul>
               </div>
               <SummaryBlock title="권리범위 요약" content={patent.summary.claimsSummary} />
+              <RawMarkdownBlock title="특허 요약 원문" content={patent.summary.rawMarkdown} />
             </div>
         </Section>
 
@@ -853,6 +845,24 @@ function SummaryBlock({ title, content }: { title: string; content: string }) {
       <h3>{title}</h3>
       <p>{content}</p>
     </div>
+  );
+}
+
+/**
+ * @relatedFR FR-005, FR-006, FR-007, FR-008
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @description raw markdown 원문을 변형 없이 접이식 원문 영역으로 표시한다.
+ */
+function RawMarkdownBlock({ title, content }: { title: string; content?: string }) {
+  if (!content) {
+    return null;
+  }
+
+  return (
+    <details className="raw-markdown-block">
+      <summary>{title}</summary>
+      <pre>{content}</pre>
+    </details>
   );
 }
 

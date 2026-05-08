@@ -58,6 +58,7 @@ export interface PatentSummary {
   coreTechnicalPoints: string[];
   claimsSummary: string;
   missingFields: string[];
+  rawMarkdown?: string;
 }
 
 export interface EvaluationScore {
@@ -92,6 +93,7 @@ export interface AiEvaluationReport {
     title: string;
     url: string;
   }[];
+  rawMarkdown?: string;
 }
 
 export interface FinalDecisionRecord {

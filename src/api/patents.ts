@@ -97,6 +97,7 @@ interface BackendPatentDetail extends BackendPatentListItem {
     coreTechnicalPoints: string[];
     claimsSummary: string;
     missingFields: string[];
+    rawMarkdown?: string;
   };
   aiEvaluationReport: {
     reportId: string;
@@ -110,6 +111,7 @@ interface BackendPatentDetail extends BackendPatentListItem {
       evidence: string;
     }>;
     missingInformation: string[];
+    rawMarkdown?: string;
   };
   finalDecisionRecord: {
     decisionId: string | null;
@@ -393,6 +395,7 @@ function mapBackendSummary(summary: BackendPatentDetail["summary"]): PatentSumma
     coreTechnicalPoints: summary.coreTechnicalPoints,
     claimsSummary: summary.claimsSummary,
     missingFields: summary.missingFields,
+    rawMarkdown: summary.rawMarkdown,
   };
 }
 
@@ -409,6 +412,7 @@ function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationR
       evidenceSummary: score.evidence,
     })),
     missingInformation: report.missingInformation,
+    rawMarkdown: report.rawMarkdown,
   };
 }
 

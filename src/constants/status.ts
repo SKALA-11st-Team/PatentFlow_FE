@@ -46,7 +46,13 @@ export const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const
 
 export type LegalActionResult = (typeof LEGAL_ACTION_RESULTS)[number];
 
-export const EVALUATION_CATEGORIES = ["RIGHTS", "TECHNOLOGY", "MARKET", "LIFECYCLE_ECONOMICS"] as const;
+export const EVALUATION_CATEGORIES = [
+  "RIGHTS",
+  "TECHNOLOGY",
+  "MARKET",
+  "LIFECYCLE_ECONOMICS",
+  "BUSINESS_ALIGNMENT",
+] as const;
 
 export type EvaluationCategory = (typeof EVALUATION_CATEGORIES)[number];
 
@@ -253,6 +259,7 @@ export const evaluationCategoryLabels: Record<EvaluationCategory, string> = {
   TECHNOLOGY: "기술성",
   MARKET: "시장성",
   LIFECYCLE_ECONOMICS: "라이프사이클 경제성",
+  BUSINESS_ALIGNMENT: "사업 연계성",
 };
 
 export const REVIEW_WORKFLOW_FILTER_OPTIONS = [

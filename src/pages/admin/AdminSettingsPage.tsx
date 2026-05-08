@@ -15,7 +15,7 @@ export function AdminSettingsPage() {
     >
       <Section title="운영 설정" description="백엔드 연동 전까지 설정 항목의 구조를 먼저 고정합니다.">
         <div className="placeholder-grid">
-          <PlaceholderItem title="평가 기준" text="권리성, 기술성, 시장성, 라이프사이클 경제성 기준을 관리합니다. 사업 연계성은 추후 개발 예정입니다." />
+          <PlaceholderItem title="평가 기준" text="권리성, 기술성, 시장성, 라이프사이클 경제성, 사업 연계성 기준을 관리합니다." />
           <PlaceholderItem title="AI 레포트 메일 수신자 매핑" text="부서별 수신자와 참조자 정보를 관리합니다." />
           <PlaceholderItem title="검토 운영 기준" text="연차료 검토 기간, 알림 기준, 승인 흐름을 관리합니다." />
         </div>

@@ -19,9 +19,8 @@ const categoryConfigs = [
   { heading: "기술성", key: "TECHNOLOGY" },
   { heading: "시장성", key: "MARKET" },
   { heading: "라이프사이클 경제성", key: "LIFECYCLE_ECONOMICS" },
+  { heading: "사업 연계성", key: "BUSINESS_ALIGNMENT" },
 ];
-
-const businessAlignmentHeading = "사업 연계성";
 
 function main() {
   const reports = readMarkdownEntries(reportDir, /^(?<order>\d+)_(?<managementNumber>[^_]+)_(?<registrationNumber>KR\d+-\d+)_final_report\.md$/);
@@ -84,7 +83,7 @@ function parseAiReport(entry) {
     (item) => item.text,
   );
   const scores = categoryConfigs.map((category, index) => {
-    const section = getCategorySection(entry.content, category.heading, categoryConfigs[index + 1]?.heading ?? businessAlignmentHeading);
+    const section = getCategorySection(entry.content, category.heading, categoryConfigs[index + 1]?.heading);
     const score = parseCategoryScore(section);
     const evidenceDetails = parseBullets(getSectionAfterLine(section, "주요 판단 근거"));
 
@@ -96,11 +95,9 @@ function parseAiReport(entry) {
     };
   });
   const scoreValues = scores.map((score) => score.score).filter((score) => typeof score === "number");
-  const fourAxisTotal = scoreValues.reduce((sum, score) => sum + score, 0);
-  const averageScore = scoreValues.length ? roundToOneDecimal(fourAxisTotal / scoreValues.length) : undefined;
-  const businessAlignmentSection = getCategorySection(entry.content, businessAlignmentHeading);
-  const businessAlignmentDetails = parseBullets(getSectionAfterLine(businessAlignmentSection, "주요 판단 근거"));
-  const externalSources = collectExternalSources([...scores.flatMap((score) => score.evidenceDetails), ...businessAlignmentDetails]);
+  const categoryTotal = scoreValues.reduce((sum, score) => sum + score, 0);
+  const averageScore = scoreValues.length ? roundToOneDecimal(categoryTotal / scoreValues.length) : undefined;
+  const externalSources = collectExternalSources(scores.flatMap((score) => score.evidenceDetails));
 
   return {
     averageScore,
@@ -113,9 +110,10 @@ function parseAiReport(entry) {
     missingInformation: extractMissingInformation(entry.content),
     recommendation: getRecommendation(recommendationText),
     recommendationText,
+    rawMarkdown: entry.content,
     scores,
-    totalScore: averageScore ?? fourAxisTotal,
-    totalScoreText: `${fourAxisTotal}/400점, 평균 ${averageScore}점 (원문 ${sourceTotalScoreText})`,
+    totalScore: averageScore ?? categoryTotal,
+    totalScoreText: `${categoryTotal}/${scores.length * 100}점, 평균 ${averageScore}점 (원문 ${sourceTotalScoreText})`,
   };
 }
 
@@ -135,6 +133,7 @@ function parsePatentSummary(entry) {
     coreTechnicalPoints: [...coreIdeas, ...featureBullets].slice(0, 5),
     missingFields: [],
     problemSolved: problemSolved || "요약 파일에서 해결 과제 정보를 확인해야 합니다.",
+    rawMarkdown: entry.content,
     summaryText: parseBullets(getSection(entry.content, "## 1. 한 줄 요약", "## 2. 핵심 내용"))[0]?.text ?? "요약 정보 확인 필요",
   };
 }
@@ -292,7 +291,6 @@ function getRecommendation(text) {
 function cleanInlineMarkdown(value) {
   return value
     .replace(/\*\*/g, "")
-    .replace(/사업\s*연계성/g, "사업부 적용 확인")
     .replace(/\s{2,}/g, " ")
     .replace(/[。]/g, ".")
     .trim();
