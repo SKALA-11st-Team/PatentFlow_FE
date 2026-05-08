@@ -2002,7 +2002,9 @@ tbody tr:hover {
 }
 
 .ai-report-modal,
-.business-checklist-modal {
+.business-checklist-modal,
+.mail-preview-modal,
+.mail-confirm-modal {
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -2014,6 +2016,14 @@ tbody tr:hover {
 
 .business-checklist-modal {
   max-width: 920px;
+}
+
+.mail-preview-modal {
+  max-width: 920px;
+}
+
+.mail-confirm-modal {
+  max-width: 520px;
 }
 
 .modal-header {
@@ -2082,6 +2092,114 @@ tbody tr:hover {
   display: block;
   font-size: 18px;
   margin-top: 2px;
+}
+
+.mail-preview-toolbar {
+  align-items: center;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  text-align: center;
+}
+
+.mail-preview-toolbar strong,
+.mail-preview-toolbar span {
+  display: block;
+}
+
+.mail-preview-toolbar span,
+.mail-preview-meta span,
+.mail-preview-body span,
+.mail-preview-integration-note,
+.mail-confirm-copy {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.mail-preview-arrow {
+  align-items: center;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-dark);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 26px;
+  height: 40px;
+  justify-content: center;
+  line-height: 1;
+  width: 40px;
+}
+
+.mail-preview-arrow:disabled {
+  color: var(--color-text-light);
+  cursor: not-allowed;
+}
+
+.mail-preview-arrow:not(:disabled):hover,
+.mail-preview-arrow:not(:disabled):focus-visible {
+  border-color: rgba(var(--color-primary-rgb), 0.35);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+  outline: none;
+}
+
+.mail-preview-meta {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: var(--spacing-lg);
+}
+
+.mail-preview-meta label,
+.mail-preview-body {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.mail-preview-meta label:last-child {
+  grid-column: 1 / -1;
+}
+
+.mail-preview-meta input,
+.mail-preview-body textarea {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-dark);
+  padding: 0 var(--spacing-md);
+  width: 100%;
+}
+
+.mail-preview-meta input {
+  height: 40px;
+}
+
+.mail-preview-meta input[readonly] {
+  background: var(--color-bg-light);
+}
+
+.mail-preview-body textarea {
+  line-height: 1.65;
+  min-height: 280px;
+  padding: var(--spacing-md);
+  resize: vertical;
+}
+
+.mail-preview-meta input:focus,
+.mail-preview-body textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.12);
+  outline: none;
+}
+
+.mail-preview-integration-note,
+.mail-confirm-copy {
+  line-height: 1.7;
+  margin: var(--spacing-lg) 0 0;
 }
 
 .checklist-total-row {
@@ -2270,6 +2388,7 @@ tbody tr:hover {
   .placeholder-grid,
   .submission-reason-grid,
   .submission-checklist-preview,
+  .mail-preview-meta,
   .modal-score-grid,
   .score-option-grid,
   .workflow-flow,
@@ -2305,6 +2424,7 @@ tbody tr:hover {
   .submission-reason-grid,
   .submission-inline-insights,
   .submission-checklist-preview,
+  .mail-preview-meta,
   .score-option-grid,
   .modal-score-grid,
   .workflow-flow,

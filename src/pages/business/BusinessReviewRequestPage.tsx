@@ -54,7 +54,7 @@ export function BusinessReviewRequestPage() {
   const [submittedOpinions, setSubmittedOpinions] = useState<Record<string, BusinessChecklistSubmission>>({});
   const { errorMessage, isLoading, patents } = usePatentList();
   const assigned = useMemo(
-    () => patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER"),
+    () => patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE"),
     [patents],
   );
   const filteredPatents = useMemo(
@@ -565,7 +565,7 @@ function getPageTitle(opinionFilter: OpinionFilter) {
     return "제출 완료 특허";
   }
 
-  return "이번 분기 제출 대상";
+  return "제출 대상 특허";
 }
 
 /**

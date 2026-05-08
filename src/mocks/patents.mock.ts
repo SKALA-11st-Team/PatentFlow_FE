@@ -17,6 +17,7 @@ import type {
   ReviewWorkflowStatus,
 } from "../types/patent";
 import { getNextAnnualFeeDueDate } from "../utils/annualFee";
+import { aiReportsByManagementNumber, patentSummariesByManagementNumber } from "./aiReports.mock";
 import { skaxPatentRows, type SkaxPatentRow } from "./skaxPatents.raw";
 
 // Patent metadata is based on docs/skax_patents_list.md.
@@ -26,8 +27,9 @@ const reviewTargetWorkflowCycle: ReviewWorkflowStatus[] = [
   "REVIEW_QUARTER_STARTED",
   "REPORT_GENERATED",
   "MAIL_READY",
-  "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
+  "WAITING_EXECUTIVE_APPROVAL",
+  "APPROVAL_COMPLETED",
   "LEGAL_ACTION_RECORDED",
 ];
 
@@ -268,8 +270,10 @@ export const patentHistory: Record<string, PatentHistoryItem[]> = Object.fromEnt
 
 function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
   const department = getDepartment(row.businessArea);
-  const reviewWorkflowStatus = getMockReviewWorkflowStatus(index);
-  const recommendation = getRecommendation(row, reviewWorkflowStatus, index);
+  const generatedReport = aiReportsByManagementNumber[row.managementNumber];
+  const generatedSummary = patentSummariesByManagementNumber[row.managementNumber];
+  const reviewWorkflowStatus = getMockReviewWorkflowStatus(index, Boolean(generatedReport));
+  const recommendation = generatedReport?.recommendation ?? getRecommendation(row, reviewWorkflowStatus, index);
   const businessOpinionDecision = getBusinessOpinion(reviewWorkflowStatus, recommendation);
   const legalActionResult = getLegalActionResult(reviewWorkflowStatus, recommendation);
   const executiveApprovalDecision = getExecutiveApprovalDecision(legalActionResult);
@@ -306,7 +310,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
     businessOpinionDecision,
     executiveApprovalDecision,
     legalActionResult,
-    summary: {
+    summary: generatedSummary ?? {
       summaryText: `${title}은(는) ${businessArea} 분야의 ${technologyArea} 특허입니다. ${productName ? `관련 제품은 ${productName}입니다.` : "관련 제품 정보는 비어 있습니다."}`,
       problemSolved: `${technologyArea} 영역에서 ${productName || "관련 제품"}의 운영, 성능, 관리 효율을 높이기 위한 문제를 다룹니다.`,
       coreTechnicalPoints: [
@@ -365,8 +369,8 @@ function normalizeDisplayText(value: string) {
     .trim();
 }
 
-function getMockReviewWorkflowStatus(index: number): ReviewWorkflowStatus {
-  if (index === 0) {
+function getMockReviewWorkflowStatus(index: number, hasGeneratedReport = false): ReviewWorkflowStatus {
+  if (hasGeneratedReport) {
     return "WAITING_BUSINESS_RESPONSE";
   }
 
@@ -375,7 +379,7 @@ function getMockReviewWorkflowStatus(index: number): ReviewWorkflowStatus {
   }
 
   const reviewTargetIndex = Math.floor(index / 4) - 1;
-  return reviewTargetWorkflowCycle[reviewTargetIndex % reviewTargetWorkflowCycle.length];
+  return reviewTargetWorkflowCycle[Math.max(0, reviewTargetIndex) % reviewTargetWorkflowCycle.length];
 }
 
 /**
@@ -501,6 +505,12 @@ function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRo
  * @description 발표에서 바로 보여줄 수 있는 대표 특허의 작성 완료 AI 평가 레포트를 반환한다.
  */
 function getAiEvaluationReport(row: SkaxPatentRow, recommendation: Recommendation, index: number): AiEvaluationReport {
+  const generatedReport = aiReportsByManagementNumber[row.managementNumber];
+
+  if (generatedReport) {
+    return generatedReport;
+  }
+
   const demoReport = demoAiEvaluationReports[row.managementNumber];
 
   if (demoReport) {

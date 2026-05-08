@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
-import { applyExecutiveApprovalDecision, getPatentDetail, getPatentHistory } from "../../api/patents";
+import {
+  applyExecutiveApprovalDecision,
+  getPatentDetail,
+  getPatentHistory,
+  sendBusinessReviewMails,
+} from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
 import { Section } from "../../components/common/Section";
+import { BusinessReviewMailPreviewModal } from "../../components/mailing/BusinessReviewMailPreviewModal";
 import {
   createBusinessChecklistDraft,
   getBusinessChecklistTotal,
@@ -32,6 +38,7 @@ import {
   recommendationLabels,
   reviewWorkflowStatusLabels,
 } from "../../constants/status";
+import { createBusinessReviewMailDraft, type BusinessReviewMailDraft } from "../../utils/businessReviewMail";
 
 /**
  * @relatedFR FR-005, FR-006, FR-007, FR-008, FR-011, FR-012, FR-013, FR-017
@@ -54,8 +61,13 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
   const [decisionDraft, setDecisionDraft] = useState<ExecutiveApprovalDecision>("APPROVED_MAINTAIN");
   const [decisionMessage, setDecisionMessage] = useState("");
   const [isApplyingDecision, setIsApplyingDecision] = useState(false);
+  const [mailDrafts, setMailDrafts] = useState<BusinessReviewMailDraft[]>([]);
+  const [activeMailIndex, setActiveMailIndex] = useState(0);
+  const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
+  const [isSendingMail, setIsSendingMail] = useState(false);
   const checklistTotal = getBusinessChecklistTotal(businessChecklistSubmission);
   const canApplyExecutiveApproval = patent?.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED";
+  const canSendBusinessReviewMail = patent?.reviewWorkflowStatus === "MAIL_READY";
   const displayedBusinessOpinionLabel = patent
     ? hasSubmittedBusinessChecklist
       ? businessOpinionLabels[businessChecklistSubmission.finalOpinion]
@@ -330,8 +342,83 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           patentTitle={patent.title}
         />
       ) : null}
+
+      {mailDrafts.length > 0 ? (
+        <BusinessReviewMailPreviewModal
+          activeIndex={activeMailIndex}
+          drafts={mailDrafts}
+          isConfirmOpen={isSendConfirmOpen}
+          isProcessing={isSendingMail}
+          onClose={handleCloseMailPreview}
+          onConfirmSend={handleConfirmSendMails}
+          onConfirmToggle={setIsSendConfirmOpen}
+          onDraftChange={handleUpdateMailDraft}
+          onIndexChange={setActiveMailIndex}
+        />
+      ) : null}
     </AppLayout>
   );
+
+  function handleOpenMailPreview() {
+    if (!patent || patent.reviewWorkflowStatus !== "MAIL_READY") {
+      setDecisionMessage("메일 발송 대기 상태의 특허만 발송할 수 있습니다.");
+      return;
+    }
+
+    setMailDrafts([createBusinessReviewMailDraft(patent)]);
+    setActiveMailIndex(0);
+    setIsSendConfirmOpen(false);
+    setDecisionMessage("");
+  }
+
+  function handleCloseMailPreview() {
+    if (isSendingMail) {
+      return;
+    }
+
+    setMailDrafts([]);
+    setActiveMailIndex(0);
+    setIsSendConfirmOpen(false);
+  }
+
+  function handleUpdateMailDraft(nextDraft: BusinessReviewMailDraft) {
+    setMailDrafts((currentDrafts) =>
+      currentDrafts.map((draft, index) => (index === activeMailIndex ? nextDraft : draft)),
+    );
+  }
+
+  async function handleConfirmSendMails() {
+    if (!patent) {
+      return;
+    }
+
+    setIsSendingMail(true);
+    setDecisionMessage("");
+
+    try {
+      const result = await sendBusinessReviewMails(mailDrafts.map((draft) => draft.patent.patentId));
+      const [nextPatent, nextHistory] = await Promise.all([
+        getPatentDetail(patent.patentId),
+        getPatentHistory(patent.patentId),
+      ]);
+
+      if (nextPatent) {
+        setPatent(nextPatent);
+      }
+
+      setHistory(nextHistory);
+      setMailDrafts([]);
+      setActiveMailIndex(0);
+      setIsSendConfirmOpen(false);
+      setDecisionMessage(
+        result.updatedCount > 0 ? "사업부 검토 요청 메일을 발송했습니다." : "메일 발송 처리할 선택 건이 없습니다.",
+      );
+    } catch (error) {
+      setDecisionMessage(error instanceof Error ? error.message : "메일 발송 처리에 실패했습니다.");
+    } finally {
+      setIsSendingMail(false);
+    }
+  }
 
   async function handleApplyExecutiveApproval() {
     if (!patent) {
@@ -430,11 +517,18 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
             <p>{getAdminActionDescription(patentDetail.reviewWorkflowStatus)}</p>
             {decisionMessage ? <p className="notice">{decisionMessage}</p> : null}
             <Button
-              disabled={!canApplyExecutiveApproval}
+              disabled={!canSendBusinessReviewMail && !canApplyExecutiveApproval}
               onClick={() => {
-                setDecisionDraft(getDefaultDecision(patentDetail.businessOpinion.opinion));
-                setDecisionMessage("");
-                setIsDecisionModalOpen(true);
+                if (patentDetail.reviewWorkflowStatus === "MAIL_READY") {
+                  handleOpenMailPreview();
+                  return;
+                }
+
+                if (patentDetail.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED") {
+                  setDecisionDraft(getDefaultDecision(patentDetail.businessOpinion.opinion));
+                  setDecisionMessage("");
+                  setIsDecisionModalOpen(true);
+                }
               }}
               type="button"
             >
