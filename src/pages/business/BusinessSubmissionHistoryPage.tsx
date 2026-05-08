@@ -7,7 +7,7 @@ import { Section } from "../../components/common/Section";
 import { getBusinessSubmissionVersions, getLatestBusinessSubmission } from "../../api/businessSubmissions";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
-import { businessOpinionLabels, reviewWorkflowStatusLabels } from "../../constants/status";
+import { businessOpinionLabels, getBusinessOpinionTone, reviewWorkflowStatusLabels } from "../../constants/status";
 import type { BusinessSubmissionVersion } from "../../mocks/businessSubmissions.mock";
 
 /**
@@ -97,7 +97,9 @@ export function BusinessSubmissionHistoryPage() {
                     </td>
                     <td>
                       {latestSubmission ? (
-                        <Badge tone="primary">{businessOpinionLabels[latestSubmission.opinion]}</Badge>
+                        <Badge tone={getBusinessOpinionTone(latestSubmission.opinion)}>
+                          {businessOpinionLabels[latestSubmission.opinion]}
+                        </Badge>
                       ) : (
                         "N/A"
                       )}

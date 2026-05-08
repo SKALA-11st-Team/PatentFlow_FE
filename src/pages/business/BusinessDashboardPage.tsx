@@ -12,7 +12,9 @@ import type { PatentListItem } from "../../types/patent";
 import {
   RECOMMENDATION_FILTER_OPTIONS,
   businessOpinionLabels,
+  getBusinessOpinionTone,
   getRecommendationsByFilter,
+  getRecommendationTone,
   recommendationLabels,
   type RecommendationFilter,
 } from "../../constants/status";
@@ -165,13 +167,13 @@ export function BusinessDashboardPage() {
                   </td>
                   <td>{formatOptionalTableText(patent.productName)}</td>
                   <td>
-                    <Badge tone={patent.currentRecommendation === "MAINTAIN" ? "success" : "warning"}>
+                    <Badge tone={getRecommendationTone(patent.currentRecommendation)}>
                       {recommendationLabels[patent.currentRecommendation]}
                     </Badge>
                   </td>
                   <td>
                     {patent.businessOpinionDecision ? (
-                      <Badge tone={patent.businessOpinionDecision === "MAINTAIN" ? "success" : "warning"}>
+                      <Badge tone={getBusinessOpinionTone(patent.businessOpinionDecision)}>
                         {businessOpinionLabels[patent.businessOpinionDecision]}
                       </Badge>
                     ) : (

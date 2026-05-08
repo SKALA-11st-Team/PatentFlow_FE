@@ -158,6 +158,23 @@ export const recommendationLabels: Record<Recommendation, string> = {
   HOLD: "추가 정보 필요",
 };
 
+export const recommendationTone: Record<Recommendation, StatusTone> = {
+  MAINTAIN: "success",
+  REVIEW_AGAIN: "warning",
+  ABANDON: "danger",
+  SALES_CANDIDATE: "danger",
+  HOLD: "warning",
+};
+
+/**
+ * @relatedFR FR-006, FR-008
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-05, UI-BUS-01, UI-BUS-02, UI-BUS-03
+ * @description AI 권고값을 특허 목록과 상세 화면의 일관된 배지 tone으로 변환한다.
+ */
+export function getRecommendationTone(recommendation: Recommendation) {
+  return recommendationTone[recommendation];
+}
+
 export const RECOMMENDATION_FILTER_OPTIONS = [
   {
     label: "전체",
@@ -202,6 +219,20 @@ export const businessOpinionLabels: Record<BusinessOpinionDecision, string> = {
   MAINTAIN: "유지",
   ABANDON: "포기",
 };
+
+export const businessOpinionTone: Record<BusinessOpinionDecision, StatusTone> = {
+  MAINTAIN: "success",
+  ABANDON: "danger",
+};
+
+/**
+ * @relatedFR FR-009
+ * @relatedUI UI-LEGAL-05, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
+ * @description 사업부 유지/포기 의견을 일관된 배지 tone으로 변환한다.
+ */
+export function getBusinessOpinionTone(opinion: BusinessOpinionDecision) {
+  return businessOpinionTone[opinion];
+}
 
 export const executiveApprovalLabels: Record<ExecutiveApprovalDecision, string> = {
   APPROVED_MAINTAIN: "유지 승인",

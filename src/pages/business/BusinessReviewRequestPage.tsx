@@ -19,7 +19,10 @@ import { usePatentList } from "../../hooks/usePatentList";
 import {
   RECOMMENDATION_FILTER_OPTIONS,
   businessOpinionLabels,
+  evaluationCategoryLabels,
+  getBusinessOpinionTone,
   getRecommendationsByFilter,
+  getRecommendationTone,
   recommendationLabels,
   type RecommendationFilter,
 } from "../../constants/status";
@@ -166,13 +169,13 @@ export function BusinessReviewRequestPage() {
                     </td>
                     <td>{formatOptionalTableText(patent.productName)}</td>
                     <td>
-                      <Badge tone={patent.currentRecommendation === "MAINTAIN" ? "success" : "warning"}>
+                      <Badge tone={getRecommendationTone(patent.currentRecommendation)}>
                         {recommendationLabels[patent.currentRecommendation]}
                       </Badge>
                     </td>
                     <td>
                       {displayedOpinion ? (
-                        <Badge tone={displayedOpinion === "MAINTAIN" ? "success" : "warning"}>
+                        <Badge tone={getBusinessOpinionTone(displayedOpinion)}>
                           {businessOpinionLabels[displayedOpinion]}
                         </Badge>
                       ) : (
@@ -357,6 +360,40 @@ function BusinessOpinionModal({
         </button>
       </div>
 
+      <div className="modal-report-summary">
+        <div className="evaluation-header">
+          <div>
+            <span>AI 특허 평가 레포트</span>
+            <strong>{formatReportDisplayScore(patent.aiEvaluationReport)}</strong>
+            {patent.aiEvaluationReport.totalScoreText ? (
+              <small>원문 점수 {patent.aiEvaluationReport.totalScoreText}</small>
+            ) : null}
+          </div>
+          <Badge tone={getRecommendationTone(patent.aiEvaluationReport.recommendation)}>
+            {recommendationLabels[patent.aiEvaluationReport.recommendation]}
+          </Badge>
+        </div>
+        <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
+        {patent.aiEvaluationReport.keyEvidence ? <p>{patent.aiEvaluationReport.keyEvidence}</p> : null}
+        <div className="modal-score-grid">
+          {patent.aiEvaluationReport.scores.map((score) => (
+            <span key={score.category}>
+              {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
+            </span>
+          ))}
+        </div>
+        {patent.aiEvaluationReport.businessCheckRequests?.length ? (
+          <div className="report-block">
+            <h3>사업부 확인 요청 사항</h3>
+            <ul className="clean-list">
+              {patent.aiEvaluationReport.businessCheckRequests.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+
       <div className="checklist-total-row">
         <span>총점</span>
         <strong>{total}점</strong>
@@ -466,6 +503,15 @@ function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSub
       Number.isFinite(submission.qualitativeScore) &&
       submission.finalOpinion,
   );
+}
+
+/**
+ * @relatedFR FR-006, FR-008, FR-009
+ * @relatedUI UI-BUS-02
+ * @description 사업부 의견 모달의 AI 레포트 대표 점수는 평균 점수를 표시한다.
+ */
+function formatReportDisplayScore(report: PatentDetail["aiEvaluationReport"]) {
+  return report.averageScore ?? report.totalScore;
 }
 
 /**

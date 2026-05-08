@@ -27,6 +27,7 @@ import {
   evaluationCategoryLabels,
   EXECUTIVE_APPROVAL_DECISIONS,
   executiveApprovalLabels,
+  getRecommendationTone,
   lifecycleStatusLabels,
   recommendationLabels,
   reviewWorkflowStatusLabels,
@@ -165,39 +166,103 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         </div>
       </section>
 
-      <div className="detail-grid">
-        <div className="detail-main">
-          {isAdmin ? <BusinessOpinionSection isAdmin={isAdmin} /> : null}
+      <div className="detail-followup-grid">
+        {isAdmin ? (
+          <>
+            <BusinessOpinionSection isAdmin={isAdmin} />
+            <AdminDecisionSection patentDetail={patent} />
+          </>
+        ) : (
+          <BusinessOpinionSection isAdmin={isAdmin} />
+        )}
+      </div>
 
-          <Section
-            title="AI 특허 평가 레포트"
-            description="특허 유지 검토에 참고할 수 있는 AI 생성 평가 레포트입니다."
-          >
+      <div className="detail-main">
+        <Section
+          title="AI 특허 평가 레포트"
+          description="특허 유지 검토에 참고할 수 있는 AI 생성 평가 레포트입니다."
+        >
             <div className="evaluation-header">
               <div>
                 <span>종합 점수</span>
-                <strong>{patent.aiEvaluationReport.totalScore}</strong>
+                <strong>{formatReportDisplayScore(patent.aiEvaluationReport)}</strong>
+                {patent.aiEvaluationReport.totalScoreText ? (
+                  <small>원문 점수 {patent.aiEvaluationReport.totalScoreText}</small>
+                ) : null}
                 <small>작성일 {formatDate(patent.aiEvaluationReport.createdAt)}</small>
               </div>
-              <Badge tone={patent.aiEvaluationReport.recommendation === "MAINTAIN" ? "success" : "warning"}>
+              <Badge tone={getRecommendationTone(patent.aiEvaluationReport.recommendation)}>
                 {recommendationLabels[patent.aiEvaluationReport.recommendation]}
               </Badge>
             </div>
             <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
+            {patent.aiEvaluationReport.keyEvidence ? (
+              <div className="report-callout">
+                <strong>핵심 근거</strong>
+                <p>{patent.aiEvaluationReport.keyEvidence}</p>
+              </div>
+            ) : null}
+            {patent.aiEvaluationReport.judgementGrounds?.length ? (
+              <div className="report-block">
+                <h3>판단 근거</h3>
+                <ul className="clean-list">
+                  {patent.aiEvaluationReport.judgementGrounds.map((ground) => (
+                    <li key={ground}>{ground}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <div className="score-list">
               {patent.aiEvaluationReport.scores.map((score) => (
                 <div className="score-row" key={score.category}>
                   <div>
                     <strong>{evaluationCategoryLabels[score.category]}</strong>
                     <span>{score.evidenceSummary}</span>
+                    {score.evidenceDetails?.length ? (
+                      <ul className="score-detail-list">
+                        {score.evidenceDetails.map((detail) => (
+                          <li key={detail.text}>
+                            {detail.text}
+                            {detail.source ? (
+                              <>
+                                {" "}
+                                <a className="inline-source-link" href={detail.source.url} rel="noreferrer" target="_blank">
+                                  🔗 {detail.source.title}
+                                </a>
+                              </>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                   </div>
                   <b>{score.score ?? "N/A"}</b>
                 </div>
               ))}
             </div>
-          </Section>
+            {patent.aiEvaluationReport.missingInformation.length ? (
+              <div className="report-block">
+                <h3>정보 부족 / 추가 확인 필요</h3>
+                <ul className="clean-list warning-list">
+                  {patent.aiEvaluationReport.missingInformation.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {patent.aiEvaluationReport.businessCheckRequests?.length ? (
+              <div className="report-block">
+                <h3>사업부 확인 요청 사항</h3>
+                <ul className="clean-list">
+                  {patent.aiEvaluationReport.businessCheckRequests.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+        </Section>
 
-          <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
+        <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
             <div className="summary-stack">
               <SummaryBlock title="요약" content={patent.summary.summaryText} />
               <SummaryBlock title="해결 과제" content={patent.summary.problemSolved} />
@@ -211,10 +276,10 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
               </div>
               <SummaryBlock title="권리범위 요약" content={patent.summary.claimsSummary} />
             </div>
-          </Section>
+        </Section>
 
-          {isAdmin ? (
-            <Section title="평가/판단 이력">
+        {isAdmin ? (
+          <Section title="평가/판단 이력">
               <ol className="branch-timeline submission-log-list">
                 {history.map((item) => (
                   <li className="branch-node completed" key={item.historyId}>
@@ -230,46 +295,12 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                 ))}
               </ol>
               {history.length === 0 ? <p className="empty-state">아직 기록된 이력이 없습니다.</p> : null}
-            </Section>
-          ) : null}
-        </div>
+          </Section>
+        ) : null}
 
-        <aside className="detail-side">
-          {isAdmin ? (
-            <Section title="처리 결과" description="유지, 포기, 매각 등 최종 처리 결과를 관리합니다.">
-              {patent.finalDecisionRecord.decision ? (
-                <div className="decision-box">
-                  <Badge tone="success">{executiveApprovalLabels[patent.finalDecisionRecord.decision]}</Badge>
-                  <p>{patent.finalDecisionRecord.reason ?? "최종 처리 결과가 반영되었습니다."}</p>
-                  <small>{patent.finalDecisionRecord.decidedAt?.slice(0, 10)}</small>
-                </div>
-              ) : (
-                <div className="decision-box empty">
-                  <strong>{getAdminActionTitle(patent.reviewWorkflowStatus)}</strong>
-                  <p>{getAdminActionDescription(patent.reviewWorkflowStatus)}</p>
-                  {decisionMessage ? <p className="notice">{decisionMessage}</p> : null}
-                  <Button
-                    disabled={!canApplyExecutiveApproval}
-                    onClick={() => {
-                      setDecisionDraft(getDefaultDecision(patent.businessOpinion.opinion));
-                      setDecisionMessage("");
-                      setIsDecisionModalOpen(true);
-                    }}
-                    type="button"
-                  >
-                    {getAdminActionButtonLabel(patent.reviewWorkflowStatus)}
-                  </Button>
-                </div>
-              )}
-            </Section>
-          ) : null}
-
-          {!isAdmin ? <BusinessOpinionSection isAdmin={isAdmin} /> : null}
-
-          <Link className="back-link" to={role === "ADMIN" ? "/admin/dashboard" : "/business/dashboard"}>
-            대시보드로 돌아가기
-          </Link>
-        </aside>
+        <Link className="back-link detail-back-link" to={role === "ADMIN" ? "/admin/dashboard" : "/business/dashboard"}>
+          대시보드로 돌아가기
+        </Link>
       </div>
 
       {isChecklistOpen ? (
@@ -380,6 +411,37 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
             </Button>
           ) : null}
         </div>
+      </Section>
+    );
+  }
+
+  function AdminDecisionSection({ patentDetail }: { patentDetail: PatentDetail }) {
+    return (
+      <Section title="처리 결과" description="유지, 포기, 매각 등 최종 처리 결과를 관리합니다.">
+        {patentDetail.finalDecisionRecord.decision ? (
+          <div className="decision-box">
+            <Badge tone="success">{executiveApprovalLabels[patentDetail.finalDecisionRecord.decision]}</Badge>
+            <p>{patentDetail.finalDecisionRecord.reason ?? "최종 처리 결과가 반영되었습니다."}</p>
+            <small>{patentDetail.finalDecisionRecord.decidedAt?.slice(0, 10)}</small>
+          </div>
+        ) : (
+          <div className="decision-box empty">
+            <strong>{getAdminActionTitle(patentDetail.reviewWorkflowStatus)}</strong>
+            <p>{getAdminActionDescription(patentDetail.reviewWorkflowStatus)}</p>
+            {decisionMessage ? <p className="notice">{decisionMessage}</p> : null}
+            <Button
+              disabled={!canApplyExecutiveApproval}
+              onClick={() => {
+                setDecisionDraft(getDefaultDecision(patentDetail.businessOpinion.opinion));
+                setDecisionMessage("");
+                setIsDecisionModalOpen(true);
+              }}
+              type="button"
+            >
+              {getAdminActionButtonLabel(patentDetail.reviewWorkflowStatus)}
+            </Button>
+          </div>
+        )}
       </Section>
     );
   }
@@ -779,4 +841,13 @@ function formatShortDate(dateText: string) {
  */
 function formatDate(dateText: string) {
   return dateText.slice(0, 10);
+}
+
+/**
+ * @relatedFR FR-006, FR-008
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @description AI 레포트 종합 점수는 원문 합산 점수가 아니라 평균 점수를 대표값으로 표시한다.
+ */
+function formatReportDisplayScore(report: PatentDetail["aiEvaluationReport"]) {
+  return report.averageScore ?? report.totalScore;
 }
