@@ -4,10 +4,16 @@ import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { Button } from "../../components/common/Button";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { AppLayout } from "../../components/layout/AppLayout";
+import { BusinessReviewMailPreviewModal } from "../../components/mailing/BusinessReviewMailPreviewModal";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { usePatentList } from "../../hooks/usePatentList";
 import { useClientPagination } from "../../hooks/useClientPagination";
+import {
+  createBusinessReviewMailDraft,
+  getDepartmentRecipient,
+  type BusinessReviewMailDraft,
+} from "../../utils/businessReviewMail";
 import {
   REVIEW_WORKFLOW_FILTER_OPTIONS,
   reviewWorkflowStatusLabels,
@@ -70,6 +76,9 @@ export function AdminReviewTargetPage() {
   const [selectedPatentIds, setSelectedPatentIds] = useState<string[]>([]);
   const [actionMessage, setActionMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [mailDrafts, setMailDrafts] = useState<BusinessReviewMailDraft[]>([]);
+  const [activeMailIndex, setActiveMailIndex] = useState(0);
+  const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
   const activeContextConfig = getContextFilterConfig(contextFilterKey);
   const filteredPatents = useMemo(
     () =>
@@ -134,16 +143,48 @@ export function AdminReviewTargetPage() {
     setContextFilterValue("ALL");
   }
 
-  async function handleSendMails() {
+  function handleOpenMailPreview() {
+    const selectedDrafts = selectedPatentIds
+      .map((patentId) => patentList.find((patent) => patent.patentId === patentId))
+      .filter((patent): patent is PatentListItem => Boolean(patent))
+      .filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY")
+      .map(createBusinessReviewMailDraft);
+
+    setMailDrafts(selectedDrafts);
+    setActiveMailIndex(0);
+    setIsSendConfirmOpen(false);
+    setActionMessage(selectedDrafts.length === 0 ? "미리보기할 메일 발송 대기 특허가 없습니다." : "");
+  }
+
+  function handleCloseMailPreview() {
+    if (isProcessing) {
+      return;
+    }
+
+    setMailDrafts([]);
+    setActiveMailIndex(0);
+    setIsSendConfirmOpen(false);
+  }
+
+  function handleUpdateMailDraft(nextDraft: BusinessReviewMailDraft) {
+    setMailDrafts((currentDrafts) =>
+      currentDrafts.map((draft, index) => (index === activeMailIndex ? nextDraft : draft)),
+    );
+  }
+
+  async function handleConfirmSendMails() {
     setIsProcessing(true);
     setActionMessage("");
 
     try {
-      const result = await sendBusinessReviewMails(selectedPatentIds);
+      const result = await sendBusinessReviewMails(mailDrafts.map((draft) => draft.patent.patentId));
       const skippedCount = result.skippedPatentIds?.length ?? 0;
 
       setPatentList(await getPatents());
       setSelectedPatentIds([]);
+      setMailDrafts([]);
+      setActiveMailIndex(0);
+      setIsSendConfirmOpen(false);
       setActionMessage(
         result.updatedCount > 0
           ? `${result.updatedCount}건의 사업부 검토 요청 메일을 발송했습니다.${skippedCount > 0 ? ` ${skippedCount}건은 현재 단계가 맞지 않아 건너뛰었습니다.` : ""}`
@@ -173,8 +214,8 @@ export function AdminReviewTargetPage() {
               <div className="inline-action-group">
                 <span className="selection-count">선택 {selectedPatentIds.length}건</span>
                 {isActionableMailList ? (
-                  <Button disabled={selectedPatentIds.length === 0 || isProcessing} onClick={handleSendMails} type="button">
-                    {isProcessing ? "처리 중" : "메일 발송"}
+                  <Button disabled={selectedPatentIds.length === 0 || isProcessing} onClick={handleOpenMailPreview} type="button">
+                    메일 발송
                   </Button>
                 ) : null}
               </div>
@@ -333,6 +374,19 @@ export function AdminReviewTargetPage() {
           totalPages={totalPages}
         />
       </section>
+      {mailDrafts.length > 0 ? (
+        <BusinessReviewMailPreviewModal
+          activeIndex={activeMailIndex}
+          drafts={mailDrafts}
+          isConfirmOpen={isSendConfirmOpen}
+          isProcessing={isProcessing}
+          onClose={handleCloseMailPreview}
+          onConfirmSend={handleConfirmSendMails}
+          onConfirmToggle={setIsSendConfirmOpen}
+          onDraftChange={handleUpdateMailDraft}
+          onIndexChange={setActiveMailIndex}
+        />
+      ) : null}
     </AppLayout>
   );
 }
@@ -473,20 +527,6 @@ function getReviewTargetSectionTitle(
   }
 
   return scope === "QUARTER" ? "이번 분기 납부 대상" : "전체 검토 단계";
-}
-
-/**
- * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-06
- * @description 메일 발송 대기 목록에서 부서별 담당자 이름과 이메일을 표시한다.
- */
-function getDepartmentRecipient(patent: PatentListItem) {
-  const localPart = patent.departmentId.replace(/^DEPT-/, "").toLowerCase();
-
-  return {
-    email: `${localPart}.owner@syuuk.test`,
-    name: `${patent.departmentName} 담당자`,
-  };
 }
 
 /**

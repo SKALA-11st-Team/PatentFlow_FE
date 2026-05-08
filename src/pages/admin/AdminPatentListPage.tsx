@@ -67,8 +67,8 @@ export function AdminPatentListPage() {
   );
 
   async function handleLookupPatent() {
-    if (!form.managementNumber.trim()) {
-      setLookupMessage("관리번호를 입력한 뒤 검색해 주세요.");
+    if (!form.registrationNumber?.trim()) {
+      setLookupMessage("등록번호를 입력한 뒤 KIPRIS 검색을 실행해 주세요.");
       return;
     }
 
@@ -77,16 +77,17 @@ export function AdminPatentListPage() {
     setSaveMessage("");
 
     try {
-      const result = await lookupPatentBibliographicInfo(form.managementNumber);
+      const result = await lookupPatentBibliographicInfo(form.registrationNumber);
 
       if (!result) {
-        setLookupMessage("KIPRIS와 Google Patents 검색 결과가 없습니다. 확인되는 값만 직접 입력해 주세요.");
+        setLookupMessage("KIPRIS와 Google Patents 검색 결과가 없습니다. 등록번호를 확인하거나 확인되는 값만 직접 입력해 주세요.");
         return;
       }
 
       setForm((currentForm) => ({
         ...currentForm,
         ...result,
+        managementNumber: currentForm.managementNumber,
         businessArea: currentForm.businessArea,
         technologyArea: currentForm.technologyArea,
         productName: currentForm.productName,
@@ -106,7 +107,7 @@ export function AdminPatentListPage() {
     setSaveMessage("");
 
     if (!form.managementNumber.trim() || !form.title.trim()) {
-      setSaveMessage("관리번호 검색 후 특허 기본 정보를 확인해 주세요.");
+      setSaveMessage("관리번호를 직접 입력하고 특허 기본 정보를 확인해 주세요.");
       return;
     }
 
@@ -196,17 +197,17 @@ export function AdminPatentListPage() {
     >
       <Section
         title="신규 특허 등록"
-        description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "관리번호로 KIPRIS를 먼저 조회하고, 결과가 없으면 Google Patents 검색을 백엔드에 요청하는 흐름입니다.")}
+        description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "")}
       >
         <form className="patent-edit-form" onSubmit={handleSavePatent}>
           <div className="external-lookup-row">
             <label>
-              관리번호
+              등록번호
               <input
-                name="managementNumber"
+                name="registrationNumber"
                 onChange={handleFormChange}
-                placeholder="예: P202405001-KR0"
-                value={form.managementNumber}
+                placeholder="예: 10-2932891"
+                value={form.registrationNumber ?? ""}
               />
             </label>
             <Button disabled={isLookingUp} onClick={handleLookupPatent} type="button" variant="secondary">
@@ -226,6 +227,15 @@ export function AdminPatentListPage() {
           </div>
           <div className="patent-form-grid">
             <label>
+              관리번호
+              <input
+                name="managementNumber"
+                onChange={handleFormChange}
+                placeholder="예: P202405001-KR0"
+                value={form.managementNumber}
+              />
+            </label>
+            <label>
               특허명
               <input name="title" readOnly value={form.title} />
             </label>
@@ -244,10 +254,6 @@ export function AdminPatentListPage() {
             <label>
               출원번호
               <input name="applicationNumber" readOnly value={form.applicationNumber} />
-            </label>
-            <label>
-              등록번호
-              <input name="registrationNumber" readOnly value={form.registrationNumber ?? ""} />
             </label>
             <label>
               공동출원인명

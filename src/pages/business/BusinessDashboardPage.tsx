@@ -12,7 +12,9 @@ import type { PatentListItem } from "../../types/patent";
 import {
   RECOMMENDATION_FILTER_OPTIONS,
   businessOpinionLabels,
+  getBusinessOpinionTone,
   getRecommendationsByFilter,
+  getRecommendationTone,
   recommendationLabels,
   type RecommendationFilter,
 } from "../../constants/status";
@@ -38,7 +40,7 @@ export function BusinessDashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const { errorMessage, isLoading, patents } = usePatentList();
   const assigned = useMemo(
-    () => patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER"),
+    () => patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE"),
     [patents],
   );
   const pending = assigned.filter((patent) => !patent.businessOpinionDecision);
@@ -71,7 +73,7 @@ export function BusinessDashboardPage() {
         />
         <div className="kpi-grid business-kpi-grid">
           <KpiCard
-            label="이번 분기 제출 대상"
+            label="제출 대상 특허"
             value={assigned.length}
             helper="연차료 검토 요청"
             tone="primary"
@@ -165,13 +167,13 @@ export function BusinessDashboardPage() {
                   </td>
                   <td>{formatOptionalTableText(patent.productName)}</td>
                   <td>
-                    <Badge tone={patent.currentRecommendation === "MAINTAIN" ? "success" : "warning"}>
+                    <Badge tone={getRecommendationTone(patent.currentRecommendation)}>
                       {recommendationLabels[patent.currentRecommendation]}
                     </Badge>
                   </td>
                   <td>
                     {patent.businessOpinionDecision ? (
-                      <Badge tone={patent.businessOpinionDecision === "MAINTAIN" ? "success" : "warning"}>
+                      <Badge tone={getBusinessOpinionTone(patent.businessOpinionDecision)}>
                         {businessOpinionLabels[patent.businessOpinionDecision]}
                       </Badge>
                     ) : (

@@ -263,15 +263,15 @@ export async function applyExecutiveApprovalDecision(
 /**
  * @relatedFR FR-003
  * @relatedUI UI-LEGAL-04
- * @description 관리번호로 KIPRIS 우선 검색 후 결과가 없으면 Google Patents 검색을 요청한다.
+ * @description 등록번호로 KIPRIS 우선 검색 후 결과가 없으면 Google Patents 검색을 요청한다.
  */
-export async function lookupPatentBibliographicInfo(managementNumber: string): Promise<PatentBibliographicInfo | null> {
-  const normalizedManagementNumber = managementNumber.trim();
+export async function lookupPatentBibliographicInfo(registrationNumber: string): Promise<PatentBibliographicInfo | null> {
+  const normalizedRegistrationNumber = registrationNumber.trim();
 
   if (isBackendApiEnabled()) {
     const response = await requestJson<ApiEnvelope<BackendPatentBibliographicInfo | null>>(
       `/patents/external-lookup${toQueryString({
-        managementNumber: normalizedManagementNumber,
+        registrationNumber: normalizedRegistrationNumber,
         sourcePriority: "KIPRIS,GOOGLE_PATENTS",
       })}`,
     );
@@ -279,7 +279,7 @@ export async function lookupPatentBibliographicInfo(managementNumber: string): P
     return response.data ? normalizeBibliographicInfo(response.data) : null;
   }
 
-  return lookupMockPatentBibliographicInfo(normalizedManagementNumber);
+  return lookupMockPatentBibliographicInfo(normalizedRegistrationNumber);
 }
 
 /**
@@ -746,15 +746,12 @@ function getFilteredMockPatents(query: PatentListQuery) {
 /**
  * @relatedFR FR-003
  * @relatedUI UI-LEGAL-04
- * @description docs/skax_patents_list.md 기반 mock 데이터에서 KIPRIS 검색 결과를 흉내낸다.
+ * @description docs/skax_patents_list.md 기반 mock 데이터에서 등록번호 KIPRIS 검색 결과를 흉내낸다.
  */
-function lookupMockPatentBibliographicInfo(managementNumber: string): PatentBibliographicInfo | null {
-  const keyword = managementNumber.toLowerCase();
+function lookupMockPatentBibliographicInfo(registrationNumber: string): PatentBibliographicInfo | null {
+  const keyword = registrationNumber.toLowerCase();
   const matchedPatent = skaxPatentRows.find(
-    (patent) =>
-      patent.managementNumber.toLowerCase() === keyword ||
-      patent.applicationNumber.toLowerCase() === keyword ||
-      patent.registrationNumber?.toLowerCase() === keyword,
+    (patent) => patent.registrationNumber?.toLowerCase() === keyword,
   );
 
   if (!matchedPatent) {

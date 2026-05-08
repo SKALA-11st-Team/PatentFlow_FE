@@ -1,3 +1,8 @@
+/**
+ * @relatedFR FR-001, FR-005, FR-006, FR-007, FR-008, FR-009, FR-011, FR-012, FR-013, FR-017
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-05, UI-LEGAL-07, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
+ * @description 특허 목록, 상세, AI 평가 레포트, 사업부 의견, 최종 판단 화면 모델 타입
+ */
 import type {
   BusinessOpinionDecision,
   EvaluationCategory,
@@ -59,6 +64,15 @@ export interface EvaluationScore {
   category: EvaluationCategory;
   score: number | null;
   evidenceSummary: string;
+  evidenceDetails?: EvaluationEvidenceDetail[];
+}
+
+export interface EvaluationEvidenceDetail {
+  text: string;
+  source?: {
+    title: string;
+    url: string;
+  };
 }
 
 export interface AiEvaluationReport {
@@ -67,8 +81,17 @@ export interface AiEvaluationReport {
   recommendation: Recommendation;
   recommendationText: string;
   totalScore: number;
+  totalScoreText?: string;
+  averageScore?: number;
+  keyEvidence?: string;
+  judgementGrounds?: string[];
   scores: EvaluationScore[];
   missingInformation: string[];
+  businessCheckRequests?: string[];
+  externalSources?: {
+    title: string;
+    url: string;
+  }[];
 }
 
 export interface FinalDecisionRecord {

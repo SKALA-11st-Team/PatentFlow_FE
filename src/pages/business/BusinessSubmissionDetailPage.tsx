@@ -17,6 +17,8 @@ import type { PatentDetail } from "../../types/patent";
 import {
   businessOpinionLabels,
   evaluationCategoryLabels,
+  getBusinessOpinionTone,
+  getRecommendationTone,
   legalActionResultLabels,
   recommendationLabels,
 } from "../../constants/status";
@@ -183,7 +185,7 @@ export function BusinessSubmissionDetailPage() {
                     </div>
                   </div>
                   <div className="submission-version-side">
-                    <Badge tone={submission.opinion === "MAINTAIN" ? "success" : "warning"}>
+                    <Badge tone={getBusinessOpinionTone(submission.opinion)}>
                       체크리스트 {submission.checklistTotal}점
                     </Badge>
                     <div className="inline-action-group">
@@ -304,7 +306,7 @@ function AiReportModal({
             <strong>{submission.aiTotalScore}</strong>
             <small>작성일 {formatDate(submission.aiReportCreatedAt)}</small>
           </div>
-          <Badge tone={submission.aiRecommendation === "MAINTAIN" ? "success" : "warning"}>
+          <Badge tone={getRecommendationTone(submission.aiRecommendation)}>
             {recommendationLabels[submission.aiRecommendation]}
           </Badge>
         </div>

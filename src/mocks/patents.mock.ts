@@ -1,6 +1,12 @@
+/**
+ * @relatedFR FR-001, FR-002, FR-005, FR-006, FR-007, FR-008, FR-009, FR-011, FR-012, FR-013, FR-017
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-05, UI-LEGAL-07, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
+ * @description docs 기반 특허 메타데이터에 발표용 AI 평가 레포트, workflow, 의견/판단 mock 데이터를 결합한다.
+ */
 import type {
   AiEvaluationReport,
   BusinessOpinionDecision,
+  EvaluationEvidenceDetail,
   EvaluationCategory,
   ExecutiveApprovalDecision,
   LegalActionResult,
@@ -11,6 +17,7 @@ import type {
   ReviewWorkflowStatus,
 } from "../types/patent";
 import { getNextAnnualFeeDueDate } from "../utils/annualFee";
+import { aiReportsByManagementNumber, patentSummariesByManagementNumber } from "./aiReports.mock";
 import { skaxPatentRows, type SkaxPatentRow } from "./skaxPatents.raw";
 
 // Patent metadata is based on docs/skax_patents_list.md.
@@ -20,8 +27,9 @@ const reviewTargetWorkflowCycle: ReviewWorkflowStatus[] = [
   "REVIEW_QUARTER_STARTED",
   "REPORT_GENERATED",
   "MAIL_READY",
-  "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
+  "WAITING_EXECUTIVE_APPROVAL",
+  "APPROVAL_COMPLETED",
   "LEGAL_ACTION_RECORDED",
 ];
 
@@ -40,34 +48,99 @@ const businessAreaDepartmentMap: Record<string, { id: string; name: string }> = 
 const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
   "P202405001-KR0": {
     evaluationId: "EVAL-P202405001-KR0",
-    createdAt: "2026-05-01T09:00:00+09:00",
-    recommendation: "MAINTAIN",
+    createdAt: "2026-05-08T09:00:00+09:00",
+    recommendation: "REVIEW_AGAIN",
     recommendationText:
-      "로보어드바이저 자산배분 엔진에 직접 연결 가능한 강화학습 기반 예측 기술로, 현재 제품 적용 가능성과 잔여 권리기간을 고려할 때 유지 권고가 타당합니다.",
-    totalScore: 86,
+      '종합적으로 권리·기술·시장성은 대체로 긍정적이나, 포트폴리오 연계·구체적 구현·상용화 성과 등 핵심 정보의 부재로 인해 추가 확인이 필요하므로 "조건부 유지" 권고입니다.',
+    totalScore: 359,
+    totalScoreText: "359/500점, 평균 71.8점",
+    averageScore: 71.8,
+    keyEvidence:
+      "권리성·기술성은 액터-크리틱 구조와 기간별 리워드 가중결합의 구체적 절차가 기재되어 비교적 명확한 보호 가능성을 보이며, 시장 흐름은 강화학습 기반 자산배분과 로보어드바이저 수요 확대를 뒷받침합니다. 다만 종속항 전문·심사이력·구체적 가중비율 산식·실증 데이터·내부 적용 계획 등 핵심 정보의 부재로 상용화 가능성·경제성 판단에는 추가 확인이 필요합니다.",
+    judgementGrounds: [
+      "권리·기술 측면에서 발명의 개념과 구성(액터-크리틱 복수 크리틱, 운용기간별 리워드 반영비율 조정)은 명시되어 있어 특허의 보호 대상과 적용 아이디어가 분명합니다. 다만 종속항·심사 보정 내역·가중비율 산식 등 세부 구현 정보 부재로 권리범위 해석과 침해·회피 가능성 평가에는 불확실성이 존재합니다.",
+      "기술적으로는 설계 아이디어가 실무 적용 가능성을 제시하나, 학습데이터·하이퍼파라미터·백테스트 같은 실증 근거가 없어 성능 우위·운영비용·리스크(예: 레짐 전환 시 일반화성)를 확정하기 어렵습니다.",
+      "시장·사업 관점에서는 로보어드바이저·자산배분 자동화에 대한 수요와 강화학습 관심이 확인되어 상업화 기회가 존재합니다. 다만 외부 근거는 산업 흐름을 보여줄 뿐 본 발명의 특정 가중조정 방식의 채택·성과를 직접 입증하지 못하므로 실제 채택 가능성은 추가 검증이 필요합니다.",
+      "경제성 관점에서는 장기간의 보호기간(2044년까지)과 업계 수요 확대가 유지의 실익을 뒷받침합니다. 그러나 내부 적용 계획·수익모델·연차료 등 정량적 경제성 자료 부재로 비용 대비 기대가 불명확합니다.",
+    ],
     scores: [
       createScore(
         "RIGHTS",
-        82,
-        "단독 출원이며 자산배분 시스템과 방법 청구항이 함께 구성되어 서비스 구현 방어 범위가 비교적 명확합니다.",
+        74,
+        "점수/등급: 74 / B",
+        [
+          { text: "대표 청구항은 액터-크리틱 구조와 크리틱의 상품별·자산군별 평균수익률 및 변동성 예측을 통한 리워드 제공, 운용기간에 따른 리워드 가중결합 절차를 구체적으로 기재하고 있어 권리의 기술적 구성과 보호대상이 비교적 명확합니다." },
+          { text: "시스템 청구항(등록된 독립항)과 방법 청구항을 모두 확보하고 있어 실시형태별 권리 확보에 유리한 측면이 있습니다." },
+          { text: "청구항 수가 총 6개(독립항 2개, 종속항 4개)로 상대적으로 축소되어 있고 심사 과정에서 삭제된 청구항 기록이 있어(삭제 내역 상세 불명) 권리범위가 일부 좁혀졌을 가능성이 있습니다." },
+          { text: "가중비율 산정의 구체적 수식·파라미터가 청구항에 상세하지 않아 권리범위 해석상 모호성이 발생할 위험이 있습니다." },
+          { text: "종속항 전문과 심사이력의 상세 내용이 제공되지 않아 포트폴리오 차원의 권리 강화 가능성 평가 및 보강 방안 도출에 추가 확인이 필요합니다." },
+        ],
       ),
       createScore(
         "TECHNOLOGY",
-        88,
-        "상품 트렌드 예측과 강화학습 기반 의사결정을 결합해 금융 AI 제품의 핵심 알고리즘 차별화 근거로 활용할 수 있습니다.",
+        75,
+        "점수/등급: 75 / B",
+        [
+          { text: "문제정의(예측오류에 따른 노이즈 및 기간별 트렌드 반영 미흡)와 해결 아이디어(복수 크리틱의 지도학습 예측값을 운용기간에 따라 가중결합)는 기술적 논리·구성이 명확하게 제시되어 기술적 구체성이 높습니다." },
+          { text: "복수 크리틱, 운용기간별 대표값 산출, 리워드 반영비율의 반복적 최적화 같은 구성은 실제 적용 가능성을 지원하는 설계 요소로 보입니다." },
+          { text: "구현 관련(학습데이터, 입력 피처, 모델 아키텍처, 하이퍼파라미터 등) 세부 정보가 제공되지 않아 성능 우위나 운영 특성(추론 비용·실시간성 등)을 확정하기 어려워 추가 검증이 필요합니다。" },
+          { text: "크리틱 예측 품질에 따른 액터 성능 의존성, 레짐 전환 등 시장 변화에 대한 일반화·강건성 불확실성 등 운영 리스크가 존재합니다。" },
+          { text: "백테스트·실증 자료 부재로 실무 적용을 위한 튜닝 노력(파라미터·보상 설계) 범위와 비용을 추정하기 어려워 파일럿 검증이 적절합니다。" },
+        ],
       ),
       createScore(
         "MARKET",
-        84,
-        "로보어드바이저와 금융 상품 추천 시장에서 개인화 투자, 자동 리밸런싱 수요가 지속되어 사업 활용성이 높습니다.",
+        75,
+        "점수/등급: 75 / B",
+        [
+          {
+            text: "강화학습 기반 자산배분이 백테스트에서 유의한 위험조정 성과와 동적 자산비중 조정 능력을 보였다는 시장 리포트는 기술의 업계 적용 가능성을 지지합니다.",
+            source: {
+              title: "자료: AI 강화학습, 자산관리 '새 지평', 2026-03-10",
+              url: "http://www.ftoday.co.kr/news/articleView.html?idxno=356248",
+            },
+          },
+          {
+            text: "로보어드바이저·ISA 등 자산관리 플랫폼에서 자동화된 자산배분 서비스의 고객자산 증가 사례는 관련 기술 수요의 상업적 기회를 시사합니다. 다만 해당 보도는 플랫폼 확대를 보여줄 뿐 본 발명의 특정 가중조정 방식의 채택·성과를 직접 입증하지 않습니다.",
+            source: {
+              title: "자료: \"3개월에 5조 '쑥'\\\"…미래에셋증권, ISA 고객자산 15조 돌파, 2026-05-07",
+              url: "https://www.dailian.co.kr/news/view/1641648/?sc=Naver",
+            },
+          },
+          {
+            text: "금융권의 디지털·자산관리·투자 플랫폼 고도화 및 포트폴리오 구조 설계 중심 전략 전환은 대상 특허가 제공하는 기간별 리워드 반영 방식의 시장 적합성을 뒷받침합니다. 다만 산업 동향 근거는 전반적 수요를 보여주는 참고자료로서 대상 특허의 직접적 도입 사례를 입증하지는 않습니다.",
+            source: {
+              title: "자료: [서울타임즈뉴스] 금융·증권업계, 디지털·포용·자산관리 전략 강화, 2026-03-19",
+              url: "https://www.seoultimes.news/news/article.html?no=2000093875",
+            },
+          },
+        ],
       ),
       createScore(
         "LIFECYCLE_ECONOMICS",
-        90,
-        "등록 초기 특허로 잔여 보호기간이 길고 유지 비용 대비 제품/제안서 차별화 효과가 큽니다.",
+        70,
+        "점수/등급: 70 / B",
+        [
+          { text: "등록일(2026-02-25) 기준으로 예상 소멸일(2044-08-28)까지 장기간의 보호기간을 보유하고 있어 장기 유지 시 가치 실현의 시간이 충분합니다." },
+          { text: "시장 측면에서 로보어드바이저·강화학습 기반 자산배분 수요 확대는 경제적 수익화 가능성을 지지하나, 본 특허의 구체적 기능 채택 사례·라이선스·내부 적용 계획이 부재하여 실제 수익화 가능성은 불확실합니다." },
+          { text: "특허의 권리범위가 상대적으로 축소된 점과 알고리즘적 기능이 플랫폼에 통합될 경우 개별 특허의 상업적 가치가 희석될 가능성은 경제성 리스크로 작용합니다." },
+          { text: "연차료·유지비용 추정치, 예상 ROI·내부 매출 연계 자료가 없으므로 비용 대비 기대수익 분석을 수행할 수 없어 보수적 유지 판단이 필요합니다。" },
+        ],
       ),
     ],
-    missingInformation: ["실제 서비스 적용 모듈", "최근 1년 제안서 활용 여부"],
+    missingInformation: [
+      "종속항 전문",
+      "심사 보정 이력 상세",
+      "가중비율 산식·파라미터",
+      "백테스트·실증 데이터",
+      "내부 적용 계획",
+      "연차료·유지비용 추정치",
+    ],
+    businessCheckRequests: [
+      "대상 특허 기술을 현재 운영 중인 로보어드바이저 또는 내부 자산배분 프로토타입에 적용한 파일럿·테스트 사례(있다면 백테스트·실거래 성과 지표 포함)를 확인 후 최종 검토가 필요합니다。",
+      "해당 기술을 적용했을 때 예상되는 구현 난이도(데이터 확보·전처리 요구사항, 학습·추론 비용, 운영 인력 소요)와 예상 연차료·유지비용을 비교한 비용·편익 관점의 평가를 확인 후 최종 검토가 필요합니다。",
+      "동일 포트폴리오 내 유사·보완 특허의 존재 여부 및 각 특허와의 기능적 중복·보완 관계(포트폴리오 차원의 활용계획 포함)를 확인 후 최종 검토가 필요합니다。",
+    ],
   },
   "P202307002-KR0": {
     evaluationId: "EVAL-P202307002-KR0",
@@ -197,8 +270,10 @@ export const patentHistory: Record<string, PatentHistoryItem[]> = Object.fromEnt
 
 function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
   const department = getDepartment(row.businessArea);
-  const reviewWorkflowStatus = getMockReviewWorkflowStatus(index);
-  const recommendation = getRecommendation(row, reviewWorkflowStatus, index);
+  const generatedReport = aiReportsByManagementNumber[row.managementNumber];
+  const generatedSummary = patentSummariesByManagementNumber[row.managementNumber];
+  const reviewWorkflowStatus = getMockReviewWorkflowStatus(index, Boolean(generatedReport));
+  const recommendation = generatedReport?.recommendation ?? getRecommendation(row, reviewWorkflowStatus, index);
   const businessOpinionDecision = getBusinessOpinion(reviewWorkflowStatus, recommendation);
   const legalActionResult = getLegalActionResult(reviewWorkflowStatus, recommendation);
   const executiveApprovalDecision = getExecutiveApprovalDecision(legalActionResult);
@@ -235,7 +310,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
     businessOpinionDecision,
     executiveApprovalDecision,
     legalActionResult,
-    summary: {
+    summary: generatedSummary ?? {
       summaryText: `${title}은(는) ${businessArea} 분야의 ${technologyArea} 특허입니다. ${productName ? `관련 제품은 ${productName}입니다.` : "관련 제품 정보는 비어 있습니다."}`,
       problemSolved: `${technologyArea} 영역에서 ${productName || "관련 제품"}의 운영, 성능, 관리 효율을 높이기 위한 문제를 다룹니다.`,
       coreTechnicalPoints: [
@@ -294,13 +369,17 @@ function normalizeDisplayText(value: string) {
     .trim();
 }
 
-function getMockReviewWorkflowStatus(index: number): ReviewWorkflowStatus {
-  if (index === 0 || index % 4 !== 0) {
+function getMockReviewWorkflowStatus(index: number, hasGeneratedReport = false): ReviewWorkflowStatus {
+  if (hasGeneratedReport) {
+    return "WAITING_BUSINESS_RESPONSE";
+  }
+
+  if (index % 4 !== 0) {
     return "NOT_IN_REVIEW_QUARTER";
   }
 
   const reviewTargetIndex = Math.floor(index / 4) - 1;
-  return reviewTargetWorkflowCycle[reviewTargetIndex % reviewTargetWorkflowCycle.length];
+  return reviewTargetWorkflowCycle[Math.max(0, reviewTargetIndex) % reviewTargetWorkflowCycle.length];
 }
 
 /**
@@ -426,6 +505,12 @@ function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRo
  * @description 발표에서 바로 보여줄 수 있는 대표 특허의 작성 완료 AI 평가 레포트를 반환한다.
  */
 function getAiEvaluationReport(row: SkaxPatentRow, recommendation: Recommendation, index: number): AiEvaluationReport {
+  const generatedReport = aiReportsByManagementNumber[row.managementNumber];
+
+  if (generatedReport) {
+    return generatedReport;
+  }
+
   const demoReport = demoAiEvaluationReports[row.managementNumber];
 
   if (demoReport) {
@@ -493,8 +578,13 @@ function getScores(row: SkaxPatentRow, recommendation: Recommendation, index: nu
   ];
 }
 
-function createScore(category: EvaluationCategory, score: number | null, evidenceSummary: string) {
-  return { category, score, evidenceSummary };
+function createScore(
+  category: EvaluationCategory,
+  score: number | null,
+  evidenceSummary: string,
+  evidenceDetails?: EvaluationEvidenceDetail[],
+) {
+  return { category, evidenceDetails, evidenceSummary, score };
 }
 
 function getLegalActionText(result: LegalActionResult) {
