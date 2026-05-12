@@ -11,7 +11,6 @@ import type {
   ExecutiveApprovalDecision,
   LegalActionResult,
   PatentDetail,
-  PatentHistoryItem,
   PatentListItem,
   Recommendation,
   ReviewWorkflowStatus,
@@ -264,10 +263,6 @@ export const patents: PatentListItem[] = patentDetails.map(
   }),
 );
 
-export const patentHistory: Record<string, PatentHistoryItem[]> = Object.fromEntries(
-  patentDetails.map((patent) => [patent.patentId, createHistory(patent)]),
-);
-
 function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
   const department = getDepartment(row.businessArea);
   const generatedReport = aiReportsByManagementNumber[row.managementNumber];
@@ -277,7 +272,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
   const businessOpinionDecision = getBusinessOpinion(reviewWorkflowStatus, recommendation);
   const legalActionResult = getLegalActionResult(reviewWorkflowStatus, recommendation);
   const executiveApprovalDecision = getExecutiveApprovalDecision(legalActionResult);
-  const annualFeeDueDate = getMockDeadlineDate(row.registrationDate, reviewWorkflowStatus, index);
+  const annualFeeDueDate = getMockDeadlineDate(row.registrationDate);
   const title = normalizeDisplayText(row.title || row.draftTitle || row.managementNumber);
   const draftTitle = normalizeDisplayText(row.draftTitle || row.title || row.managementNumber);
   const businessArea = normalizeDisplayText(row.businessArea || "N/A");
@@ -385,17 +380,10 @@ function getMockReviewWorkflowStatus(index: number, hasGeneratedReport = false):
 /**
  * @relatedFR FR-001, FR-009
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-BUS-01, UI-BUS-02
- * @description 검토 workflow 대상 특허의 데모 마감 기한은 중간발표 시점에 가까운 날짜로 보정한다.
+ * @description mock 특허의 마감 기한을 등록일 기준 다음 연차료 납부일로 계산한다.
  */
-function getMockDeadlineDate(registrationDate: string, status: ReviewWorkflowStatus, index: number) {
-  if (status === "NOT_IN_REVIEW_QUARTER") {
-    return getNextAnnualFeeDueDate(registrationDate);
-  }
-
-  const day = 8 + ((Math.floor(index / 4) * 3) % 45);
-  const deadline = new Date(2026, 4, day);
-
-  return formatMockDate(deadline);
+function getMockDeadlineDate(registrationDate: string) {
+  return getNextAnnualFeeDueDate(registrationDate);
 }
 
 function getDepartment(businessArea: string) {
@@ -595,51 +583,4 @@ function getLegalActionText(result: LegalActionResult) {
   };
 
   return textMap[result];
-}
-
-function formatMockDate(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-}
-
-function createHistory(patent: PatentDetail): PatentHistoryItem[] {
-  const history: PatentHistoryItem[] = [];
-
-  if (patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER") {
-    history.push({
-      historyId: `HIST-${patent.patentId}-REPORT`,
-      type: "AI_EVALUATION_CREATED",
-      title: "AI 특허 평가 레포트 생성",
-      description: "이번 분기 연차료 검토를 위한 평가 레포트가 생성되었습니다.",
-      actorName: "AI Evaluation Service",
-      createdAt: "2026-05-01T09:00:00+09:00",
-    });
-  }
-
-  if (patent.businessOpinionDecision) {
-    history.push({
-      historyId: `HIST-${patent.patentId}-OPINION`,
-      type: "BUSINESS_OPINION_SUBMITTED",
-      title: "사업부 의견 제출",
-      description: `${patent.departmentName}에서 ${patent.businessOpinionDecision === "MAINTAIN" ? "유지" : "포기"} 의견을 제출했습니다.`,
-      actorName: patent.departmentName,
-      createdAt: "2026-05-01T14:20:00+09:00",
-    });
-  }
-
-  if (patent.legalActionResult) {
-    history.push({
-      historyId: `HIST-${patent.patentId}-ACTION`,
-      type: "HUMAN_DECISION_UPDATED",
-      title: "법적 액션 결과 입력",
-      description: `${getLegalActionText(patent.legalActionResult)} 결과가 입력되었습니다.`,
-      actorName: "관리자",
-      createdAt: "2026-05-01T17:30:00+09:00",
-    });
-  }
-
-  return history;
 }

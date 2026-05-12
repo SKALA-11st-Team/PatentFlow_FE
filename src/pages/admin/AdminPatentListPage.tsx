@@ -49,6 +49,7 @@ export function AdminPatentListPage() {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isManualMetadataEditEnabled, setIsManualMetadataEditEnabled] = useState(false);
   const listedPatents = useMemo(
     () => getEditablePatentRows(patentList, keyword, businessAreaFilter, workflowFilter, sort),
     [businessAreaFilter, keyword, patentList, sort, workflowFilter],
@@ -137,6 +138,7 @@ export function AdminPatentListPage() {
         return currentList.map((patent) => (patent.patentId === nextPatent.patentId ? nextPatent : patent));
       });
       setForm(emptyPatentForm);
+      setIsManualMetadataEditEnabled(false);
       setSaveMessage("특허가 등록되었습니다.");
     } finally {
       setIsSaving(false);
@@ -198,6 +200,17 @@ export function AdminPatentListPage() {
       <Section
         title="신규 특허 등록"
         description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "")}
+        actions={
+          <label className="metadata-switch">
+            <span>특허 기본정보 수동 입력</span>
+            <input
+              checked={isManualMetadataEditEnabled}
+              onChange={(event) => setIsManualMetadataEditEnabled(event.target.checked)}
+              type="checkbox"
+            />
+            <i aria-hidden="true" />
+          </label>
+        }
       >
         <form className="patent-edit-form" onSubmit={handleSavePatent}>
           <div className="external-lookup-row">
@@ -210,17 +223,22 @@ export function AdminPatentListPage() {
                 value={form.registrationNumber ?? ""}
               />
             </label>
-            <Button disabled={isLookingUp} onClick={handleLookupPatent} type="button" variant="secondary">
+            <Button disabled={isLookingUp} onClick={handleLookupPatent} type="button">
               {isLookingUp ? "검색 중" : "KIPRIS 검색"}
             </Button>
           </div>
           {lookupMessage ? <p className="notice patent-form-notice">{lookupMessage}</p> : null}
-          <div className="context-suggestion-row">
+          <div className="patent-inline-action-row">
             <div>
               <strong>관련 분야 AI 추천</strong>
               <span>기존 특허의 관련사업/관련기술 분야 중 가장 가까운 값을 추천합니다.</span>
             </div>
-            <Button disabled={isSuggestingContext} onClick={handleSuggestContextFields} type="button" variant="secondary">
+            <Button
+              className="btn-small btn-sk-orange"
+              disabled={isSuggestingContext}
+              onClick={handleSuggestContextFields}
+              type="button"
+            >
               <span aria-hidden="true" className="ai-sparkle-icon" />
               {isSuggestingContext ? "추천 중" : "AI 추천"}
             </Button>
@@ -237,33 +255,67 @@ export function AdminPatentListPage() {
             </label>
             <label>
               특허명
-              <input name="title" readOnly value={form.title} />
+              <input
+                name="title"
+                onChange={handleFormChange}
+                readOnly={!isManualMetadataEditEnabled}
+                value={form.title}
+              />
             </label>
             <label>
               출원국
-              <input name="country" readOnly value={form.country} />
+              <input
+                name="country"
+                onChange={handleFormChange}
+                readOnly={!isManualMetadataEditEnabled}
+                value={form.country}
+              />
             </label>
             <label>
               출원일
-              <input name="applicationDate" readOnly type="date" value={form.applicationDate} />
+              <input
+                name="applicationDate"
+                onChange={handleFormChange}
+                readOnly={!isManualMetadataEditEnabled}
+                type="date"
+                value={form.applicationDate}
+              />
             </label>
             <label>
               등록일
-              <input name="registrationDate" readOnly type="date" value={form.registrationDate} />
+              <input
+                name="registrationDate"
+                onChange={handleFormChange}
+                readOnly={!isManualMetadataEditEnabled}
+                type="date"
+                value={form.registrationDate}
+              />
             </label>
             <label>
               출원번호
-              <input name="applicationNumber" readOnly value={form.applicationNumber} />
+              <input
+                name="applicationNumber"
+                onChange={handleFormChange}
+                readOnly={!isManualMetadataEditEnabled}
+                value={form.applicationNumber}
+              />
             </label>
             <label>
               공동출원인명
-              <input name="coApplicants" placeholder="없으면 비워둠" readOnly value={form.coApplicants} />
+              <input
+                name="coApplicants"
+                onChange={handleFormChange}
+                placeholder="없으면 비워둠"
+                readOnly={!isManualMetadataEditEnabled}
+                value={form.coApplicants}
+              />
             </label>
             <label>
               예상 소멸일
               <input
                 name="expectedExpirationDate"
-                readOnly
+                onChange={handleFormChange}
+                readOnly={!isManualMetadataEditEnabled}
                 type="date"
                 value={form.expectedExpirationDate}
               />
