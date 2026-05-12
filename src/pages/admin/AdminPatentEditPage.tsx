@@ -205,12 +205,7 @@ export function AdminPatentEditPage() {
             </label>
             <label>
               예상 소멸일
-              <input
-                name="expectedExpirationDate"
-                readOnly
-                type="date"
-                value={form.expectedExpirationDate}
-              />
+              <input name="expectedExpirationDate" readOnly type="date" value={form.expectedExpirationDate} />
             </label>
             <label>
               관련사업 분야

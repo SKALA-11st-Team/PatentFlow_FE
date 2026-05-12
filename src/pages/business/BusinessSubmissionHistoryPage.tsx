@@ -8,7 +8,7 @@ import { getBusinessSubmissionVersions, getLatestBusinessSubmission } from "../.
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
 import { businessOpinionLabels, getBusinessOpinionTone, reviewWorkflowStatusLabels } from "../../constants/status";
-import type { BusinessSubmissionVersion } from "../../mocks/businessSubmissions.mock";
+import type { BusinessSubmissionVersion } from "../../types/businessSubmission";
 
 /**
  * @relatedFR FR-009, FR-013
@@ -55,7 +55,7 @@ export function BusinessSubmissionHistoryPage() {
     >
       <Section
         title="특허별 의견 제출 이력"
-        description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "행을 선택하면 해당 특허의 제출 의견, 당시 AI 레포트, 평가 이력을 확인합니다.")}
+        description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "행을 선택하면 특허 상세에서 제출 의견, 당시 AI 레포트, 평가 이력을 확인합니다.")}
       >
         <div className="table-wrap">
           <table>
@@ -79,11 +79,11 @@ export function BusinessSubmissionHistoryPage() {
                   <tr
                     className="clickable-row"
                     key={patent.patentId}
-                    onClick={() => navigate(`/business/submissions/${patent.patentId}`)}
+                    onClick={() => navigate(`/business/patents/${patent.patentId}`)}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        navigate(`/business/submissions/${patent.patentId}`);
+                        navigate(`/business/patents/${patent.patentId}`);
                       }
                     }}
                     role="link"

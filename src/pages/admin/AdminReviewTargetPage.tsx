@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { getDepartmentRecipientMappings } from "../../api/mailing";
 import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { Button } from "../../components/common/Button";
 import { PaginationControls } from "../../components/common/PaginationControls";
@@ -10,8 +11,9 @@ import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge
 import { usePatentList } from "../../hooks/usePatentList";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import {
-  createBusinessReviewMailDraft,
+  createGroupedBusinessReviewMailDrafts,
   getDepartmentRecipient,
+  toBusinessReviewMailSendDraft,
   type BusinessReviewMailDraft,
 } from "../../utils/businessReviewMail";
 import {
@@ -20,6 +22,7 @@ import {
   type ReviewWorkflowFilter,
 } from "../../constants/status";
 import type { PatentListItem, ReviewWorkflowStatus } from "../../types/patent";
+import type { DepartmentRecipientMapping } from "../../types/mailing";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
 type ReviewTargetScope = "ALL" | "QUARTER";
@@ -77,6 +80,7 @@ export function AdminReviewTargetPage() {
   const [actionMessage, setActionMessage] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [mailDrafts, setMailDrafts] = useState<BusinessReviewMailDraft[]>([]);
+  const [recipientMappings, setRecipientMappings] = useState<DepartmentRecipientMapping[]>([]);
   const [activeMailIndex, setActiveMailIndex] = useState(0);
   const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
   const activeContextConfig = getContextFilterConfig(contextFilterKey);
@@ -126,6 +130,30 @@ export function AdminReviewTargetPage() {
     setSelectedPatentIds((currentIds) => currentIds.filter((patentId) => selectablePatentIds.includes(patentId)));
   }, [selectablePatentIds]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadRecipientMappings() {
+      try {
+        const nextMappings = await getDepartmentRecipientMappings();
+
+        if (isMounted) {
+          setRecipientMappings(nextMappings);
+        }
+      } catch {
+        if (isMounted) {
+          setRecipientMappings([]);
+        }
+      }
+    }
+
+    loadRecipientMappings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   function handleTogglePatentSelection(patentId: string) {
     setSelectedPatentIds((currentIds) =>
       currentIds.includes(patentId)
@@ -144,11 +172,11 @@ export function AdminReviewTargetPage() {
   }
 
   function handleOpenMailPreview() {
-    const selectedDrafts = selectedPatentIds
+    const selectedPatents = selectedPatentIds
       .map((patentId) => patentList.find((patent) => patent.patentId === patentId))
       .filter((patent): patent is PatentListItem => Boolean(patent))
-      .filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY")
-      .map(createBusinessReviewMailDraft);
+      .filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
+    const selectedDrafts = createGroupedBusinessReviewMailDrafts(selectedPatents, recipientMappings);
 
     setMailDrafts(selectedDrafts);
     setActiveMailIndex(0);
@@ -177,7 +205,7 @@ export function AdminReviewTargetPage() {
     setActionMessage("");
 
     try {
-      const result = await sendBusinessReviewMails(mailDrafts.map((draft) => draft.patent.patentId));
+      const result = await sendBusinessReviewMails(mailDrafts.map(toBusinessReviewMailSendDraft));
       const skippedCount = result.skippedPatentIds?.length ?? 0;
 
       setPatentList(await getPatents());
@@ -307,7 +335,7 @@ export function AdminReviewTargetPage() {
             </thead>
             <tbody>
               {displayedPatents.map((patent) => {
-                const recipient = getDepartmentRecipient(patent);
+                const recipient = getDepartmentRecipient(patent, recipientMappings);
 
                 return (
                   <tr

@@ -11,7 +11,6 @@ import { BusinessDashboardPage } from "./pages/business/BusinessDashboardPage";
 import { BusinessPatentDetailPage } from "./pages/business/BusinessPatentDetailPage";
 import { BusinessReviewRequestPage } from "./pages/business/BusinessReviewRequestPage";
 import { BusinessSettingsPage } from "./pages/business/BusinessSettingsPage";
-import { BusinessSubmissionDetailPage } from "./pages/business/BusinessSubmissionDetailPage";
 import { BusinessSubmissionHistoryPage } from "./pages/business/BusinessSubmissionHistoryPage";
 import { LoginPage } from "./pages/LoginPage";
 
@@ -34,7 +33,6 @@ const router = createBrowserRouter([
   { path: "/business/dashboard", element: <BusinessDashboardPage /> },
   { path: "/business/review-requests", element: <BusinessReviewRequestPage /> },
   { path: "/business/submissions", element: <BusinessSubmissionHistoryPage /> },
-  { path: "/business/submissions/:patentId", element: <BusinessSubmissionDetailPage /> },
   { path: "/business/settings", element: <BusinessSettingsPage /> },
   { path: "/business/patents/:patentId", element: <BusinessPatentDetailPage /> },
   { path: "*", element: <Navigate to="/login" replace /> },
