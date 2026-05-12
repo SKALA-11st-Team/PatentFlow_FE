@@ -1,8 +1,9 @@
 import type { PatentListItem } from "../types/patent";
+import type { BusinessReviewMailSendDraft, DepartmentRecipientMapping } from "../types/mailing";
 
 export interface BusinessReviewMailDraft {
   body: string;
-  patent: PatentListItem;
+  patents: PatentListItem[];
   recipientEmail: string;
   recipientName: string;
   subject: string;
@@ -13,42 +14,122 @@ export interface BusinessReviewMailDraft {
  * @relatedUI UI-LEGAL-02, UI-LEGAL-05
  * @description 선택 특허와 부서 담당자 정보를 기반으로 사업부 검토 요청 메일 초안을 만든다.
  */
-export function createBusinessReviewMailDraft(patent: PatentListItem): BusinessReviewMailDraft {
-  const recipient = getDepartmentRecipient(patent);
+export function createBusinessReviewMailDraft(
+  patent: PatentListItem,
+  recipientMappings: DepartmentRecipientMapping[] = [],
+): BusinessReviewMailDraft {
+  return createBusinessReviewMailDraftFromPatents([patent], recipientMappings);
+}
+
+/**
+ * @relatedFR FR-014, FR-015, FR-016
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @description 같은 담당자에게 보낼 여러 특허를 하나의 사업부 검토 요청 메일 초안으로 묶는다.
+ */
+export function createBusinessReviewMailDraftFromPatents(
+  patents: PatentListItem[],
+  recipientMappings: DepartmentRecipientMapping[] = [],
+): BusinessReviewMailDraft {
+  const [firstPatent] = patents;
+
+  if (!firstPatent) {
+    throw new Error("메일 초안을 만들 특허가 없습니다.");
+  }
+
+  const recipient = getDepartmentRecipient(firstPatent, recipientMappings);
+  const patentLines = patents.flatMap((patent, index) => [
+    `${index + 1}. ${patent.managementNumber} · ${patent.title}`,
+    `   - 관련 사업: ${getDisplayValue(patent.businessArea)}`,
+    `   - 관련 기술: ${getDisplayValue(patent.technologyArea)}`,
+    `   - 납부 기한: ${patent.annualFeeDueDate}`,
+  ]);
 
   return {
     body: [
       `${recipient.name}님,`,
       "",
-      "아래 특허가 연차료 납부 검토 대상에 포함되어 사업부 의견을 요청드립니다.",
+      `아래 ${patents.length}건의 특허가 연차료 납부 검토 대상에 포함되어 사업부 의견을 요청드립니다.`,
       "",
-      `- 관리번호: ${patent.managementNumber}`,
-      `- 특허명: ${patent.title}`,
-      `- 관련 사업: ${getDisplayValue(patent.businessArea)}`,
-      `- 관련 기술: ${getDisplayValue(patent.technologyArea)}`,
-      `- 납부 기한: ${patent.annualFeeDueDate}`,
+      ...patentLines,
       "",
-      "AI 특허 평가 레포트와 평가 근거를 확인한 뒤 유지 또는 포기 의견을 제출해 주세요.",
+      "각 특허의 AI 특허 평가 레포트와 평가 근거를 확인한 뒤 유지 또는 포기 의견을 제출해 주세요.",
       "본 메일 내용은 Gmail/BE 연동 전까지 UI 미리보기용 mock 초안입니다.",
     ].join("\n"),
-    patent,
+    patents,
     recipientEmail: recipient.email,
     recipientName: recipient.name,
-    subject: `[PatentFlow] ${patent.managementNumber} 사업부 검토 요청`,
+    subject:
+      patents.length === 1
+        ? `[PatentFlow] ${firstPatent.managementNumber} 사업부 검토 요청`
+        : `[PatentFlow] ${firstPatent.departmentName} 연차료 검토 요청 ${patents.length}건`,
   };
 }
 
 /**
  * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @description 선택 특허를 부서 담당자 이메일 기준으로 묶어 메일 초안 목록을 만든다.
+ */
+export function createGroupedBusinessReviewMailDrafts(
+  patents: PatentListItem[],
+  recipientMappings: DepartmentRecipientMapping[] = [],
+) {
+  const groupedPatents = new Map<string, PatentListItem[]>();
+
+  patents.forEach((patent) => {
+    const recipient = getDepartmentRecipient(patent, recipientMappings);
+    const groupKey = `${recipient.email}::${recipient.name}`;
+
+    groupedPatents.set(groupKey, [...(groupedPatents.get(groupKey) ?? []), patent]);
+  });
+
+  return Array.from(groupedPatents.values()).map((groupedPatentList) =>
+    createBusinessReviewMailDraftFromPatents(groupedPatentList, recipientMappings),
+  );
+}
+
+/**
+ * @relatedFR FR-014, FR-015, FR-016
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
  * @description 메일 발송 대기 목록과 상세 화면에서 부서별 담당자 이름과 이메일을 표시한다.
  */
-export function getDepartmentRecipient(patent: PatentListItem) {
+export function getDepartmentRecipient(
+  patent: PatentListItem,
+  recipientMappings: DepartmentRecipientMapping[] = [],
+) {
+  const savedMapping = recipientMappings.find((mapping) => mapping.departmentId === patent.departmentId);
+
+  if (savedMapping) {
+    return {
+      email: savedMapping.managerEmail,
+      name: savedMapping.managerName,
+    };
+  }
+
   const localPart = patent.departmentId.replace(/^DEPT-/, "").toLowerCase();
 
   return {
     email: `${localPart}.owner@syuuk.test`,
     name: `${patent.departmentName} 담당자`,
+  };
+}
+
+/**
+ * @relatedFR FR-014, FR-015, FR-016
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @description 화면에서 수정한 메일 초안을 BE 발송 요청 payload로 변환한다.
+ */
+export function toBusinessReviewMailSendDraft(draft: BusinessReviewMailDraft): BusinessReviewMailSendDraft {
+  return {
+    body: draft.body,
+    patents: draft.patents.map((patent) => ({
+      managementNumber: patent.managementNumber,
+      patentId: patent.patentId,
+      title: patent.title,
+    })),
+    recipientEmail: draft.recipientEmail,
+    recipientName: draft.recipientName,
+    subject: draft.subject,
   };
 }
 

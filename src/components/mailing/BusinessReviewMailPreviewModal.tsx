@@ -3,12 +3,15 @@ import { Button } from "../common/Button";
 import { Modal } from "../common/Modal";
 import type { BusinessReviewMailDraft } from "../../utils/businessReviewMail";
 
-export { createBusinessReviewMailDraft } from "../../utils/businessReviewMail";
+export {
+  createBusinessReviewMailDraft,
+  createGroupedBusinessReviewMailDrafts,
+} from "../../utils/businessReviewMail";
 export type { BusinessReviewMailDraft } from "../../utils/businessReviewMail";
 
 /**
  * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
  * @description 메일 발송 대기 특허의 사업부 검토 요청 메일을 담당자별로 미리보고 수정한다.
  */
 export function BusinessReviewMailPreviewModal({
@@ -71,7 +74,9 @@ export function BusinessReviewMailPreviewModal({
             <strong>
               {activeIndex + 1} / {drafts.length}
             </strong>
-            <span>{activeDraft.recipientName}에게 보낼 메일을 확인합니다.</span>
+            <span>
+              {activeDraft.recipientName}에게 보낼 특허 {activeDraft.patents.length}건 묶음 메일을 확인합니다.
+            </span>
           </div>
           <button
             aria-label="다음 메일"
@@ -90,8 +95,8 @@ export function BusinessReviewMailPreviewModal({
             <input readOnly value={`${activeDraft.recipientName} <${activeDraft.recipientEmail}>`} />
           </label>
           <label>
-            <span>특허</span>
-            <input readOnly value={`${activeDraft.patent.managementNumber} · ${activeDraft.patent.title}`} />
+            <span>특허 건수</span>
+            <input readOnly value={`${activeDraft.patents.length}건`} />
           </label>
           <label>
             <span>제목</span>
@@ -135,8 +140,8 @@ export function BusinessReviewMailPreviewModal({
             </button>
           </div>
           <p className="mail-confirm-copy">
-            {drafts.length}건의 사업부 검토 요청 메일을 발송 처리합니다. 현재는 UI 확인용이며, 실제 발송은 Gmail 연동 후
-            연결됩니다.
+            {drafts.length}통의 사업부 검토 요청 메일로 총 {getDraftPatentCount(drafts)}건의 특허를 발송 처리합니다. 현재는
+            UI 확인용이며, 실제 발송은 Gmail 연동 후 연결됩니다.
           </p>
           <div className="modal-actions">
             <Button disabled={isProcessing} onClick={() => onConfirmToggle(false)} type="button" variant="secondary">
@@ -150,4 +155,8 @@ export function BusinessReviewMailPreviewModal({
       ) : null}
     </>
   );
+}
+
+function getDraftPatentCount(drafts: BusinessReviewMailDraft[]) {
+  return drafts.reduce((total, draft) => total + draft.patents.length, 0);
 }
