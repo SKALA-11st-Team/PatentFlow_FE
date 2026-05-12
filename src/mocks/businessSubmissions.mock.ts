@@ -1,26 +1,6 @@
 import { businessChecklistItems } from "./businessChecklist.mock";
+import type { BusinessSubmissionChecklistScore, BusinessSubmissionVersion } from "../types/businessSubmission";
 import type { BusinessOpinionDecision, PatentDetail, PatentListItem, Recommendation } from "../types/patent";
-
-export interface BusinessSubmissionChecklistScore {
-  itemId: string;
-  score: number;
-  memo: string;
-}
-
-export interface BusinessSubmissionVersion {
-  submissionId: string;
-  version: number;
-  opinion: BusinessOpinionDecision;
-  reason: string;
-  submittedBy: string;
-  submittedAt: string;
-  aiReportCreatedAt: string;
-  aiRecommendation: Recommendation;
-  aiTotalScore: number;
-  checklistTotal: number;
-  checklistScores: BusinessSubmissionChecklistScore[];
-  qualitativeScore: number;
-}
 
 /**
  * @relatedFR FR-009, FR-013

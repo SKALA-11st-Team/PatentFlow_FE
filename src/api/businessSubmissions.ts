@@ -2,8 +2,8 @@ import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
 import {
   getBusinessSubmissionVersions as getMockBusinessSubmissionVersions,
   getLatestBusinessSubmission as getMockLatestBusinessSubmission,
-  type BusinessSubmissionVersion,
 } from "../mocks/businessSubmissions.mock";
+import type { BusinessSubmissionVersion } from "../types/businessSubmission";
 import type { BusinessOpinionDecision, PatentDetail, PatentListItem, Recommendation } from "../types/patent";
 
 interface BackendBusinessSubmissionVersion extends Omit<BusinessSubmissionVersion, "opinion"> {
