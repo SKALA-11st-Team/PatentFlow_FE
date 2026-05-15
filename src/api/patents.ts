@@ -6,7 +6,7 @@ import {
   type PageMeta,
   type PaginatedApiEnvelope,
 } from "./client";
-import { PATENT_CONTEXT_CATEGORY_OPTIONS } from "../constants/status";
+import { EVALUATION_CATEGORIES, PATENT_CONTEXT_CATEGORY_OPTIONS } from "../constants/status";
 import { appendMockMailingHistory } from "../mocks/mailing.mock";
 import { patentDetails, patents } from "../mocks/patents.mock";
 import { skaxPatentRows } from "../mocks/skaxPatents.raw";
@@ -121,7 +121,7 @@ interface BackendPatentDetail extends BackendPatentListItem {
     recommendationReason: string;
     totalScore: number;
     scores: Array<{
-      category: EvaluationScore["category"];
+      category: string;
       score: number | null;
       evidence: string;
     }>;
@@ -421,20 +421,66 @@ function mapBackendSummary(summary: BackendPatentDetail["summary"]): PatentSumma
 }
 
 function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationReport"]): AiEvaluationReport {
+  const scores = mapBackendEvaluationScores(report.scores);
+  const averageScore = getAverageScore(scores);
+
   return {
     evaluationId: report.reportId,
     createdAt: report.createdAt,
     recommendation: report.recommendation,
     recommendationText: report.recommendationReason,
-    totalScore: report.totalScore,
-    scores: report.scores.map((score) => ({
-      category: score.category,
-      score: score.score,
-      evidenceSummary: score.evidence,
-    })),
+    totalScore: averageScore ?? report.totalScore,
+    totalScoreText: getTotalScoreText(scores, averageScore),
+    averageScore,
+    scores,
     missingInformation: report.missingInformation,
     rawMarkdown: report.rawMarkdown,
   };
+}
+
+/**
+ * @relatedFR FR-006, FR-007, FR-008
+ * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @description 백엔드가 이전 5축 응답을 보내도 현재 FE/API 계약의 4축 평가 점수만 화면 모델로 통과시킨다.
+ */
+function mapBackendEvaluationScores(scores: BackendPatentDetail["aiEvaluationReport"]["scores"]): EvaluationScore[] {
+  return scores.flatMap((score) => {
+    if (!isEvaluationCategory(score.category)) {
+      return [];
+    }
+
+    return [{
+      category: score.category,
+      score: score.score,
+      evidenceSummary: score.evidence,
+    }];
+  });
+}
+
+function isEvaluationCategory(category: string): category is EvaluationScore["category"] {
+  return EVALUATION_CATEGORIES.includes(category as EvaluationScore["category"]);
+}
+
+function getAverageScore(scores: EvaluationScore[]) {
+  const scoreValues = scores.map((score) => score.score).filter((score): score is number => typeof score === "number");
+
+  if (scoreValues.length === 0) {
+    return undefined;
+  }
+
+  return Math.round((scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length) * 10) / 10;
+}
+
+function getTotalScoreText(scores: EvaluationScore[], averageScore: number | undefined) {
+  const scoreValues = scores.map((score) => score.score).filter((score): score is number => typeof score === "number");
+
+  if (averageScore === undefined || scoreValues.length === 0) {
+    return undefined;
+  }
+
+  const totalScore = scoreValues.reduce((sum, score) => sum + score, 0);
+
+  return `${totalScore}/${scores.length * 100}점, 평균 ${averageScore}점`;
 }
 
 function mapBackendFinalDecisionRecord(
