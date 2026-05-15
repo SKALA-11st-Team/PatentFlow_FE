@@ -376,9 +376,7 @@ function BusinessOpinionModal({
         <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
         {patent.aiEvaluationReport.keyEvidence ? <p>{patent.aiEvaluationReport.keyEvidence}</p> : null}
         <div className="modal-score-grid">
-          {patent.aiEvaluationReport.scores
-            .filter((score) => score.category !== "BUSINESS_ALIGNMENT")
-            .map((score) => (
+          {patent.aiEvaluationReport.scores.map((score) => (
               <span key={score.category}>
                 {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
               </span>

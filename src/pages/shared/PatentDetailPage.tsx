@@ -268,7 +268,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
               </div>
             ) : null}
             <div className="score-list">
-              {patent.aiEvaluationReport.scores.filter((score) => score.category !== "BUSINESS_ALIGNMENT").map((score) => (
+              {patent.aiEvaluationReport.scores.map((score) => (
                 <div className="score-row" key={score.category}>
                   <div>
                     <strong>{evaluationCategoryLabels[score.category]}</strong>

@@ -51,9 +51,10 @@ export const EVALUATION_CATEGORIES = [
   "TECHNOLOGY",
   "MARKET",
   "LIFECYCLE_ECONOMICS",
+  "BUSINESS_ALIGNMENT",
 ] as const;
 
-export type EvaluationCategory = (typeof EVALUATION_CATEGORIES)[number] | "BUSINESS_ALIGNMENT";
+export type EvaluationCategory = (typeof EVALUATION_CATEGORIES)[number];
 
 export const PATENT_CONTEXT_CATEGORY_OPTIONS = [
   {

@@ -116,9 +116,7 @@ export function BusinessSubmissionHistoryDetail({ patent }: { patent: PatentDeta
                     </article>
                   </div>
                   <div className="submission-report-preview">
-                    {patent.aiEvaluationReport.scores
-                      .filter((score) => score.category !== "BUSINESS_ALIGNMENT")
-                      .map((score) => (
+                    {patent.aiEvaluationReport.scores.map((score) => (
                         <span key={score.category}>
                           {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
                         </span>
@@ -228,9 +226,7 @@ function AiReportModal({
       </div>
       <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
       <div className="score-list">
-        {patent.aiEvaluationReport.scores
-          .filter((score) => score.category !== "BUSINESS_ALIGNMENT")
-          .map((score) => (
+        {patent.aiEvaluationReport.scores.map((score) => (
             <div className="score-row" key={score.category}>
               <div>
                 <strong>{evaluationCategoryLabels[score.category]}</strong>

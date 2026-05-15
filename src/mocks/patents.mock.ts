@@ -126,6 +126,15 @@ const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
           { text: "연차료·유지비용 추정치, 예상 ROI·내부 매출 연계 자료가 없으므로 비용 대비 기대수익 분석을 수행할 수 없어 보수적 유지 판단이 필요합니다。" },
         ],
       ),
+      createScore(
+        "BUSINESS_ALIGNMENT",
+        65,
+        "점수/등급: 65 / B",
+        [
+          { text: "로보어드바이저 및 자산배분 자동화 사업과 연결 가능성은 있으나, 현재 제품 로드맵이나 내부 적용 계획의 직접 근거가 부족해 추가 확인이 필요합니다." },
+          { text: "강화학습 기반 자산배분 기능이 실제 사업 KPI와 연결되는지, 파일럿 적용 가능성과 우선순위를 사업부에서 확인해야 합니다." },
+        ],
+      ),
     ],
     missingInformation: [
       "종속항 전문",
@@ -169,6 +178,11 @@ const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
         88,
         "등록 초기 특허이며 플랫폼 핵심 성능 지표와 연결되어 유지 비용 대비 방어 가치가 있습니다.",
       ),
+      createScore(
+        "BUSINESS_ALIGNMENT",
+        84,
+        "ChainZ 성능 개선 로드맵과 직접 연결될 수 있어 플랫폼 경쟁력 방어 관점의 사업 연계성이 높습니다.",
+      ),
     ],
     missingInformation: ["ChainZ 현재 적용 여부", "외부 고객 PoC 활용 사례"],
   },
@@ -199,6 +213,11 @@ const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
         "LIFECYCLE_ECONOMICS",
         78,
         "잔여 보호기간은 충분하지만 공동출원 관리 비용과 실제 사용 여부에 따라 경제성이 달라질 수 있습니다.",
+      ),
+      createScore(
+        "BUSINESS_ALIGNMENT",
+        72,
+        "CMP Pad 물류 관리 업무와 연결 가능성은 있으나, 현재 제조 현장 시스템 적용 여부와 공동출원 협의 조건 확인이 필요합니다.",
       ),
     ],
     missingInformation: ["공동출원인 협의 조건", "CMP Pad 물류 시스템 현재 운영 여부", "유지 비용 분담 기준"],
@@ -539,6 +558,12 @@ function getScores(row: SkaxPatentRow, recommendation: Recommendation, index: nu
   const technologyScore = recommendation === "MAINTAIN" ? 82 : recommendation === "ABANDON" ? 48 : 68;
   const marketScore = recommendation === "SALES_CANDIDATE" ? 74 : 62 + (index % 14);
   const lifecycleScore = recommendation === "ABANDON" ? 44 : recommendation === "REVIEW_AGAIN" ? 61 : 72 + (index % 9);
+  const businessAlignmentScore =
+    !row.productName || row.productName === "해당사항없음"
+      ? 55
+      : recommendation === "MAINTAIN"
+        ? 80 + (index % 8)
+        : 62 + (index % 10);
 
   return [
     createScore(
@@ -562,6 +587,11 @@ function getScores(row: SkaxPatentRow, recommendation: Recommendation, index: nu
       "LIFECYCLE_ECONOMICS",
       lifecycleScore,
       "잔여 보호 기간, 유지 비용, 경제적 효과를 기준으로 비용 대비 가치를 산정했습니다.",
+    ),
+    createScore(
+      "BUSINESS_ALIGNMENT",
+      businessAlignmentScore,
+      `${row.businessArea || "미분류"} 사업과 ${row.productName || "관련 제품"}의 적용 가능성, 제품 로드맵 연결성, 내부 활용 우선순위를 기준으로 검토했습니다.`,
     ),
   ];
 }
