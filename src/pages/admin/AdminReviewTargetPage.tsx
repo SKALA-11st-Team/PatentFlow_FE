@@ -23,9 +23,9 @@ import {
 } from "../../constants/status";
 import type { PatentListItem, ReviewWorkflowStatus } from "../../types/patent";
 import type { DepartmentRecipientMapping } from "../../types/mailing";
+import { matchesReviewTargetScope, type ReviewTargetScope } from "../../utils/reviewWorkflow";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
-type ReviewTargetScope = "ALL" | "QUARTER";
 type ContextFilterKey = "businessArea" | "technologyArea" | "productName";
 
 interface ContextFilterConfig {
@@ -69,9 +69,10 @@ export function AdminReviewTargetPage() {
   const [searchParams] = useSearchParams();
   const initialWorkflow = getInitialWorkflowFilter(searchParams.get("workflow"));
   const scope = getReviewTargetScope(searchParams.get("scope"));
+  const effectiveInitialWorkflow = scope === "QUARTER" && initialWorkflow === "NOT_IN_REVIEW_QUARTER" ? "ALL" : initialWorkflow;
   const initialContextFilter = getInitialContextFilter(searchParams);
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>(initialWorkflow);
+  const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>(effectiveInitialWorkflow);
   const [contextFilterKey, setContextFilterKey] = useState<ContextFilterKey>(initialContextFilter.key);
   const [contextFilterValue, setContextFilterValue] = useState(initialContextFilter.value);
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
@@ -112,11 +113,12 @@ export function AdminReviewTargetPage() {
       ),
     [activeContextConfig, patentList],
   );
-  const pageTitle = getReviewTargetPageTitle(scope, initialWorkflow, contextFilterValue);
+  const pageTitle = getReviewTargetPageTitle(scope, effectiveInitialWorkflow, contextFilterValue);
   const sectionTitle = getReviewTargetSectionTitle(scope, workflowFilter, activeContextConfig.label, contextFilterValue);
   const isActionableMailList = workflowFilter === "MAIL_READY";
   const canSelectRows = isActionableMailList;
   const shouldShowWorkflowColumn = workflowFilter === "ALL";
+  const workflowFilterOptions = getReviewTargetWorkflowFilterOptions(scope);
   const selectablePatentIds = useMemo(() => displayedPatents.map((patent) => patent.patentId), [displayedPatents]);
   const areAllRowsSelected =
     selectablePatentIds.length > 0 && selectablePatentIds.every((patentId) => selectedPatentIds.includes(patentId));
@@ -287,7 +289,7 @@ export function AdminReviewTargetPage() {
               onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowFilter)}
               value={workflowFilter}
             >
-              {REVIEW_WORKFLOW_FILTER_OPTIONS.map((option) => (
+              {workflowFilterOptions.map((option) => (
                 <option key={option} value={option}>
                   {option === "ALL" ? "전체" : reviewWorkflowStatusLabels[option]}
                 </option>
@@ -486,7 +488,7 @@ function getFilteredAndSortedReviewTargets(
       const matchesWorkflow = workflowFilter === "ALL" || patent.reviewWorkflowStatus === workflowFilter;
       const matchesContext =
         contextFilterValue === "ALL" || getDisplayValue(contextConfig.getValue(patent)) === contextFilterValue;
-      const matchesScope = scope === "ALL" || patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER";
+      const matchesScope = matchesReviewTargetScope(patent.reviewWorkflowStatus, scope);
 
       return matchesKeyword && matchesWorkflow && matchesContext && matchesScope;
     })
@@ -555,6 +557,19 @@ function getReviewTargetSectionTitle(
   }
 
   return scope === "QUARTER" ? "이번 분기 납부 대상" : "전체 검토 단계";
+}
+
+/**
+ * @relatedFR FR-001, FR-002
+ * @relatedUI UI-LEGAL-02
+ * @description 이번 분기 KPI 조회 화면에서는 검토 분기 아님 단계 필터를 숨겨 KPI 집계 기준과 조회 기준을 맞춘다.
+ */
+function getReviewTargetWorkflowFilterOptions(scope: ReviewTargetScope) {
+  if (scope === "ALL") {
+    return REVIEW_WORKFLOW_FILTER_OPTIONS;
+  }
+
+  return REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW_QUARTER");
 }
 
 /**

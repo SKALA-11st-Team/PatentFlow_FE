@@ -15,6 +15,11 @@ import {
   reviewWorkflowStatusLabels,
 } from "../../constants/status";
 import type { PatentListItem } from "../../types/patent";
+import {
+  isQuarterlyReviewTarget,
+  matchesReviewTargetScope,
+  type ReviewTargetScope,
+} from "../../utils/reviewWorkflow";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
 
@@ -33,17 +38,18 @@ const sortLabels: Record<SortKey, string> = {
 export function AdminDashboardPage() {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState("");
+  const [reviewScope, setReviewScope] = useState<ReviewTargetScope>("QUARTER");
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const { errorMessage, isLoading, patents } = usePatentList();
-  const quarterlyTargets = patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER");
+  const quarterlyTargets = patents.filter(isQuarterlyReviewTarget);
   const mailReady = patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
   const waitingBusiness = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE");
   const actionRecorded = patents.filter((patent) => patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED");
   const quarterlyTargetCount = quarterlyTargets.length;
   const filteredPatents = useMemo(
-    () => getFilteredAndSortedPatents(patents, searchKeyword, workflowFilter, sortKey),
-    [patents, searchKeyword, sortKey, workflowFilter],
+    () => getFilteredAndSortedPatents(patents, searchKeyword, reviewScope, workflowFilter, sortKey),
+    [patents, reviewScope, searchKeyword, sortKey, workflowFilter],
   );
   const {
     currentPage,
@@ -52,7 +58,16 @@ export function AdminDashboardPage() {
     setCurrentPage,
     totalItems,
     totalPages,
-  } = useClientPagination(filteredPatents, [searchKeyword, workflowFilter, sortKey]);
+  } = useClientPagination(filteredPatents, [reviewScope, searchKeyword, workflowFilter, sortKey]);
+  const workflowFilterOptions = getDashboardWorkflowFilterOptions(reviewScope);
+
+  function handleReviewScopeChange(nextScope: ReviewTargetScope) {
+    setReviewScope(nextScope);
+
+    if (nextScope === "QUARTER" && workflowFilter === "NOT_IN_REVIEW_QUARTER") {
+      setWorkflowFilter("ALL");
+    }
+  }
 
   return (
     <AppLayout
@@ -131,6 +146,16 @@ export function AdminDashboardPage() {
         </div>
         <div className="filter-bar">
           <label>
+            <span>조회 범위</span>
+            <select
+              onChange={(event) => handleReviewScopeChange(event.target.value as ReviewTargetScope)}
+              value={reviewScope}
+            >
+              <option value="QUARTER">이번 분기 납부 대상</option>
+              <option value="ALL">전체 특허</option>
+            </select>
+          </label>
+          <label>
             <span>검색</span>
             <input
               onChange={(event) => setSearchKeyword(event.target.value)}
@@ -145,7 +170,7 @@ export function AdminDashboardPage() {
               onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowFilter)}
               value={workflowFilter}
             >
-              {REVIEW_WORKFLOW_FILTER_OPTIONS.map((option) => (
+              {workflowFilterOptions.map((option) => (
                 <option key={option} value={option}>
                   {option === "ALL" ? "전체" : reviewWorkflowStatusLabels[option]}
                 </option>
@@ -231,6 +256,7 @@ export function AdminDashboardPage() {
 function getFilteredAndSortedPatents(
   patentList: PatentListItem[],
   searchKeyword: string,
+  reviewScope: ReviewTargetScope,
   workflowFilter: ReviewWorkflowFilter,
   sortKey: SortKey,
 ) {
@@ -244,10 +270,24 @@ function getFilteredAndSortedPatents(
           value.toLowerCase().includes(normalizedKeyword),
         );
       const matchesWorkflow = workflowFilter === "ALL" || patent.reviewWorkflowStatus === workflowFilter;
+      const matchesScope = matchesReviewTargetScope(patent.reviewWorkflowStatus, reviewScope);
 
-      return matchesKeyword && matchesWorkflow;
+      return matchesKeyword && matchesWorkflow && matchesScope;
     })
     .sort((firstPatent, secondPatent) => comparePatents(firstPatent, secondPatent, sortKey));
+}
+
+/**
+ * @relatedFR FR-001, FR-002
+ * @relatedUI UI-LEGAL-01
+ * @description 이번 분기 조회 범위에서는 검토 분기 아님 상태 필터를 숨겨 KPI 대상 기준과 충돌하지 않게 한다.
+ */
+function getDashboardWorkflowFilterOptions(reviewScope: ReviewTargetScope) {
+  if (reviewScope === "ALL") {
+    return REVIEW_WORKFLOW_FILTER_OPTIONS;
+  }
+
+  return REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW_QUARTER");
 }
 
 /**
