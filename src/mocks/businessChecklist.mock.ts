@@ -124,7 +124,7 @@ function getAiSuggestedScore(patent: PatentDetail, itemId: string) {
     TECH_COMPLETENESS: reportScores.find((score) => score.category === "TECHNOLOGY")?.score,
     TECH_ORIGINALITY: reportScores.find((score) => score.category === "TECHNOLOGY")?.score,
     MARKETABILITY: reportScores.find((score) => score.category === "MARKET")?.score,
-    EXPECTED_EFFECT: getExpectedEffectSuggestedScore(reportScores),
+    EXPECTED_EFFECT: reportScores.find((score) => score.category === "BUSINESS_ALIGNMENT")?.score,
   };
   const score = categoryScoreMap[itemId] ?? patent.aiEvaluationReport.totalScore;
 
@@ -145,22 +145,4 @@ function getAiSuggestedScore(patent: PatentDetail, itemId: string) {
   }
 
   return 1;
-}
-
-/**
- * @relatedFR FR-006, FR-009
- * @relatedUI UI-BUS-02, UI-BUS-03, UI-LEGAL-05
- * @description 5축 AI 평가 표준에 맞춰 기대효과 제안 점수에 라이프사이클 경제성과 사업 연계성을 함께 반영한다.
- */
-function getExpectedEffectSuggestedScore(reportScores: PatentDetail["aiEvaluationReport"]["scores"]) {
-  const relatedScores = [
-    reportScores.find((score) => score.category === "LIFECYCLE_ECONOMICS")?.score,
-    reportScores.find((score) => score.category === "BUSINESS_ALIGNMENT")?.score,
-  ].filter((score): score is number => typeof score === "number");
-
-  if (relatedScores.length === 0) {
-    return undefined;
-  }
-
-  return Math.round(relatedScores.reduce((sum, score) => sum + score, 0) / relatedScores.length);
 }

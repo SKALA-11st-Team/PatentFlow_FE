@@ -35,8 +35,8 @@ Review target identification
   - 권리성
   - 기술성
   - 시장성
-  - 라이프사이클 경제성
-- Do not include `사업 연계성` as a current scoring axis, enum value, checklist total, or AI score category unless explicitly requested.
+  - 사업 연계성
+- Do not include `LIFECYCLE_ECONOMICS` as a current scoring axis, enum value, checklist total, or AI score category unless explicitly requested.
 - Business opinion categories are `유지` and `포기`.
 - AI report recommendation labels are:
   - 유지 권고
@@ -150,7 +150,7 @@ const EXECUTIVE_APPROVAL_DECISIONS = [
 
 const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const;
 
-const EVALUATION_CATEGORIES = ["RIGHTS", "TECHNOLOGY", "MARKET", "LIFECYCLE_ECONOMICS"] as const;
+const EVALUATION_CATEGORIES = ["RIGHTS", "TECHNOLOGY", "MARKET", "BUSINESS_ALIGNMENT"] as const;
 ```
 
 Current display labels include:
@@ -188,7 +188,7 @@ Current display labels include:
 | EvaluationCategory | `RIGHTS` | 권리성 |
 | EvaluationCategory | `TECHNOLOGY` | 기술성 |
 | EvaluationCategory | `MARKET` | 시장성 |
-| EvaluationCategory | `LIFECYCLE_ECONOMICS` | 라이프사이클 경제성 |
+| EvaluationCategory | `BUSINESS_ALIGNMENT` | 사업 연계성 |
 
 Workflow progress visualization currently uses this subset and order:
 

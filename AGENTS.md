@@ -108,7 +108,7 @@ Use `docs/DESIGN_SYSTEM.md` as the project design reference for:
 
 Use `docs/patent_evaluation_criteria.md` as the project evaluation reference for:
 
-- Evaluation axes: 권리성, 기술성, 시장성, 라이프사이클 경제성, 사업 연계성
+- Evaluation axes: 권리성, 기술성, 시장성, 사업 연계성
 - 사업 연계성 is a current AI evaluation scoring axis and must be included in `EvaluationCategory`, AI report score displays, and FE/API contracts.
 - Final comprehensive indicator: 종합 가치 지표, 특허 가치 평가, 포트폴리오 내 가치 수준
 - Business opinion categories: 유지, 포기
@@ -260,7 +260,6 @@ Evaluation axes:
 - 권리성
 - 기술성
 - 시장성
-- 라이프사이클 경제성
 - 사업 연계성
 
 Final comprehensive indicator:
@@ -302,7 +301,7 @@ Mock data should clearly look like test data.
 
 The following decisions came from implementation review and should not be accidentally reverted:
 
-1. 사업 연계성 is a current AI evaluation criterion. Current scoring uses 권리성, 기술성, 시장성, 라이프사이클 경제성, and 사업 연계성. Keep `BUSINESS_ALIGNMENT` in `EvaluationCategory` and AI report displays.
+1. 사업 연계성 is a current AI evaluation criterion. Current scoring uses 권리성, 기술성, 시장성, and 사업 연계성. Keep `BUSINESS_ALIGNMENT` in `EvaluationCategory` and AI report displays. Do not include `LIFECYCLE_ECONOMICS` as a current AI evaluation axis.
 2. Do not put individual patent detail pages in the main nav. Patent detail screens are reached from dashboard/list rows.
 3. The business dashboard is for current work. The `의견 요청 특허` table should show actionable request status only; do not add past-history links such as `제출 이력` inside the business opinion column. Submission history belongs in the dedicated `제출 이력` nav/page.
 4. Business submission history detail is separate from normal business patent detail. `/business/submissions/:patentId` should show why the business made a prior choice, the AI report at that time, checklist evaluation history, and a small request/opinion/approval/action timeline.
@@ -508,7 +507,7 @@ const EXECUTIVE_APPROVAL_DECISIONS = [
 
 const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const;
 
-const EVALUATION_CATEGORIES = ["RIGHTS", "TECHNOLOGY", "MARKET", "LIFECYCLE_ECONOMICS", "BUSINESS_ALIGNMENT"] as const;
+const EVALUATION_CATEGORIES = ["RIGHTS", "TECHNOLOGY", "MARKET", "BUSINESS_ALIGNMENT"] as const;
 ```
 
 Current Korean display labels:
@@ -546,7 +545,6 @@ Current Korean display labels:
 | EvaluationCategory | `RIGHTS` | 권리성 |
 | EvaluationCategory | `TECHNOLOGY` | 기술성 |
 | EvaluationCategory | `MARKET` | 시장성 |
-| EvaluationCategory | `LIFECYCLE_ECONOMICS` | 라이프사이클 경제성 |
 | EvaluationCategory | `BUSINESS_ALIGNMENT` | 사업 연계성 |
 
 Current workflow progress visualization uses this subset and order:

@@ -51,9 +51,9 @@ const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
     recommendation: "REVIEW_AGAIN",
     recommendationText:
       '종합적으로 권리·기술·시장성은 대체로 긍정적이나, 포트폴리오 연계·구체적 구현·상용화 성과 등 핵심 정보의 부재로 인해 추가 확인이 필요하므로 "조건부 유지" 권고입니다.',
-    totalScore: 359,
-    totalScoreText: "359/500점, 평균 71.8점",
-    averageScore: 71.8,
+    totalScore: 72.3,
+    totalScoreText: "289/400점, 평균 72.3점",
+    averageScore: 72.3,
     keyEvidence:
       "권리성·기술성은 액터-크리틱 구조와 기간별 리워드 가중결합의 구체적 절차가 기재되어 비교적 명확한 보호 가능성을 보이며, 시장 흐름은 강화학습 기반 자산배분과 로보어드바이저 수요 확대를 뒷받침합니다. 다만 종속항 전문·심사이력·구체적 가중비율 산식·실증 데이터·내부 적용 계획 등 핵심 정보의 부재로 상용화 가능성·경제성 판단에는 추가 확인이 필요합니다.",
     judgementGrounds: [
@@ -116,17 +116,6 @@ const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
         ],
       ),
       createScore(
-        "LIFECYCLE_ECONOMICS",
-        70,
-        "점수/등급: 70 / B",
-        [
-          { text: "등록일(2026-02-25) 기준으로 예상 소멸일(2044-08-28)까지 장기간의 보호기간을 보유하고 있어 장기 유지 시 가치 실현의 시간이 충분합니다." },
-          { text: "시장 측면에서 로보어드바이저·강화학습 기반 자산배분 수요 확대는 경제적 수익화 가능성을 지지하나, 본 특허의 구체적 기능 채택 사례·라이선스·내부 적용 계획이 부재하여 실제 수익화 가능성은 불확실합니다." },
-          { text: "특허의 권리범위가 상대적으로 축소된 점과 알고리즘적 기능이 플랫폼에 통합될 경우 개별 특허의 상업적 가치가 희석될 가능성은 경제성 리스크로 작용합니다." },
-          { text: "연차료·유지비용 추정치, 예상 ROI·내부 매출 연계 자료가 없으므로 비용 대비 기대수익 분석을 수행할 수 없어 보수적 유지 판단이 필요합니다。" },
-        ],
-      ),
-      createScore(
         "BUSINESS_ALIGNMENT",
         65,
         "점수/등급: 65 / B",
@@ -174,11 +163,6 @@ const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
         "엔터프라이즈 블록체인 수요는 제한적이나 인증, 추적, 정산 영역에서 성능 안정성 요구가 유지되고 있습니다.",
       ),
       createScore(
-        "LIFECYCLE_ECONOMICS",
-        88,
-        "등록 초기 특허이며 플랫폼 핵심 성능 지표와 연결되어 유지 비용 대비 방어 가치가 있습니다.",
-      ),
-      createScore(
         "BUSINESS_ALIGNMENT",
         84,
         "ChainZ 성능 개선 로드맵과 직접 연결될 수 있어 플랫폼 경쟁력 방어 관점의 사업 연계성이 높습니다.",
@@ -208,11 +192,6 @@ const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
         "MARKET",
         66,
         "반도체 제조 물류 자동화 수요는 있으나 내부 장비/고객 적용 범위 확인이 필요합니다.",
-      ),
-      createScore(
-        "LIFECYCLE_ECONOMICS",
-        78,
-        "잔여 보호기간은 충분하지만 공동출원 관리 비용과 실제 사용 여부에 따라 경제성이 달라질 수 있습니다.",
       ),
       createScore(
         "BUSINESS_ALIGNMENT",
@@ -497,10 +476,10 @@ function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRo
   const productText = normalizeProductName(row.productName) || "관련 제품";
   const textMap: Record<Recommendation, string> = {
     MAINTAIN: `${productText} 관련 기술성, 권리성, 유지 비용 대비 가치가 확인되어 유지 권고가 타당한 AI 특허 평가 레포트입니다.`,
-    REVIEW_AGAIN: "권리성, 기술성, 시장성, 라이프사이클 경제성 중 일부 근거 보완이 필요한 AI 특허 평가 레포트입니다.",
-    ABANDON: "권리성 또는 라이프사이클 경제성 보완 근거가 부족해 포기 검토가 가능한 AI 특허 평가 레포트입니다.",
+    REVIEW_AGAIN: "권리성, 기술성, 시장성, 사업 연계성 중 일부 근거 보완이 필요한 AI 특허 평가 레포트입니다.",
+    ABANDON: "권리성 또는 사업 연계성 보완 근거가 부족해 포기 검토가 가능한 AI 특허 평가 레포트입니다.",
     SALES_CANDIDATE: "현재 내부 활용도는 낮고 유지 필요성이 부족해 포기 검토가 필요한 AI 특허 평가 레포트입니다.",
-    HOLD: "권리성, 시장성, 라이프사이클 경제성 일부 정보가 부족해 추가 정보 확인이 필요한 AI 특허 평가 레포트입니다.",
+    HOLD: "권리성, 시장성, 사업 연계성 일부 정보가 부족해 추가 정보 확인이 필요한 AI 특허 평가 레포트입니다.",
   };
 
   return textMap[recommendation];
@@ -557,7 +536,6 @@ function getScores(row: SkaxPatentRow, recommendation: Recommendation, index: nu
   const rightsScore = row.isJointApplication ? 58 : recommendation === "ABANDON" ? 52 : 76 + (index % 8);
   const technologyScore = recommendation === "MAINTAIN" ? 82 : recommendation === "ABANDON" ? 48 : 68;
   const marketScore = recommendation === "SALES_CANDIDATE" ? 74 : 62 + (index % 14);
-  const lifecycleScore = recommendation === "ABANDON" ? 44 : recommendation === "REVIEW_AGAIN" ? 61 : 72 + (index % 9);
   const businessAlignmentScore =
     !row.productName || row.productName === "해당사항없음"
       ? 55
@@ -582,11 +560,6 @@ function getScores(row: SkaxPatentRow, recommendation: Recommendation, index: nu
       "MARKET",
       marketScore,
       `${row.businessArea || "미분류"} 분야의 시장 범위, 경쟁 활동, 산업 트렌드 확인이 필요합니다.`,
-    ),
-    createScore(
-      "LIFECYCLE_ECONOMICS",
-      lifecycleScore,
-      "잔여 보호 기간, 유지 비용, 경제적 효과를 기준으로 비용 대비 가치를 산정했습니다.",
     ),
     createScore(
       "BUSINESS_ALIGNMENT",

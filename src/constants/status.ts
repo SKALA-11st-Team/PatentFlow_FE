@@ -50,7 +50,6 @@ export const EVALUATION_CATEGORIES = [
   "RIGHTS",
   "TECHNOLOGY",
   "MARKET",
-  "LIFECYCLE_ECONOMICS",
   "BUSINESS_ALIGNMENT",
 ] as const;
 
@@ -258,7 +257,6 @@ export const evaluationCategoryLabels: Record<EvaluationCategory, string> = {
   RIGHTS: "권리성",
   TECHNOLOGY: "기술성",
   MARKET: "시장성",
-  LIFECYCLE_ECONOMICS: "라이프사이클 경제성",
   BUSINESS_ALIGNMENT: "사업 연계성",
 };
 
