@@ -1,3 +1,5 @@
+import { getStoredAccessToken } from "./authStorage";
+
 const importMetaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
 const API_BASE_URL = normalizeApiBaseUrl(importMetaEnv?.VITE_API_BASE_URL ?? "");
 const USE_MOCK_API = importMetaEnv?.VITE_USE_MOCK_API === "true";
@@ -55,10 +57,13 @@ export function isBackendApiEnabled() {
  * @description Spring Boot API 연동 시 공통 JSON 요청과 에러 처리를 담당한다.
  */
 export async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const accessToken = path === "/auth/login" ? null : getStoredAccessToken();
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       "Content-Type": "application/json",
       ...init.headers,
     },

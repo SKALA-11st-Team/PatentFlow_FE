@@ -1,20 +1,56 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../api/auth";
+import { getApiErrorMessage } from "../api/client";
 import { Button } from "../components/common/Button";
 import type { UserRole } from "../types/patent";
+
+const DEV_ACCOUNTS: Record<UserRole, { password: string; username: string }> = {
+  ADMIN: {
+    password: "admin1234",
+    username: "admin",
+  },
+  BUSINESS: {
+    password: "business1234",
+    username: "business",
+  },
+};
 
 /**
  * @relatedFR N/A
  * @relatedUI UI-COM-01
- * @description 관리자/사업부서 사용자가 역할을 선택해 PatentFlow 데모 화면에 진입하는 로그인 화면
+ * @description 관리자/사업부서 사용자가 역할을 선택해 실제 백엔드 JWT 로그인 후 PatentFlow 화면에 진입하는 로그인 화면
  */
 export function LoginPage() {
   const [role, setRole] = useState<UserRole>("ADMIN");
+  const [username, setUsername] = useState(DEV_ACCOUNTS.ADMIN.username);
+  const [password, setPassword] = useState(DEV_ACCOUNTS.ADMIN.password);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleRoleChange = (nextRole: UserRole) => {
+    setRole(nextRole);
+    setUsername(DEV_ACCOUNTS[nextRole].username);
+    setPassword(DEV_ACCOUNTS[nextRole].password);
+    setErrorMessage("");
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    navigate(role === "ADMIN" ? "/admin/dashboard" : "/business/dashboard");
+    setErrorMessage("");
+    setIsSubmitting(true);
+
+    try {
+      const loginResult = await login({ password, username });
+      const nextRole = loginResult.user.role ?? role;
+
+      navigate(nextRole === "ADMIN" ? "/admin/dashboard" : "/business/dashboard");
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error, "로그인에 실패했습니다. 계정 정보를 확인해 주세요."));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -32,30 +68,40 @@ export function LoginPage() {
             <button
               type="button"
               className={role === "ADMIN" ? "selected" : ""}
-              onClick={() => setRole("ADMIN")}
+              onClick={() => handleRoleChange("ADMIN")}
             >
               관리자
             </button>
             <button
               type="button"
               className={role === "BUSINESS" ? "selected" : ""}
-              onClick={() => setRole("BUSINESS")}
+              onClick={() => handleRoleChange("BUSINESS")}
             >
               사업부서
             </button>
           </div>
           <label>
-            이메일
+            아이디
             <input
-              defaultValue={role === "ADMIN" ? "admin@syuuk.test" : "business@syuuk.test"}
-              type="email"
+              autoComplete="username"
+              onChange={(event) => setUsername(event.target.value)}
+              type="text"
+              value={username}
             />
           </label>
           <label>
             비밀번호
-            <input defaultValue="demo1234" type="password" />
+            <input
+              autoComplete="current-password"
+              onChange={(event) => setPassword(event.target.value)}
+              type="password"
+              value={password}
+            />
           </label>
-          <Button type="submit">{role === "ADMIN" ? "관리자로 로그인" : "사업부서로 로그인"}</Button>
+          {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+          <Button disabled={isSubmitting} type="submit">
+            {isSubmitting ? "로그인 중" : role === "ADMIN" ? "관리자로 로그인" : "사업부서로 로그인"}
+          </Button>
         </form>
       </section>
     </main>

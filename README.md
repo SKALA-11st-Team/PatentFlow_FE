@@ -15,8 +15,6 @@ AI 결과는 평가 레포트와 권고안으로 표시하며, 최종 판단과 
 - 특허 기본 정보 등록/수정
 - 특허 상세, AI 평가 레포트, 평가 근거, 최종 판단 확인
 - 결재 대기 특허 일괄 유지/포기 처리
-- 메일링 미리보기 및 발송 대상 관리
-- 매각 후보 특허 관리
 - 평가 기준 및 운영 설정 확인
 
 ### 사업부 사용자
@@ -71,6 +69,16 @@ VITE_API_BASE_URL=http://localhost:8080
 ```
 
 `VITE_API_BASE_URL`이 비어 있으면 프론트엔드는 `src/mocks/`의 데모 데이터를 사용합니다. 이 방식으로 백엔드가 준비되기 전에도 화면과 사용자 흐름을 검증할 수 있습니다.
+
+백엔드 없이 화면만 단독 개발할 때는 다음 값을 사용합니다.
+
+```bash
+VITE_USE_MOCK_API=true
+```
+
+Docker 이미지로 빌드할 때는 Vite 특성상 `VITE_API_BASE_URL`이 빌드 시점에 고정됩니다. 프로젝트 루트의 `docker-compose.yml`은 기본값으로 `http://localhost:8080`을 build arg로 전달합니다.
+
+프로덕션 이미지는 Nginx로 정적 파일을 서빙하며, `/admin/...`, `/business/...` 같은 React Router 경로 새로고침을 위해 `nginx.conf`의 SPA fallback을 사용합니다.
 
 ## 주요 라우트
 
@@ -140,9 +148,7 @@ API 함수는 `src/api/`에 모여 있으며, 백엔드 URL 설정 여부에 따
 
 AI 권고 라벨은 `유지 권고`, `포기 검토`, `추가 정보 필요`처럼 표시하고, workflow 상태는 `사업부 응답 대기`, `결재 대기`, `처리 완료`처럼 프로세스 상태로 표시합니다.
 
-## 참고 문서
 
-프론트엔드 변경 전에는 관련 문서를 먼저 확인합니다.
 
 - `docs/DESIGN_SYSTEM.md`: UI 톤, 토큰, 레이아웃, 컴포넌트 원칙
 - `docs/skax_patents_list.md`: 데모 특허 메타데이터 원본
@@ -166,8 +172,32 @@ AI 권고 라벨은 `유지 권고`, `포기 검토`, `추가 정보 필요`처�
 변경 후 가능한 범위에서 다음 명령을 실행합니다.
 
 ```bash
+npm install
 npm run lint
 npm run build
 ```
+
+백엔드 없이 화면만 검증할 때는 `.env`에 mock 모드를 켭니다.
+
+```bash
+VITE_USE_MOCK_API=true
+npm run dev
+```
+
+실제 백엔드와 연동할 때는 `.env`에 API 주소를 설정한 뒤 실행합니다.
+
+```bash
+VITE_API_BASE_URL=http://localhost:8080
+npm run dev
+```
+
+Docker/Nginx 배포 형태는 workspace 루트에서 확인합니다.
+
+```bash
+docker compose config
+docker compose up --build patentflow-fe patentflow-api
+```
+
+컨테이너 실행 후 `http://localhost:5173/admin/dashboard` 같은 하위 라우트를 새로고침해 SPA fallback이 정상 동작하는지 확인합니다.
 
 문서만 변경한 경우에는 별도 빌드가 필요하지 않을 수 있지만, 코드 변경이 포함되면 실제 실행 결과를 확인한 뒤 보고합니다.

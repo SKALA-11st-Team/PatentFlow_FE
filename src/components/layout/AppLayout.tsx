@@ -1,7 +1,9 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { logout } from "../../api/auth";
+import { getNotifications, updateNotificationReadState } from "../../api/notifications";
 import { BellIcon, NotificationPanel } from "../notification/NotificationPanel";
-import { notifications } from "../../mocks/notifications.mock";
+import { notifications as mockNotifications } from "../../mocks/notifications.mock";
 import type { AppNotification } from "../../types/notification";
 import type { UserRole } from "../../types/patent";
 
@@ -19,14 +21,19 @@ interface AppLayoutProps {
  */
 export function AppLayout({ children, role, title, description }: AppLayoutProps) {
   const isAdmin = role === "ADMIN";
-  const [notificationItems, setNotificationItems] = useState<AppNotification[]>(notifications);
+  const [notificationItems, setNotificationItems] = useState<AppNotification[]>(mockNotifications);
+
+  useEffect(() => {
+    getNotifications(role).then(setNotificationItems).catch(() => {});
+  }, [role]);
   const navItems = isAdmin
     ? [
         { label: "대시보드", to: "/admin/dashboard" },
         { label: "특허관리", to: "/admin/patents" },
         { label: "AI 레포트 메일 발송", to: "/admin/mailing" },
-        { label: "매각 후보(개발예정)", to: "/admin/sales-candidates" },
-        { label: "설정(개발예정)", to: "/admin/settings" },
+        { label: "매각 후보", to: "/admin/sales-candidates" },
+        { label: "설정", to: "/admin/settings" },
+        { label: "사업부/계정 관리", to: "/admin/users" },
       ]
     : [
         { label: "대시보드", to: "/business/dashboard" },
@@ -48,6 +55,7 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
         notification.id === notificationId ? { ...notification, isRead } : notification,
       ),
     );
+    updateNotificationReadState(notificationId, isRead).catch(() => {});
   };
 
   return (
@@ -69,7 +77,7 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
         </nav>
         <div className="sidebar-note">
           <strong>연차료 검토 진행 중</strong>
-          <span>검토 대상, 부서 의견, 최종 판단 상태를 순서대로 확인합니다.</span>
+          <span>검토 대상, 사업부 의견, 최종 판단 상태를 순서대로 확인합니다.</span>
         </div>
       </aside>
       <main className="main-content">
@@ -94,11 +102,12 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
               {isNotificationOpen ? (
                 <NotificationPanel
                   notifications={visibleNotifications}
+                  onClose={() => setIsNotificationOpen(false)}
                   onToggleRead={handleToggleNotificationRead}
                 />
               ) : null}
             </div>
-            <Link className="logout-link" to="/login">
+            <Link className="logout-link" onClick={logout} to="/login">
               로그아웃
             </Link>
           </div>

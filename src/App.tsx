@@ -1,4 +1,5 @@
 import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { getStoredAccessToken } from "./api/authStorage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { AdminMailingPage } from "./pages/admin/AdminMailingPage";
 import { AdminPatentDetailPage } from "./pages/admin/AdminPatentDetailPage";
@@ -7,12 +8,19 @@ import { AdminPatentListPage } from "./pages/admin/AdminPatentListPage";
 import { AdminReviewTargetPage } from "./pages/admin/AdminReviewTargetPage";
 import { AdminSalesCandidatePage } from "./pages/admin/AdminSalesCandidatePage";
 import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { BusinessDashboardPage } from "./pages/business/BusinessDashboardPage";
 import { BusinessPatentDetailPage } from "./pages/business/BusinessPatentDetailPage";
 import { BusinessReviewRequestPage } from "./pages/business/BusinessReviewRequestPage";
 import { BusinessSettingsPage } from "./pages/business/BusinessSettingsPage";
 import { BusinessSubmissionHistoryPage } from "./pages/business/BusinessSubmissionHistoryPage";
 import { LoginPage } from "./pages/LoginPage";
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = getStoredAccessToken();
+  if (!token) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
 
 /**
  * @relatedFR FR-001, FR-002, FR-003, FR-004, FR-009, FR-013, FR-014, FR-015, FR-016, FR-017
@@ -22,19 +30,20 @@ import { LoginPage } from "./pages/LoginPage";
 const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <LoginPage /> },
-  { path: "/admin/dashboard", element: <AdminDashboardPage /> },
-  { path: "/admin/review-targets", element: <AdminReviewTargetPage /> },
-  { path: "/admin/patents", element: <AdminPatentListPage /> },
-  { path: "/admin/patents/:patentId/edit", element: <AdminPatentEditPage /> },
-  { path: "/admin/mailing", element: <AdminMailingPage /> },
-  { path: "/admin/sales-candidates", element: <AdminSalesCandidatePage /> },
-  { path: "/admin/settings", element: <AdminSettingsPage /> },
-  { path: "/admin/patents/:patentId", element: <AdminPatentDetailPage /> },
-  { path: "/business/dashboard", element: <BusinessDashboardPage /> },
-  { path: "/business/review-requests", element: <BusinessReviewRequestPage /> },
-  { path: "/business/submissions", element: <BusinessSubmissionHistoryPage /> },
-  { path: "/business/settings", element: <BusinessSettingsPage /> },
-  { path: "/business/patents/:patentId", element: <BusinessPatentDetailPage /> },
+  { path: "/admin/dashboard", element: <ProtectedRoute><AdminDashboardPage /></ProtectedRoute> },
+  { path: "/admin/review-targets", element: <ProtectedRoute><AdminReviewTargetPage /></ProtectedRoute> },
+  { path: "/admin/patents", element: <ProtectedRoute><AdminPatentListPage /></ProtectedRoute> },
+  { path: "/admin/patents/:patentId/edit", element: <ProtectedRoute><AdminPatentEditPage /></ProtectedRoute> },
+  { path: "/admin/mailing", element: <ProtectedRoute><AdminMailingPage /></ProtectedRoute> },
+  { path: "/admin/sales-candidates", element: <ProtectedRoute><AdminSalesCandidatePage /></ProtectedRoute> },
+  { path: "/admin/settings", element: <ProtectedRoute><AdminSettingsPage /></ProtectedRoute> },
+  { path: "/admin/users", element: <ProtectedRoute><AdminUsersPage /></ProtectedRoute> },
+  { path: "/admin/patents/:patentId", element: <ProtectedRoute><AdminPatentDetailPage /></ProtectedRoute> },
+  { path: "/business/dashboard", element: <ProtectedRoute><BusinessDashboardPage /></ProtectedRoute> },
+  { path: "/business/review-requests", element: <ProtectedRoute><BusinessReviewRequestPage /></ProtectedRoute> },
+  { path: "/business/submissions", element: <ProtectedRoute><BusinessSubmissionHistoryPage /></ProtectedRoute> },
+  { path: "/business/settings", element: <ProtectedRoute><BusinessSettingsPage /></ProtectedRoute> },
+  { path: "/business/patents/:patentId", element: <ProtectedRoute><BusinessPatentDetailPage /></ProtectedRoute> },
   { path: "*", element: <Navigate to="/login" replace /> },
 ]);
 

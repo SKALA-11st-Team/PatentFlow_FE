@@ -117,6 +117,12 @@ textarea {
   outline: none;
 }
 
+.form-error {
+  color: var(--color-error);
+  font-size: 14px;
+  margin: 0;
+}
+
 .role-tabs {
   background: var(--color-bg-secondary);
   border-radius: var(--radius-md);
@@ -429,6 +435,25 @@ textarea {
   font-size: 13px;
   line-height: 1.45;
   margin: 0;
+}
+
+.notification-link {
+  color: var(--color-text-muted);
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+  text-decoration: none;
+}
+
+.notification-item.has-link:hover .notification-link,
+.notification-item.has-link:focus-within .notification-link {
+  color: var(--color-primary, #e87722);
+  text-decoration: underline;
+}
+
+.notification-item.has-link {
+  cursor: pointer;
 }
 
 .notification-item time {
