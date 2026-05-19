@@ -32,19 +32,9 @@ export const BUSINESS_OPINION_DECISIONS = ["MAINTAIN", "ABANDON"] as const;
 
 export type BusinessOpinionDecision = (typeof BUSINESS_OPINION_DECISIONS)[number];
 
-export const EXECUTIVE_APPROVAL_DECISIONS = [
-  "APPROVED_MAINTAIN",
-  "APPROVED_ABANDON",
-  "APPROVED_SELL",
-  "REJECTED",
-  "REQUEST_CHANGES",
-] as const;
+export const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED"] as const;
 
-export type ExecutiveApprovalDecision = (typeof EXECUTIVE_APPROVAL_DECISIONS)[number];
-
-export const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const;
-
-export type LegalActionResult = (typeof LEGAL_ACTION_RESULTS)[number];
+export type LegalActionResult = (typeof LEGAL_ACTION_RESULTS)[number] | "SOLD";
 
 export const EVALUATION_CATEGORIES = [
   "RIGHTS",
@@ -125,28 +115,28 @@ export const PATENT_TECHNOLOGY_AREA_CATEGORIES = Array.from(
 );
 
 export const lifecycleStatusLabels: Record<PatentLifecycleStatus, string> = {
-  ACTIVE: "보유 중",
-  ABANDONED: "포기 완료",
-  SOLD: "매각 완료",
+  ACTIVE: "유지",
+  ABANDONED: "포기",
+  SOLD: "매각",
   EXPIRED: "소멸",
 };
 
 export const reviewWorkflowStatusLabels: Record<ReviewWorkflowStatus, string> = {
   NOT_IN_REVIEW_QUARTER: "검토 분기 아님",
-  REVIEW_QUARTER_STARTED: "이번 분기 납부 대상",
+  REVIEW_QUARTER_STARTED: "리포트 생성 대기",
   REPORT_GENERATED: "레포트 생성 완료",
-  MAIL_READY: "메일 발송 대기",
+  MAIL_READY: "레포트 생성 완료 · 메일 발송 대기",
   WAITING_BUSINESS_RESPONSE: "사업부 응답 대기",
   BUSINESS_RESPONSE_RECEIVED: "사업부 응답 완료",
   WAITING_EXECUTIVE_APPROVAL: "임원 승인 대기",
-  APPROVAL_COMPLETED: "승인 완료",
+  APPROVAL_COMPLETED: "임원 승인 완료",
   LEGAL_ACTION_RECORDED: "처리 완료",
 };
 
 export const reviewWorkflowShortLabels: Record<ReviewWorkflowStatus, string> = {
   NOT_IN_REVIEW_QUARTER: "대상 아님",
-  REVIEW_QUARTER_STARTED: "대상 확정",
-  REPORT_GENERATED: "AI 레포트",
+  REVIEW_QUARTER_STARTED: "생성 대기",
+  REPORT_GENERATED: "생성 완료",
   MAIL_READY: "발송 대기",
   WAITING_BUSINESS_RESPONSE: "회신 대기",
   BUSINESS_RESPONSE_RECEIVED: "회신 완료",
@@ -239,18 +229,10 @@ export function getBusinessOpinionTone(opinion: BusinessOpinionDecision) {
   return businessOpinionTone[opinion];
 }
 
-export const executiveApprovalLabels: Record<ExecutiveApprovalDecision, string> = {
-  APPROVED_MAINTAIN: "유지 승인",
-  APPROVED_ABANDON: "포기 승인",
-  APPROVED_SELL: "매각 승인",
-  REJECTED: "반려",
-  REQUEST_CHANGES: "수정 요청",
-};
-
 export const legalActionResultLabels: Record<LegalActionResult, string> = {
-  MAINTAINED: "유지 처리",
-  ABANDONED: "포기 처리",
-  SOLD: "매각 처리",
+  MAINTAINED: "유지",
+  ABANDONED: "포기",
+  SOLD: "포기",
 };
 
 export const evaluationCategoryLabels: Record<EvaluationCategory, string> = {
@@ -269,6 +251,7 @@ export type ReviewWorkflowFilter = (typeof REVIEW_WORKFLOW_FILTER_OPTIONS)[numbe
 
 export const REVIEW_WORKFLOW_PROGRESS_STATUSES = [
   "REVIEW_QUARTER_STARTED",
+  "REPORT_GENERATED",
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
@@ -279,44 +262,44 @@ export const REVIEW_WORKFLOW_PROGRESS_STATUSES = [
 
 export const workflowStageActions: Record<ReviewWorkflowStatus, string> = {
   NOT_IN_REVIEW_QUARTER: "대상 제외",
-  REVIEW_QUARTER_STARTED: "검토 시작",
-  REPORT_GENERATED: "발송 준비",
+  REVIEW_QUARTER_STARTED: "리포트 생성",
+  REPORT_GENERATED: "메일 준비",
   MAIL_READY: "메일 발송",
   WAITING_BUSINESS_RESPONSE: "사업부 확인",
   BUSINESS_RESPONSE_RECEIVED: "결과 입력",
-  WAITING_EXECUTIVE_APPROVAL: "승인 대기",
-  APPROVAL_COMPLETED: "승인 완료",
+  WAITING_EXECUTIVE_APPROVAL: "임원 승인",
+  APPROVAL_COMPLETED: "처리 기록",
   LEGAL_ACTION_RECORDED: "종료",
 };
 
 export const workflowBottleneckDescriptions: Record<ReviewWorkflowStatus, string> = {
   NOT_IN_REVIEW_QUARTER: "이번 분기 검토 대상이 아닙니다.",
-  REVIEW_QUARTER_STARTED: "검토 대상 확정 후 메일 발송 준비가 필요합니다.",
-  REPORT_GENERATED: "AI 레포트 생성 후 발송 준비 단계로 넘겨야 합니다.",
+  REVIEW_QUARTER_STARTED: "사업부를 배정하고 AI 레포트를 생성해야 합니다.",
+  REPORT_GENERATED: "AI 레포트 생성 후 사업부 검토 요청 준비가 필요합니다.",
   MAIL_READY: "관리자가 사업부 검토 요청 메일을 발송해야 합니다.",
   WAITING_BUSINESS_RESPONSE: "사업부 회신 독려와 제출 여부 확인이 필요합니다.",
   BUSINESS_RESPONSE_RECEIVED: "제출된 사업부 의견을 확인하고 유지/포기/매각 처리 결과 입력이 필요합니다.",
-  WAITING_EXECUTIVE_APPROVAL: "임원 승인 대기 중인 특허입니다.",
-  APPROVAL_COMPLETED: "승인이 완료되어 법무 처리 결과 기록이 필요합니다.",
+  WAITING_EXECUTIVE_APPROVAL: "최종 의사결정 승인이 필요합니다.",
+  APPROVAL_COMPLETED: "승인 결과에 따른 법무 처리 기록이 필요합니다.",
   LEGAL_ACTION_RECORDED: "이번 분기 처리 workflow가 완료되었습니다.",
 };
 
 export const workflowUrgencyRank: Record<ReviewWorkflowStatus, number> = {
   NOT_IN_REVIEW_QUARTER: 99,
   REVIEW_QUARTER_STARTED: 5,
-  REPORT_GENERATED: 6,
+  REPORT_GENERATED: 3,
   MAIL_READY: 1,
   WAITING_BUSINESS_RESPONSE: 2,
   BUSINESS_RESPONSE_RECEIVED: 4,
-  WAITING_EXECUTIVE_APPROVAL: 3,
-  APPROVAL_COMPLETED: 7,
+  WAITING_EXECUTIVE_APPROVAL: 4,
+  APPROVAL_COMPLETED: 4,
   LEGAL_ACTION_RECORDED: 99,
 };
 
 export const reviewWorkflowTone: Record<ReviewWorkflowStatus, StatusTone> = {
   NOT_IN_REVIEW_QUARTER: "neutral",
   REVIEW_QUARTER_STARTED: "warning",
-  REPORT_GENERATED: "neutral",
+  REPORT_GENERATED: "primary",
   MAIL_READY: "primary",
   WAITING_BUSINESS_RESPONSE: "warning",
   BUSINESS_RESPONSE_RECEIVED: "success",

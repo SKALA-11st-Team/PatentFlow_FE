@@ -1,7 +1,7 @@
 import { getRemainingDaysUntilDate } from "../../utils/annualFee";
 
 interface DeadlineCellProps {
-  dueDate: string;
+  dueDate: string | null | undefined;
 }
 
 /**
@@ -10,6 +10,7 @@ interface DeadlineCellProps {
  * @description 특허 마감 기한을 D-n, yy-mm-dd 2줄 형식으로 표시한다.
  */
 export function DeadlineCell({ dueDate }: DeadlineCellProps) {
+  if (!dueDate) return <span className="deadline-cell"><strong>-</strong></span>;
   return (
     <span className="deadline-cell">
       <strong>{formatRemainingDays(dueDate)}</strong>

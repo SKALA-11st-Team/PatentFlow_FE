@@ -80,7 +80,7 @@ export function BusinessSubmissionHistoryDetail({ patent }: { patent: PatentDeta
         <div className="submission-summary-strip">
           <Meta label="제출 횟수" value={`${submissionVersions.length}회`} />
           <Meta label="최근 제출일" value={formatDate(latestSubmission?.submittedAt ?? null)} />
-          <Meta label="다음 결정 분기" value={getNextDecisionQuarter(patent.annualFeeDueDate)} />
+          <Meta label="다음 결정 분기" value={getNextDecisionQuarter(patent.feeDueDate)} />
           <Meta
             label="최근 AI 권고"
             value={latestSubmission ? recommendationLabels[latestSubmission.aiRecommendation] : "의견 대기"}
@@ -94,7 +94,7 @@ export function BusinessSubmissionHistoryDetail({ patent }: { patent: PatentDeta
             {submissionVersions.map((submission) => (
               <article className="submission-version-card" key={submission.submissionId}>
                 <div>
-                  <span>{submission.version}차 제출</span>
+                  <span>{submission.version}차 제출 · {getSubmissionQuarter(submission.submittedAt)}</span>
                   <strong>{businessOpinionLabels[submission.opinion]} 의견</strong>
                   <p>{submission.reason}</p>
                   <small>
@@ -355,11 +355,17 @@ function getSubmissionLogs(
   return logs;
 }
 
-function getNextDecisionQuarter(annualFeeDueDate: string) {
-  const [year, month] = annualFeeDueDate.split("-").map(Number);
+function getNextDecisionQuarter(feeDueDate: string) {
+  const [year, month] = feeDueDate.split("-").map(Number);
   return `${year}년 ${Math.ceil(month / 3)}분기`;
 }
 
 function formatDate(dateText: string | null) {
   return dateText ? dateText.slice(0, 10) : "N/A";
+}
+
+function getSubmissionQuarter(submittedAt: string) {
+  const date = new Date(submittedAt);
+  const quarter = Math.ceil((date.getMonth() + 1) / 3);
+  return `${date.getFullYear()}년 ${quarter}분기`;
 }

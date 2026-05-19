@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { getStoredAuthUser } from "../../api/authStorage";
+import { getActiveQuarter } from "../../api/settings";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { KpiCard } from "../../components/common/KpiCard";
@@ -23,8 +25,8 @@ type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
 
 const sortLabels: Record<SortKey, string> = {
-  DUE_DATE_ASC: "마감 기한 빠른순",
-  DUE_DATE_DESC: "마감 기한 늦은순",
+  DUE_DATE_ASC: "납부 기한 빠른순",
+  DUE_DATE_DESC: "납부 기한 늦은순",
   TITLE_ASC: "특허명 가나다순",
 };
 
@@ -38,7 +40,13 @@ export function BusinessDashboardPage() {
   const [opinionFilter, setOpinionFilter] = useState<OpinionFilter>("ALL");
   const [recommendationFilter, setRecommendationFilter] = useState<RecommendationFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
-  const { errorMessage, isLoading, patents } = usePatentList();
+  const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
+  const user = getStoredAuthUser();
+
+  useEffect(() => {
+    getActiveQuarter().then((q) => setSubmissionDeadline(q?.submissionDeadline ?? null)).catch(() => {});
+  }, []);
+  const { errorMessage, isLoading, patents } = usePatentList({ departmentId: user?.departmentId ?? undefined });
   const assigned = useMemo(
     () => patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE"),
     [patents],
@@ -62,7 +70,7 @@ export function BusinessDashboardPage() {
     <AppLayout
       role="BUSINESS"
       title="사업부서 대시보드"
-      description="내 부서에 요청된 특허 검토와 의견 제출 상태를 확인합니다."
+      description="내 사업부에 요청된 특허 검토와 의견 제출 상태를 확인합니다."
     >
       <section className="dashboard-kpi-overview">
         <QuarterCompletionDonut
@@ -153,7 +161,7 @@ export function BusinessDashboardPage() {
                 <th>관련제품</th>
                 <th>AI 레포트 권고</th>
                 <th>사업부 의견</th>
-                <th>마감 기한</th>
+                <th>의견 제출 마감</th>
               </tr>
             </thead>
             <tbody>
@@ -181,7 +189,7 @@ export function BusinessDashboardPage() {
                     )}
                   </td>
                   <td>
-                    <DeadlineCell dueDate={patent.annualFeeDueDate} />
+                    <DeadlineCell dueDate={submissionDeadline} />
                   </td>
                 </tr>
               ))}
@@ -248,14 +256,14 @@ function getFilteredAndSortedPatents(
  */
 function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
   if (sortKey === "DUE_DATE_DESC") {
-    return secondPatent.annualFeeDueDate.localeCompare(firstPatent.annualFeeDueDate);
+    return secondPatent.feeDueDate.localeCompare(firstPatent.feeDueDate);
   }
 
   if (sortKey === "TITLE_ASC") {
     return firstPatent.title.localeCompare(secondPatent.title, "ko");
   }
 
-  return firstPatent.annualFeeDueDate.localeCompare(secondPatent.annualFeeDueDate);
+  return firstPatent.feeDueDate.localeCompare(secondPatent.feeDueDate);
 }
 
 /**

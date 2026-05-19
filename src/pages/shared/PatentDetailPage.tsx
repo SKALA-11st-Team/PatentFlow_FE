@@ -1,10 +1,14 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
-import { getDepartmentRecipientMappings, getMailingHistory, updateDepartmentRecipientMapping } from "../../api/mailing";
+import { getLatestBusinessSubmission } from "../../api/businessSubmissions";
+import { getDepartmentRecipientMappings, getMailingHistory } from "../../api/mailing";
 import {
   getPatentDetail,
+  getPatents,
+
   recordPatentFinalDecision,
+  requestPatentAiReport,
   sendBusinessReviewMails,
 } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
@@ -23,7 +27,6 @@ import { useBusinessChecklistItems } from "../../hooks/useBusinessChecklistItems
 import type { BusinessChecklistItem, BusinessChecklistSubmission } from "../../types/businessChecklist";
 import type { DepartmentRecipientMapping, MailingDeliveryStatus, MailingHistoryItem } from "../../types/mailing";
 import type {
-  ExecutiveApprovalDecision,
   LegalActionResult,
   PatentDetail,
   PatentLifecycleStatus,
@@ -33,24 +36,16 @@ import type {
 import {
   businessOpinionLabels,
   evaluationCategoryLabels,
-  EXECUTIVE_APPROVAL_DECISIONS,
-  executiveApprovalLabels,
   getRecommendationTone,
-  LEGAL_ACTION_RESULTS,
   legalActionResultLabels,
-  lifecycleStatusLabels,
   recommendationLabels,
   reviewWorkflowStatusLabels,
 } from "../../constants/status";
 import {
-  createBusinessReviewMailDraft,
+  createGroupedBusinessReviewMailDrafts,
   toBusinessReviewMailSendDraft,
   type BusinessReviewMailDraft,
 } from "../../utils/businessReviewMail";
-
-type RecipientMappingForm = Omit<DepartmentRecipientMapping, "ccEmails"> & {
-  ccEmailsText: string;
-};
 
 type BadgeTone = "neutral" | "primary" | "success" | "warning" | "danger";
 
@@ -71,7 +66,6 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
   const isAdmin = role === "ADMIN";
   const [hasSubmittedBusinessChecklist, setHasSubmittedBusinessChecklist] = useState(() => false);
   const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
-  const [decisionDraft, setDecisionDraft] = useState<ExecutiveApprovalDecision>("APPROVED_MAINTAIN");
   const [legalActionDraft, setLegalActionDraft] = useState<LegalActionResult>("MAINTAINED");
   const [decisionReasonDraft, setDecisionReasonDraft] = useState("");
   const [decisionMessage, setDecisionMessage] = useState("");
@@ -84,11 +78,9 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
   const [mailingHistoryItems, setMailingHistoryItems] = useState<MailingHistoryItem[]>([]);
   const [isMailHistoryOpen, setIsMailHistoryOpen] = useState(false);
   const [mailHistoryMessage, setMailHistoryMessage] = useState("");
-  const [recipientForm, setRecipientForm] = useState<RecipientMappingForm | null>(null);
-  const [isRecipientModalOpen, setIsRecipientModalOpen] = useState(false);
-  const [isSavingRecipient, setIsSavingRecipient] = useState(false);
+  const [isWorkflowActionProcessing, setIsWorkflowActionProcessing] = useState(false);
+  const [workflowActionMessage, setWorkflowActionMessage] = useState("");
   const checklistTotal = getBusinessChecklistTotal(businessChecklistSubmission);
-  const canApplyExecutiveApproval = patent?.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED";
   const canRecordFinalDecision = patent ? isFinalDecisionRecordable(patent) : false;
   const canSendBusinessReviewMail = patent?.reviewWorkflowStatus === "MAIL_READY";
   const displayedBusinessOpinionLabel = patent
@@ -128,8 +120,40 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         }
 
         setPatent(nextPatent);
-        setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
-        setHasSubmittedBusinessChecklist(hasPersistedBusinessOpinion(nextPatent));
+
+        if (hasPersistedBusinessOpinion(nextPatent)) {
+          setHasSubmittedBusinessChecklist(true);
+          try {
+            const latestSubmission = await getLatestBusinessSubmission(nextPatent);
+            const scores = latestSubmission?.checklistScores ?? [];
+            if (latestSubmission && scores.length > 0) {
+              setBusinessChecklistSubmission({
+                patentId: nextPatent.patentId,
+                evaluatorName: latestSubmission.submittedBy,
+                evaluatedAt: latestSubmission.submittedAt.slice(0, 10),
+                responses: scores.map((score) => ({
+                  itemId: score.itemId,
+                  score: score.score,
+                  aiSuggestedScore: 0,
+                  memo: score.memo,
+                })),
+                qualitativeScore: latestSubmission.qualitativeScore,
+                qualitativeMemo: "",
+                finalOpinion: latestSubmission.opinion,
+                finalReason: latestSubmission.reason,
+                additionalNeeds: "",
+              });
+            } else {
+              setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
+            }
+          } catch {
+            setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
+          }
+        } else {
+          setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
+          setHasSubmittedBusinessChecklist(false);
+        }
+
         setLoadMessage("");
       } catch {
         if (isMounted) {
@@ -211,13 +235,11 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta label="관리번호" value={patent.managementNumber} />
           <Meta label="출원번호" value={patent.applicationNumber} />
           <Meta label="등록번호" value={patent.registrationNumber ?? "N/A"} />
-          {isAdmin ? <Meta label="담당 부서" value={patent.departmentName} /> : null}
-          <Meta label="마감 기한" value={formatShortDate(patent.annualFeeDueDate)} />
+          <Meta label="마감 기한" value={formatShortDate(patent.feeDueDate)} />
           <Meta label="관련사업 분야" value={patent.businessArea} />
           <Meta label="관련기술 분야" value={patent.technologyArea} />
           <Meta label="관련제품" value={patent.productName} />
           <Meta label="예상 소멸일" value={patent.expectedExpirationDate} />
-          {isAdmin ? <Meta label="특허 자체 상태" value={lifecycleStatusLabels[patent.lifecycleStatus]} /> : null}
         </div>
       </section>
 
@@ -348,19 +370,13 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
       ) : null}
 
       {isDecisionModalOpen ? (
-        <ExecutiveApprovalModal
-          decision={decisionDraft}
+        <FinalDecisionModal
           legalActionResult={legalActionDraft}
           reason={decisionReasonDraft}
           isSubmitting={isApplyingDecision}
-          onChange={(nextDecision) => {
-            setDecisionDraft(nextDecision);
-            setLegalActionDraft(getDefaultLegalActionResult(nextDecision));
-          }}
-          onLegalActionChange={setLegalActionDraft}
           onReasonChange={setDecisionReasonDraft}
           onClose={() => setIsDecisionModalOpen(false)}
-          onSubmit={handleApplyExecutiveApproval}
+          onSubmit={handleRecordFinalDecision}
           patentTitle={patent.title}
         />
       ) : null}
@@ -388,20 +404,6 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         />
       ) : null}
 
-      {isRecipientModalOpen && recipientForm ? (
-        <RecipientMappingModal
-          form={recipientForm}
-          isSubmitting={isSavingRecipient}
-          onChange={handleRecipientFormChange}
-          onClose={() => {
-            if (!isSavingRecipient) {
-              setIsRecipientModalOpen(false);
-            }
-          }}
-          onSubmit={handleSaveRecipientMapping}
-          patentTitle={patent.title}
-        />
-      ) : null}
     </AppLayout>
   );
 
@@ -424,71 +426,24 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     }
   }
 
-  function handleOpenRecipientModal() {
-    if (!patent) {
-      return;
-    }
-
-    const currentMapping = recipientMappings.find((mapping) => mapping.departmentId === patent.departmentId);
-
-    setRecipientForm(currentMapping ? createRecipientFormFromMapping(currentMapping) : createRecipientFormFromPatent(patent));
-    setDecisionMessage("");
-    setIsRecipientModalOpen(true);
-  }
-
-  function handleRecipientFormChange(event: ChangeEvent<HTMLInputElement>) {
-    const { name, value } = event.target;
-
-    setRecipientForm((currentForm) => (currentForm ? { ...currentForm, [name]: value } : currentForm));
-  }
-
-  async function handleSaveRecipientMapping(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!recipientForm) {
-      return;
-    }
-
-    const departmentName = recipientForm.departmentName.trim();
-    const managerName = recipientForm.managerName.trim();
-    const managerEmail = recipientForm.managerEmail.trim();
-
-    if (!departmentName || !managerName || !managerEmail) {
-      setDecisionMessage("부서명, 담당자 이름, 이메일을 확인해 주세요.");
-      return;
-    }
-
-    setIsSavingRecipient(true);
-    setDecisionMessage("");
-
-    try {
-      const savedMapping = await updateDepartmentRecipientMapping({
-        ccEmails: parseCcEmails(recipientForm.ccEmailsText),
-        departmentId: recipientForm.departmentId || createDepartmentId(departmentName),
-        departmentName,
-        managerEmail,
-        managerName,
-        updatedAt: new Date().toISOString().slice(0, 10),
-      });
-
-      setRecipientMappings((currentMappings) => upsertRecipientMapping(currentMappings, savedMapping));
-      setRecipientForm(createRecipientFormFromMapping(savedMapping));
-      setIsRecipientModalOpen(false);
-      setDecisionMessage(`${savedMapping.departmentName} 담당자 정보를 저장했습니다.`);
-    } catch (error) {
-      setDecisionMessage(error instanceof Error ? error.message : "담당자 정보를 저장하지 못했습니다.");
-    } finally {
-      setIsSavingRecipient(false);
-    }
-  }
-
-  function handleOpenMailPreview() {
+  async function handleOpenMailPreview() {
     if (!patent || patent.reviewWorkflowStatus !== "MAIL_READY") {
       setDecisionMessage("메일 발송 대기 상태의 특허만 발송할 수 있습니다.");
       return;
     }
 
-    setMailDrafts([createBusinessReviewMailDraft(patent, recipientMappings)]);
+    try {
+      const allMailReady = await getPatents({ reviewWorkflowStatus: "MAIL_READY" });
+      const sameDeptPatents = allMailReady.filter((p) => p.departmentId === patent.departmentId);
+      const grouped = createGroupedBusinessReviewMailDrafts(
+        sameDeptPatents.length > 0 ? sameDeptPatents : [patent],
+        recipientMappings,
+      );
+      setMailDrafts(grouped);
+    } catch {
+      setMailDrafts(createGroupedBusinessReviewMailDrafts([patent], recipientMappings));
+    }
+
     setActiveMailIndex(0);
     setIsSendConfirmOpen(false);
     setDecisionMessage("");
@@ -539,7 +494,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     }
   }
 
-  async function handleApplyExecutiveApproval() {
+  async function handleRecordFinalDecision() {
     if (!patent) {
       return;
     }
@@ -558,7 +513,6 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
       }
 
       const result = await recordPatentFinalDecision(currentPatent.patentId, {
-        decision: decisionDraft,
         legalActionResult: legalActionDraft,
         reason: trimmedReason,
       });
@@ -576,6 +530,23 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
       setIsApplyingDecision(false);
     }
   }
+
+  async function handleRequestAiReport() {
+    if (!patent) return;
+    setIsWorkflowActionProcessing(true);
+    setWorkflowActionMessage("");
+    try {
+      const updated = await requestPatentAiReport(patent.patentId);
+      if (updated) setPatent(updated);
+      setWorkflowActionMessage("AI 레포트 생성이 완료되었습니다.");
+    } catch (error) {
+      setWorkflowActionMessage(error instanceof Error ? error.message : "AI 레포트 생성에 실패했습니다.");
+    } finally {
+      setIsWorkflowActionProcessing(false);
+    }
+  }
+
+
 
   function BusinessOpinionSection({ isAdmin }: { isAdmin: boolean }) {
     return (
@@ -619,10 +590,15 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
               })}
             </div>
           ) : null}
-          {role === "BUSINESS" ? (
+          {role === "BUSINESS" && !hasSubmittedBusinessChecklist ? (
             <Button type="button" onClick={() => setIsChecklistOpen(true)}>
               의견 작성
             </Button>
+          ) : null}
+          {role === "BUSINESS" && hasSubmittedBusinessChecklist ? (
+            <p className="notice" style={{ margin: 0, fontSize: "0.85em" }}>
+              이미 제출한 의견은 변경할 수 없습니다.
+            </p>
           ) : null}
         </div>
       </Section>
@@ -631,13 +607,12 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
   function AdminDecisionSection({ patentDetail }: { patentDetail: PatentDetail }) {
     const canViewMailHistory = patentDetail.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE";
-    const canManageRecipient = canSendBusinessReviewMail || canViewMailHistory;
 
     return (
       <Section title="최종 판단" description="AI 권고와 사업부 의견을 검토한 뒤 관리자 결론과 실제 법무 처리 결과를 기록합니다.">
-        {patentDetail.finalDecisionRecord.decision ? (
+        {patentDetail.finalDecisionRecord.decisionId ? (
           <div className="decision-box">
-            <Badge tone="success">{executiveApprovalLabels[patentDetail.finalDecisionRecord.decision]}</Badge>
+            <Badge tone="success">{patentDetail.legalActionResult ? legalActionResultLabels[patentDetail.legalActionResult] : "처리 완료"}</Badge>
             <p>{patentDetail.finalDecisionRecord.reason ?? "최종 처리 결과가 반영되었습니다."}</p>
             {patentDetail.legalActionResult ? (
               <div className="decision-result-row">
@@ -660,35 +635,51 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <div className="decision-box empty">
             <strong>{getAdminActionTitle(patentDetail.reviewWorkflowStatus)}</strong>
             <p>{getAdminActionDescription(patentDetail.reviewWorkflowStatus)}</p>
+            {workflowActionMessage ? <p className="notice">{workflowActionMessage}</p> : null}
             {decisionMessage ? <p className="notice">{decisionMessage}</p> : null}
-            <div className="inline-action-group">
-              <Button
-                disabled={!canSendBusinessReviewMail && !canApplyExecutiveApproval && !canViewMailHistory}
-                onClick={() => {
-                  if (patentDetail.reviewWorkflowStatus === "MAIL_READY") {
-                    handleOpenMailPreview();
-                    return;
-                  }
-
-                  if (patentDetail.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE") {
-                    handleOpenMailHistory();
-                    return;
-                  }
-
-                  if (patentDetail.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED") {
-                    openFinalDecisionModal(patentDetail);
-                  }
-                }}
-                type="button"
-              >
-                {getAdminActionButtonLabel(patentDetail.reviewWorkflowStatus)}
+            {patentDetail.reviewWorkflowStatus === "REVIEW_QUARTER_STARTED" ? (
+              <Button disabled={isWorkflowActionProcessing} onClick={handleRequestAiReport} type="button">
+                {isWorkflowActionProcessing ? "AI 레포트 생성 중..." : "AI 레포트 생성"}
               </Button>
-              {canManageRecipient ? (
-                <Button onClick={handleOpenRecipientModal} type="button" variant="secondary">
-                  담당자 추가/수정
-                </Button>
-              ) : null}
-            </div>
+            ) : (
+              <div className="inline-action-group">
+                {patentDetail.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED" ? (
+                  patentDetail.businessOpinion.opinion === "ABANDON" ? (
+                    <Button
+                      disabled={isApplyingDecision}
+                      onClick={() => openFinalDecisionModal(patentDetail)}
+                      type="button"
+                    >
+                      {isApplyingDecision ? "처리 중..." : "매각 완료"}
+                    </Button>
+                  ) : (
+                    <Button
+                      disabled={isApplyingDecision}
+                      onClick={() => openFinalDecisionModal(patentDetail)}
+                      type="button"
+                    >
+                      {isApplyingDecision ? "처리 중..." : "납부 완료"}
+                    </Button>
+                  )
+                ) : (
+                  <Button
+                    disabled={!canSendBusinessReviewMail && !canViewMailHistory}
+                    onClick={() => {
+                      if (patentDetail.reviewWorkflowStatus === "MAIL_READY") {
+                        handleOpenMailPreview();
+                        return;
+                      }
+                      if (patentDetail.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE") {
+                        handleOpenMailHistory();
+                      }
+                    }}
+                    type="button"
+                  >
+                    {getAdminActionButtonLabel(patentDetail.reviewWorkflowStatus)}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </Section>
@@ -696,10 +687,8 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
   }
 
   function openFinalDecisionModal(patentDetail: PatentDetail) {
-    const nextDecision = patentDetail.finalDecisionRecord.decision ?? getDefaultDecision(patentDetail.businessOpinion.opinion);
-
-    setDecisionDraft(nextDecision);
-    setLegalActionDraft(patentDetail.legalActionResult ?? getDefaultLegalActionResult(nextDecision));
+    const derived = patentDetail.businessOpinion.opinion === "ABANDON" ? "SOLD" : "MAINTAINED";
+    setLegalActionDraft(patentDetail.legalActionResult ?? derived);
     setDecisionReasonDraft(patentDetail.finalDecisionRecord.reason ?? "");
     setDecisionMessage("");
     setIsDecisionModalOpen(true);
@@ -748,24 +737,18 @@ function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSub
   );
 }
 
-function ExecutiveApprovalModal({
-  decision,
+function FinalDecisionModal({
   legalActionResult,
   reason,
   isSubmitting,
-  onChange,
-  onLegalActionChange,
   onReasonChange,
   onClose,
   onSubmit,
   patentTitle,
 }: {
-  decision: ExecutiveApprovalDecision;
   legalActionResult: LegalActionResult;
   reason: string;
   isSubmitting: boolean;
-  onChange: (decision: ExecutiveApprovalDecision) => void;
-  onLegalActionChange: (legalActionResult: LegalActionResult) => void;
   onReasonChange: (reason: string) => void;
   onClose: () => void;
   onSubmit: () => void | Promise<void>;
@@ -775,39 +758,16 @@ function ExecutiveApprovalModal({
     <Modal ariaLabel="최종 처리 결과 입력" className="business-checklist-modal" onClose={onClose}>
       <div className="modal-header">
         <div>
-          <p className="eyebrow">최종 처리 결과</p>
-          <h2>관리자 판단 입력</h2>
+          <p className="eyebrow">{legalActionResult === "SOLD" ? "매각 처리" : "납부 완료"}</p>
+          <h2>{legalActionResult === "SOLD" ? "매각 완료 확인" : "납부 완료 확인"}</h2>
           <p>{patentTitle}</p>
         </div>
         <button aria-label="최종 처리 결과 닫기" className="modal-close-button" onClick={onClose} type="button">
           ×
         </button>
       </div>
-
-      <div className="checklist-final-grid">
-        <label>
-          <span>관리자 최종 판단</span>
-          <select onChange={(event) => onChange(event.target.value as ExecutiveApprovalDecision)} value={decision}>
-            {EXECUTIVE_APPROVAL_DECISIONS.map((option) => (
-              <option key={option} value={option}>
-                {executiveApprovalLabels[option]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span>법무 처리 결과</span>
-          <select onChange={(event) => onLegalActionChange(event.target.value as LegalActionResult)} value={legalActionResult}>
-            {LEGAL_ACTION_RESULTS.map((option) => (
-              <option key={option} value={option}>
-                {legalActionResultLabels[option]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
       <label className="checklist-memo-label">
-        <span>최종 판단 사유</span>
+        <span>처리 사유</span>
         <textarea
           onChange={(event) => onReasonChange(event.target.value)}
           placeholder="AI 권고, 사업부 의견, 법무 검토 근거를 구분해 입력하세요."
@@ -820,7 +780,7 @@ function ExecutiveApprovalModal({
           취소
         </Button>
         <Button disabled={isSubmitting} onClick={onSubmit} type="button">
-          {isSubmitting ? "저장 중" : "처리 결과 저장"}
+          {isSubmitting ? "처리 중..." : legalActionResult === "SOLD" ? "매각 완료" : "납부 완료"}
         </Button>
       </div>
     </Modal>
@@ -912,173 +872,6 @@ function MailingHistoryModal({
   );
 }
 
-/**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-05
- * @description 특허 상세에서 사업부 메일 수신 담당자 매핑을 추가하거나 수정하는 모달
- */
-function RecipientMappingModal({
-  form,
-  isSubmitting,
-  onChange,
-  onClose,
-  onSubmit,
-  patentTitle,
-}: {
-  form: RecipientMappingForm;
-  isSubmitting: boolean;
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onClose: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void | Promise<void>;
-  patentTitle: string;
-}) {
-  return (
-    <Modal ariaLabel="담당자 추가" className="recipient-modal" onClose={onClose}>
-      <div className="modal-header">
-        <div>
-          <p className="eyebrow">담당자 매핑</p>
-          <h2>사업부 메일 담당자</h2>
-          <p>{patentTitle}</p>
-        </div>
-        <button aria-label="담당자 추가 닫기" className="modal-close-button" onClick={onClose} type="button">
-          ×
-        </button>
-      </div>
-
-      <form className="recipient-form recipient-modal-form" onSubmit={onSubmit}>
-        <strong>{form.departmentId ? "담당자 정보 수정" : "새 부서 담당자 추가"}</strong>
-        <label>
-          부서명
-          <input name="departmentName" onChange={onChange} value={form.departmentName} />
-        </label>
-        <label>
-          담당자 이름
-          <input name="managerName" onChange={onChange} value={form.managerName} />
-        </label>
-        <label>
-          담당자 이메일
-          <input name="managerEmail" onChange={onChange} type="email" value={form.managerEmail} />
-        </label>
-        <label>
-          참조 이메일
-          <input name="ccEmailsText" onChange={onChange} value={form.ccEmailsText} />
-        </label>
-
-        <div className="modal-actions">
-          <Button disabled={isSubmitting} onClick={onClose} type="button" variant="secondary">
-            취소
-          </Button>
-          <Button disabled={isSubmitting} type="submit">
-            {isSubmitting ? "저장 중" : "담당자 저장"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function getDefaultDecision(opinion: PatentDetail["businessOpinion"]["opinion"]): ExecutiveApprovalDecision {
-  return opinion === "ABANDON" ? "APPROVED_ABANDON" : "APPROVED_MAINTAIN";
-}
-
-function getDefaultLegalActionResult(decision: ExecutiveApprovalDecision): LegalActionResult {
-  if (decision === "APPROVED_ABANDON") {
-    return "ABANDONED";
-  }
-
-  if (decision === "APPROVED_SELL") {
-    return "SOLD";
-  }
-
-  return "MAINTAINED";
-}
-
-/**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-05
- * @description 기존 부서별 메일 담당자 매핑을 특허 상세 담당자 모달 폼 상태로 변환한다.
- */
-function createRecipientFormFromMapping(mapping: DepartmentRecipientMapping): RecipientMappingForm {
-  return {
-    ...mapping,
-    ccEmailsText: mapping.ccEmails.join(", "),
-  };
-}
-
-/**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-05
- * @description 현재 특허의 담당 부서 정보를 기준으로 담당자 신규 추가 폼 초기값을 만든다.
- */
-function createRecipientFormFromPatent(patent: PatentDetail): RecipientMappingForm {
-  return {
-    ccEmailsText: "legal-review@syuuk.test",
-    departmentId: patent.departmentId,
-    departmentName: patent.departmentName,
-    managerEmail: getDefaultManagerEmail(patent.departmentId),
-    managerName: `${patent.departmentName} 담당자`,
-    updatedAt: new Date().toISOString().slice(0, 10),
-  };
-}
-
-/**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-05
- * @description 담당자 저장 결과를 기존 매핑 목록에 추가하거나 같은 부서 ID 항목으로 교체한다.
- */
-function upsertRecipientMapping(
-  currentMappings: DepartmentRecipientMapping[],
-  savedMapping: DepartmentRecipientMapping,
-) {
-  const hasMapping = currentMappings.some((mapping) => mapping.departmentId === savedMapping.departmentId);
-
-  return hasMapping
-    ? currentMappings.map((mapping) => (mapping.departmentId === savedMapping.departmentId ? savedMapping : mapping))
-    : [...currentMappings, savedMapping];
-}
-
-/**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-05
- * @description 쉼표로 입력한 참조 이메일 문자열을 API 전달 배열로 정규화한다.
- */
-function parseCcEmails(ccEmailsText: string) {
-  return ccEmailsText
-    .split(",")
-    .map((email) => email.trim())
-    .filter(Boolean);
-}
-
-/**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-05
- * @description 신규 부서명으로 mock/API 전달용 부서 ID를 생성한다.
- */
-function createDepartmentId(departmentName: string) {
-  const normalizedName = departmentName
-    .trim()
-    .toUpperCase()
-    .replace(/[^0-9A-Z가-힣]+/gu, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return `DEPT-${normalizedName || "NEW"}`;
-}
-
-/**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-05
- * @description 담당자 매핑이 없을 때 데모 입력을 빠르게 시작할 수 있는 기본 이메일을 만든다.
- */
-function getDefaultManagerEmail(departmentId: string) {
-  const normalizedDepartmentId = departmentId
-    .toLowerCase()
-    .replace(/^dept-/, "")
-    .replace(/[^0-9a-z]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return `${normalizedDepartmentId || "business"}@syuuk.test`;
-}
-
 const mailingHistoryStatusLabels: Record<MailingDeliveryStatus, string> = {
   FAILED: "실패",
   PENDING: "대기",
@@ -1118,10 +911,8 @@ function formatDateTime(dateText: string) {
  */
 function isFinalDecisionRecordable(patent: PatentDetail) {
   return (
-    Boolean(patent.finalDecisionRecord.decision) ||
+    Boolean(patent.finalDecisionRecord.decisionId) ||
     patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED" ||
-    patent.reviewWorkflowStatus === "WAITING_EXECUTIVE_APPROVAL" ||
-    patent.reviewWorkflowStatus === "APPROVAL_COMPLETED" ||
     patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED"
   );
 }
@@ -1348,18 +1139,10 @@ function SummaryBlock({ title, content }: { title: string; content: string }) {
  * @description 관리자 특허 상세의 현재 workflow 단계에 맞는 액션 제목을 반환한다.
  */
 function getAdminActionTitle(workflowStatus: ReviewWorkflowStatus) {
-  if (workflowStatus === "MAIL_READY") {
-    return "사업부 메일 발송 필요";
-  }
-
-  if (workflowStatus === "WAITING_BUSINESS_RESPONSE") {
-    return "사업부 응답 대기";
-  }
-
-  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") {
-    return "처리 결과 입력 필요";
-  }
-
+  if (workflowStatus === "REVIEW_QUARTER_STARTED") return "AI 레포트 생성 필요";
+  if (workflowStatus === "MAIL_READY") return "사업부 메일 발송 필요";
+  if (workflowStatus === "WAITING_BUSINESS_RESPONSE") return "사업부 응답 대기";
+  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") return "처리 결과 입력 필요";
   return "처리 결과 미입력";
 }
 
@@ -1369,18 +1152,10 @@ function getAdminActionTitle(workflowStatus: ReviewWorkflowStatus) {
  * @description 관리자 특허 상세의 현재 workflow 단계에 맞는 액션 설명을 반환한다.
  */
 function getAdminActionDescription(workflowStatus: ReviewWorkflowStatus) {
-  if (workflowStatus === "MAIL_READY") {
-    return "AI 특허 평가 레포트가 준비되어 사업부서 담당자에게 메일을 발송할 수 있습니다.";
-  }
-
-  if (workflowStatus === "WAITING_BUSINESS_RESPONSE") {
-    return "사업부서 담당자의 유지/포기 의견 제출을 기다리는 중입니다.";
-  }
-
-  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") {
-    return "사업부 의견을 확인한 뒤 유지, 포기, 매각 중 실제 처리 결과를 입력해야 합니다.";
-  }
-
+  if (workflowStatus === "REVIEW_QUARTER_STARTED") return "FastAPI AI 에이전트를 호출해 특허 평가 레포트를 생성합니다.";
+  if (workflowStatus === "MAIL_READY") return "AI 특허 평가 레포트가 생성되었습니다. 사업부서 담당자에게 메일을 발송하세요.";
+  if (workflowStatus === "WAITING_BUSINESS_RESPONSE") return "사업부서 담당자의 유지/포기 의견 제출을 기다리는 중입니다.";
+  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") return "사업부 의견을 확인한 뒤 유지, 포기, 매각 중 실제 처리 결과를 입력해야 합니다.";
   return "아직 입력된 최종 처리 결과가 없습니다.";
 }
 

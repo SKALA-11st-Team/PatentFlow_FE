@@ -1,15 +1,18 @@
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Button } from "../../components/common/Button";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
-import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
+import { getDepartments, type Department } from "../../api/departments";
+import { assignPatentDepartment, createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
-import { reviewWorkflowStatusLabels, REVIEW_WORKFLOW_STATUSES } from "../../constants/status";
-import type { PatentListItem, PatentUpsertPayload, ReviewWorkflowStatus } from "../../types/patent";
+import { REVIEW_WORKFLOW_FILTER_OPTIONS, reviewWorkflowStatusLabels, type ReviewWorkflowFilter } from "../../constants/status";
+import type { PatentListItem, PatentUpsertPayload } from "../../types/patent";
+
+type DashboardScope = "ALL" | "QUARTER" | "NOT_IN_QUARTER";
 import { getNextAnnualFeeDueDate } from "../../utils/annualFee";
 
 type PatentFormState = PatentUpsertPayload;
@@ -37,22 +40,30 @@ const emptyPatentForm: PatentFormState = {
  */
 export function AdminPatentListPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [form, setForm] = useState<PatentFormState>(emptyPatentForm);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [keyword, setKeyword] = useState("");
-  const [businessAreaFilter, setBusinessAreaFilter] = useState(() => searchParams.get("businessArea") ?? "ALL");
-  const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowStatus | "ALL">("ALL");
-  const [sort, setSort] = useState("annualFeeDueDate,asc");
+  const [reviewScope, setReviewScope] = useState<DashboardScope>("QUARTER");
+  const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>("ALL");
+  const [sort, setSort] = useState("feeDueDate,asc");
   const [lookupMessage, setLookupMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isManualMetadataEditEnabled, setIsManualMetadataEditEnabled] = useState(false);
+  const [assigningPatentId, setAssigningPatentId] = useState<string | null>(null);
+  const [assigningDeptId, setAssigningDeptId] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  useEffect(() => {
+    getDepartments().then(setDepartments).catch(() => {});
+  }, []);
+
   const listedPatents = useMemo(
-    () => getEditablePatentRows(patentList, keyword, businessAreaFilter, workflowFilter, sort),
-    [businessAreaFilter, keyword, patentList, sort, workflowFilter],
+    () => getEditablePatentRows(patentList, keyword, reviewScope, workflowFilter, sort),
+    [keyword, patentList, reviewScope, sort, workflowFilter],
   );
   const {
     currentPage,
@@ -61,11 +72,7 @@ export function AdminPatentListPage() {
     setCurrentPage,
     totalItems,
     totalPages,
-  } = useClientPagination(listedPatents, [businessAreaFilter, keyword, sort, workflowFilter]);
-  const businessAreaOptions = useMemo(
-    () => Array.from(new Set(patentList.map((patent) => patent.businessArea))).sort((first, second) => first.localeCompare(second, "ko")),
-    [patentList],
-  );
+  } = useClientPagination(listedPatents, [keyword, reviewScope, sort, workflowFilter]);
 
   async function handleLookupPatent() {
     if (!form.registrationNumber?.trim()) {
@@ -182,7 +189,27 @@ export function AdminPatentListPage() {
     }
   }
 
-  function handleFormChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handleAssignDepartment(patentId: string) {
+    if (!assigningDeptId) return;
+    setIsAssigning(true);
+    try {
+      await assignPatentDepartment(patentId, assigningDeptId);
+      const assigned = departments.find((d) => d.departmentId === assigningDeptId);
+      setPatentList((prev) =>
+        prev.map((p) =>
+          p.patentId === patentId
+            ? { ...p, departmentId: assigningDeptId, departmentName: assigned?.departmentName ?? assigningDeptId }
+            : p,
+        ),
+      );
+      setAssigningPatentId(null);
+      setAssigningDeptId("");
+    } finally {
+      setIsAssigning(false);
+    }
+  }
+
+  function handleFormChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = event.target;
 
     setForm((currentForm) => ({
@@ -301,6 +328,15 @@ export function AdminPatentListPage() {
               />
             </label>
             <label>
+              등록번호
+              <input
+                name="registrationNumber"
+                onChange={handleFormChange}
+                readOnly={!isManualMetadataEditEnabled}
+                value={form.registrationNumber ?? ""}
+              />
+            </label>
+            <label>
               공동출원인명
               <input
                 name="coApplicants"
@@ -343,12 +379,23 @@ export function AdminPatentListPage() {
       </Section>
 
       <Section
-        title={businessAreaFilter === "ALL" ? "특허 수정" : `${businessAreaFilter} 특허 리스트`}
+        title="특허 수정"
         description={`${listedPatents.length}건의 특허가 조회되었습니다. 행을 클릭하면 상세 수정 페이지로 이동합니다.`}
       >
         <div className="filter-bar patent-management-filter-bar">
           <label>
-            검색
+            <span>조회 범위</span>
+            <select
+              onChange={(event) => setReviewScope(event.target.value as DashboardScope)}
+              value={reviewScope}
+            >
+              <option value="ALL">전체 특허</option>
+              <option value="QUARTER">이번 분기 납부 대상</option>
+              <option value="NOT_IN_QUARTER">검토 분기 아님</option>
+            </select>
+          </label>
+          <label>
+            <span>검색</span>
             <input
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="특허명, 관리번호, 출원번호"
@@ -356,37 +403,24 @@ export function AdminPatentListPage() {
             />
           </label>
           <label>
-            관련사업 분야
-            <select onChange={(event) => setBusinessAreaFilter(event.target.value)} value={businessAreaFilter}>
-              <option value="ALL">전체</option>
-              {businessAreaOptions.map((businessArea) => (
-                <option key={businessArea} value={businessArea}>
-                  {businessArea}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            검토 단계
+            <span>검토 단계</span>
             <select
-              onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowStatus | "ALL")}
+              onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowFilter)}
               value={workflowFilter}
             >
-              <option value="ALL">전체</option>
-              {REVIEW_WORKFLOW_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {reviewWorkflowStatusLabels[status]}
+              {REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW_QUARTER").map((option) => (
+                <option key={option} value={option}>
+                  {option === "ALL" ? "전체" : reviewWorkflowStatusLabels[option]}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            정렬
+            <span>정렬</span>
             <select onChange={(event) => setSort(event.target.value)} value={sort}>
-              <option value="annualFeeDueDate,asc">마감 기한 빠른순</option>
-              <option value="annualFeeDueDate,desc">마감 기한 늦은순</option>
+              <option value="feeDueDate,asc">마감 기한 빠른순</option>
+              <option value="feeDueDate,desc">마감 기한 늦은순</option>
               <option value="title,asc">특허명 가나다순</option>
-              <option value="departmentName,asc">부서 가나다순</option>
             </select>
           </label>
         </div>
@@ -400,6 +434,7 @@ export function AdminPatentListPage() {
                 <th>관련사업 분야</th>
                 <th>관련기술 / 제품</th>
                 <th>검토 단계</th>
+                <th>담당 사업부</th>
               </tr>
             </thead>
             <tbody>
@@ -434,11 +469,60 @@ export function AdminPatentListPage() {
                   <td>
                     <WorkflowStatusBadge status={patent.reviewWorkflowStatus} />
                   </td>
+                  <td
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    {(patent.reviewWorkflowStatus === "REVIEW_QUARTER_STARTED" || patent.reviewWorkflowStatus === "MAIL_READY") ? (
+                      assigningPatentId === patent.patentId ? (
+                        <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                          <select
+                            onChange={(e) => setAssigningDeptId(e.target.value)}
+                            style={{ fontSize: "0.85em" }}
+                            value={assigningDeptId}
+                          >
+                            <option value="">선택</option>
+                            {departments.map((d) => (
+                              <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
+                            ))}
+                          </select>
+                          <button
+                            disabled={!assigningDeptId || isAssigning}
+                            onClick={() => handleAssignDepartment(patent.patentId)}
+                            style={{ fontSize: "0.8em", padding: "2px 8px" }}
+                            type="button"
+                          >
+                            {isAssigning ? "저장 중" : "확인"}
+                          </button>
+                          <button
+                            onClick={() => { setAssigningPatentId(null); setAssigningDeptId(""); }}
+                            style={{ fontSize: "0.8em", padding: "2px 6px" }}
+                            type="button"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setAssigningPatentId(patent.patentId);
+                            setAssigningDeptId(patent.departmentId ?? "");
+                          }}
+                          style={{ background: "none", border: "1px solid var(--color-border)", borderRadius: "4px", cursor: "pointer", fontSize: "0.85em", padding: "3px 10px" }}
+                          type="button"
+                        >
+                          {patent.departmentName ? patent.departmentName : "사업부 배정"}
+                        </button>
+                      )
+                    ) : (
+                      <span className="table-subtext">{patent.departmentName || "—"}</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {listedPatents.length === 0 ? (
                 <tr>
-                  <td className="empty-table-cell" colSpan={6}>
+                  <td className="empty-table-cell" colSpan={7}>
                     조건에 해당하는 수정 대상 특허가 없습니다.
                   </td>
                 </tr>
@@ -466,28 +550,28 @@ export function AdminPatentListPage() {
 function getEditablePatentRows(
   patentList: PatentListItem[],
   keyword: string,
-  businessAreaFilter: string,
-  workflowFilter: ReviewWorkflowStatus | "ALL",
+  reviewScope: DashboardScope,
+  workflowFilter: ReviewWorkflowFilter,
   sort: string,
 ) {
   const normalizedKeyword = keyword.trim().toLowerCase();
 
   return patentList
     .filter((patent) => {
-      if (workflowFilter !== "ALL" && patent.reviewWorkflowStatus !== workflowFilter) {
-        return false;
-      }
+      const matchesScope =
+        reviewScope === "ALL" ||
+        (reviewScope === "QUARTER" && patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER") ||
+        (reviewScope === "NOT_IN_QUARTER" && patent.reviewWorkflowStatus === "NOT_IN_REVIEW_QUARTER");
 
-      if (businessAreaFilter !== "ALL" && patent.businessArea !== businessAreaFilter) {
-        return false;
-      }
+      const matchesWorkflow = workflowFilter === "ALL" || patent.reviewWorkflowStatus === workflowFilter;
 
-      return (
+      const matchesKeyword =
         normalizedKeyword.length === 0 ||
         patent.title.toLowerCase().includes(normalizedKeyword) ||
         patent.managementNumber.toLowerCase().includes(normalizedKeyword) ||
-        patent.applicationNumber.toLowerCase().includes(normalizedKeyword)
-      );
+        patent.applicationNumber.toLowerCase().includes(normalizedKeyword);
+
+      return matchesScope && matchesWorkflow && matchesKeyword;
     })
     .sort((firstPatent, secondPatent) => comparePatents(firstPatent, secondPatent, sort));
 }
@@ -498,8 +582,6 @@ function getEditablePatentRows(
  * @description 등록 폼 데이터를 특허관리 테이블에서 즉시 확인할 수 있는 특허 항목으로 변환한다.
  */
 function createListItemFromForm(form: PatentFormState, patentId: string): PatentListItem {
-  const department = getDepartmentFromBusinessArea(form.businessArea);
-
   return {
     patentId,
     managementNumber: form.managementNumber,
@@ -515,15 +597,14 @@ function createListItemFromForm(form: PatentFormState, patentId: string): Patent
     applicationDate: form.applicationDate,
     registrationDate: form.registrationDate,
     expectedExpirationDate: form.expectedExpirationDate,
-    departmentId: department.id,
-    departmentName: department.name,
+    departmentId: "",
+    departmentName: "",
     lifecycleStatus: "ACTIVE",
     reviewWorkflowStatus: "NOT_IN_REVIEW_QUARTER",
-    annualFeeDueDate: getNextAnnualFeeDueDate(form.registrationDate || form.applicationDate),
+    feeDueDate: getNextAnnualFeeDueDate(form.registrationDate || form.applicationDate),
     reviewReason: "관리자가 등록한 특허입니다. 검토 분기 도래 시 AI 평가 대상에 포함됩니다.",
     currentRecommendation: "HOLD",
     businessOpinionDecision: null,
-    executiveApprovalDecision: null,
     legalActionResult: null,
   };
 }
@@ -538,22 +619,9 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
 }
 
 function getSortablePatentValue(patent: PatentListItem, field: string) {
-  if (field === "annualFeeDueDate") {
-    return patent.annualFeeDueDate;
-  }
-
-  if (field === "departmentName") {
-    return patent.departmentName;
+  if (field === "feeDueDate") {
+    return patent.feeDueDate;
   }
 
   return patent.title;
-}
-
-function getDepartmentFromBusinessArea(businessArea: string) {
-  const normalizedBusinessArea = businessArea.trim() || "미분류";
-
-  return {
-    id: `DEPT-${normalizedBusinessArea.toUpperCase()}`,
-    name: `${normalizedBusinessArea} 담당`,
-  };
 }

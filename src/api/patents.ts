@@ -17,7 +17,6 @@ import type {
   PatentDetail,
   EvaluationScore,
   FinalDecisionRecord,
-  ExecutiveApprovalDecision,
   LegalActionResult,
   PatentLifecycleStatus,
   PatentListItem,
@@ -47,14 +46,7 @@ export interface BulkMailingResult {
   updatedPatentIds: string[];
 }
 
-export interface ExecutiveApprovalResult {
-  decision: ExecutiveApprovalDecision;
-  updatedCount: number;
-  updatedPatentIds: string[];
-}
-
 export interface FinalDecisionPayload {
-  decision: ExecutiveApprovalDecision;
   legalActionResult: LegalActionResult;
   reason: string;
 }
@@ -90,7 +82,7 @@ type BackendPatentListItem = Omit<
   | "applicationDate"
   | "registrationDate"
   | "expectedExpirationDate"
-  | "annualFeeDueDate"
+  | "feeDueDate"
 > & {
   applicationNumber: string | null;
   draftTitle: string | null;
@@ -102,7 +94,7 @@ type BackendPatentListItem = Omit<
   applicationDate: string | null;
   registrationDate: string | null;
   expectedExpirationDate: string | null;
-  annualFeeDueDate: string | null;
+  feeDueDate: string | null;
 };
 
 interface BackendPatentDetail extends BackendPatentListItem {
@@ -130,7 +122,6 @@ interface BackendPatentDetail extends BackendPatentListItem {
   };
   finalDecisionRecord: {
     decisionId: string | null;
-    decision: ExecutiveApprovalDecision | null;
     reason: string | null;
     decidedAt: string | null;
   };
@@ -239,30 +230,6 @@ export async function sendBusinessReviewMails(drafts: BusinessReviewMailSendDraf
 }
 
 /**
- * @relatedFR FR-011, FR-012
- * @relatedUI UI-LEGAL-05
- * @description 관리자 최종 판단을 단건 또는 일괄 특허에 반영한다.
- */
-export async function applyExecutiveApprovalDecision(
-  patentIds: string[],
-  decision: ExecutiveApprovalDecision,
-): Promise<ExecutiveApprovalResult> {
-  if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<ExecutiveApprovalResult>>(
-      "/patents/executive-approvals/bulk-decision",
-      {
-        body: JSON.stringify({ decision, patentIds }),
-        method: "POST",
-      },
-    );
-
-    return response.data ?? { decision, updatedCount: 0, updatedPatentIds: [] };
-  }
-
-  return applyMockExecutiveApprovalDecision(patentIds, decision);
-}
-
-/**
  * @relatedFR FR-011, FR-012, FR-017
  * @relatedUI UI-LEGAL-05
  * @description 관리자 특허 상세에서 AI 권고와 분리된 단건 최종 판단과 실제 법무 처리 결과를 기록한다.
@@ -281,6 +248,34 @@ export async function recordPatentFinalDecision(
   }
 
   return recordMockPatentFinalDecision(patentId, payload);
+}
+
+/**
+ * @description 단건 특허에 대해 AI 평가 레포트 생성을 요청한다. 생성 완료 시 상태가 MAIL_READY로 전환된다.
+ */
+export async function requestPatentAiReport(patentId: string): Promise<PatentDetail | undefined> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<BackendPatentDetail>>(`/patents/${patentId}/request-ai-report`, {
+      method: "POST",
+      body: "{}",
+    });
+    return response.data ? mapBackendPatentDetail(response.data) : undefined;
+  }
+  return getPatentDetail(patentId);
+}
+
+/**
+ * @description 복수 특허를 MAIL_READY 상태로 일괄 전환한다.
+ */
+export async function markPatentsMailReady(patentIds: string[]): Promise<string[]> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<string[]>>("/patents/batch/mark-mail-ready", {
+      method: "POST",
+      body: JSON.stringify({ patentIds }),
+    });
+    return response.data ?? [];
+  }
+  return patentIds;
 }
 
 /**
@@ -349,6 +344,21 @@ export async function updatePatent(patentId: string, payload: PatentUpsertPayloa
   };
 }
 
+export async function assignPatentDepartment(patentId: string, departmentId: string): Promise<void> {
+  if (isBackendApiEnabled()) {
+    await requestJson<ApiEnvelope<unknown>>(`/patents/${patentId}/department`, {
+      body: JSON.stringify({ departmentId }),
+      method: "PATCH",
+    });
+    return;
+  }
+
+  const idx = patents.findIndex((p) => p.patentId === patentId);
+  if (idx !== -1) {
+    patents[idx] = { ...patents[idx], departmentId };
+  }
+}
+
 /**
  * @relatedFR FR-003, FR-004
  * @relatedUI UI-LEGAL-04
@@ -390,7 +400,7 @@ function mapBackendPatentListItem(patent: BackendPatentListItem): PatentListItem
     applicationDate: patent.applicationDate ?? "",
     registrationDate: patent.registrationDate ?? "",
     expectedExpirationDate: patent.expectedExpirationDate ?? "",
-    annualFeeDueDate: patent.annualFeeDueDate ?? "",
+    feeDueDate: patent.feeDueDate ?? "",
   };
 }
 
@@ -488,7 +498,6 @@ function mapBackendFinalDecisionRecord(
 ): FinalDecisionRecord {
   return {
     decisionId: finalDecisionRecord.decisionId,
-    decision: finalDecisionRecord.decision,
     reason: finalDecisionRecord.reason,
     decidedAt: finalDecisionRecord.decidedAt,
   };
@@ -716,44 +725,6 @@ function sendMockBusinessReviewMails(drafts: BusinessReviewMailSendDraft[]): Bul
   };
 }
 
-function applyMockExecutiveApprovalDecision(
-  patentIds: string[],
-  decision: ExecutiveApprovalDecision,
-): ExecutiveApprovalResult {
-  const targetIds = new Set(patentIds);
-  const updatedPatentIds: string[] = [];
-  const decidedAt = new Date().toISOString();
-
-  patents.forEach((patent) => {
-    if (targetIds.has(patent.patentId)) {
-      patent.reviewWorkflowStatus = "APPROVAL_COMPLETED";
-      patent.executiveApprovalDecision = decision;
-      patent.legalActionResult = getLegalActionResult(decision);
-      updatedPatentIds.push(patent.patentId);
-    }
-  });
-
-  patentDetails.forEach((patent) => {
-    if (targetIds.has(patent.patentId)) {
-      patent.reviewWorkflowStatus = "APPROVAL_COMPLETED";
-      patent.executiveApprovalDecision = decision;
-      patent.legalActionResult = getLegalActionResult(decision);
-      patent.finalDecisionRecord = {
-        decision,
-        decidedAt,
-        decisionId: `${patent.patentId}-DEC-01`,
-        reason: getExecutiveApprovalReason(decision),
-      };
-    }
-  });
-
-  return {
-    decision,
-    updatedCount: updatedPatentIds.length,
-    updatedPatentIds,
-  };
-}
-
 /**
  * @relatedFR FR-011, FR-012, FR-017
  * @relatedUI UI-LEGAL-05
@@ -765,14 +736,12 @@ function recordMockPatentFinalDecision(patentId: string, payload: FinalDecisionP
   const detailItem = patentDetails.find((patent) => patent.patentId === patentId);
 
   if (listItem) {
-    listItem.executiveApprovalDecision = payload.decision;
     listItem.legalActionResult = payload.legalActionResult;
     listItem.reviewWorkflowStatus = result.reviewWorkflowStatus;
     listItem.lifecycleStatus = getLifecycleStatusByLegalAction(payload.legalActionResult);
   }
 
   if (detailItem) {
-    detailItem.executiveApprovalDecision = payload.decision;
     detailItem.legalActionResult = payload.legalActionResult;
     detailItem.reviewWorkflowStatus = result.reviewWorkflowStatus;
     detailItem.lifecycleStatus = getLifecycleStatusByLegalAction(payload.legalActionResult);
@@ -785,7 +754,6 @@ function recordMockPatentFinalDecision(patentId: string, payload: FinalDecisionP
 function createFallbackFinalDecisionResult(patentId: string, payload: FinalDecisionPayload): FinalDecisionResult {
   return {
     finalDecisionRecord: {
-      decision: payload.decision,
       decidedAt: new Date().toISOString(),
       decisionId: `${patentId}-DEC-FINAL`,
       reason: payload.reason,
@@ -794,22 +762,6 @@ function createFallbackFinalDecisionResult(patentId: string, payload: FinalDecis
     patentId,
     reviewWorkflowStatus: "LEGAL_ACTION_RECORDED",
   };
-}
-
-function getLegalActionResult(decision: ExecutiveApprovalDecision): LegalActionResult | null {
-  if (decision === "APPROVED_ABANDON") {
-    return "ABANDONED";
-  }
-
-  if (decision === "APPROVED_SELL") {
-    return "SOLD";
-  }
-
-  if (decision === "APPROVED_MAINTAIN") {
-    return "MAINTAINED";
-  }
-
-  return null;
 }
 
 function getLifecycleStatusByLegalAction(legalActionResult: LegalActionResult): PatentLifecycleStatus {
@@ -822,22 +774,6 @@ function getLifecycleStatusByLegalAction(legalActionResult: LegalActionResult): 
   }
 
   return "ACTIVE";
-}
-
-function getExecutiveApprovalReason(decision: ExecutiveApprovalDecision) {
-  if (decision === "APPROVED_MAINTAIN") {
-    return "사업부 의견과 AI 평가 근거를 검토해 유지 처리했습니다.";
-  }
-
-  if (decision === "APPROVED_ABANDON") {
-    return "사업 활용성과 유지 필요성이 낮아 포기 처리했습니다.";
-  }
-
-  if (decision === "APPROVED_SELL") {
-    return "외부 활용 가능성이 있어 매각 후보로 처리했습니다.";
-  }
-
-  return "추가 검토가 필요해 최종 처리 완료 전 단계로 기록했습니다.";
 }
 
 function getMockPatentPage(query: PatentListQuery): PatentListPage {
@@ -922,8 +858,8 @@ function sortMockPatents(items: PatentListItem[], sort: string) {
 }
 
 function getSortablePatentValue(patent: PatentListItem, field: string) {
-  if (field === "annualFeeDueDate") {
-    return patent.annualFeeDueDate;
+  if (field === "feeDueDate") {
+    return patent.feeDueDate;
   }
 
   if (field === "departmentName") {

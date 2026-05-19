@@ -34,15 +34,13 @@ export async function submitBusinessChecklist(
   submission: BusinessChecklistSubmission,
 ): Promise<BusinessChecklistSubmission> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<BusinessChecklistSubmission>>(
+    await requestJson<ApiEnvelope<unknown>>(
       `/patents/${patentId}/business-submissions`,
       {
         body: JSON.stringify(submission),
         method: "POST",
       },
     );
-
-    return response.data ?? submission;
   }
 
   return submission;

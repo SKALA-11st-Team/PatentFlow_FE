@@ -40,7 +40,7 @@ export function AdminSalesCandidatePage() {
             <Link className="list-row" key={patent.patentId} to={`/admin/patents/${patent.patentId}`}>
               <span>
                 <strong>{patent.title}</strong>
-                <small>{patent.departmentName} · {patent.applicationNumber}</small>
+                <small>{patent.departmentName || "연결된 사업부서 없음"} · {patent.applicationNumber}</small>
               </span>
               <Badge tone="warning">매각 후보</Badge>
             </Link>

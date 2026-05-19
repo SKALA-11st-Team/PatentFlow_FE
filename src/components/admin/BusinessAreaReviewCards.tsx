@@ -18,7 +18,6 @@ interface PatentContextDimension {
   key: PatentContextDimensionKey;
   label: string;
   queryParam: PatentContextQueryParam;
-  secondaryLabel: string;
   getPrimaryValue: (patent: PatentListItem) => string;
   getSecondaryValue: (patent: PatentListItem) => string;
 }
@@ -46,7 +45,6 @@ const patentContextDimensions: PatentContextDimension[] = [
     key: "BUSINESS_AREA",
     label: "관련 사업",
     queryParam: "businessArea",
-    secondaryLabel: "담당 부서",
   },
   {
     description: "관련기술 분야 기준으로 기술 포트폴리오 분포를 확인하고, 선택한 기술의 특허 목록을 조회합니다.",
@@ -55,7 +53,7 @@ const patentContextDimensions: PatentContextDimension[] = [
     key: "TECHNOLOGY_AREA",
     label: "관련 기술",
     queryParam: "technologyArea",
-    secondaryLabel: "관련 사업",
+
   },
   {
     description: "관련제품 기준으로 제품별 보유 특허 수를 확인하고, 선택한 제품의 특허 목록을 조회합니다.",
@@ -64,7 +62,6 @@ const patentContextDimensions: PatentContextDimension[] = [
     key: "PRODUCT",
     label: "관련 제품",
     queryParam: "productName",
-    secondaryLabel: "관련 기술",
   },
 ];
 
@@ -154,7 +151,6 @@ export function BusinessAreaReviewCards({
                 <span className="business-area-dot" style={{ background: summary.color }} />
                 <div>
                   <strong>{summary.value}</strong>
-                  <span>{`${activeDimension.secondaryLabel}: ${formatRelatedLabels(summary.relatedLabels)}`}</span>
                 </div>
                 <b>{summary.totalCount}</b>
               </button>
@@ -240,15 +236,6 @@ function compareBusinessAreaSummaries(firstSummary: PatentContextSummary, second
   }
 
   return firstSummary.value.localeCompare(secondSummary.value, "ko");
-}
-
-/**
- * @relatedFR FR-001
- * @relatedUI UI-LEGAL-01
- * @description 관련 컨텍스트에 연결된 보조 라벨을 카드 보조 문구로 표시한다.
- */
-function formatRelatedLabels(labels: string[]) {
-  return labels.length > 2 ? `${labels.slice(0, 2).join(", ")} 외 ${labels.length - 2}` : labels.join(", ");
 }
 
 /**

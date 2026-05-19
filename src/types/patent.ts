@@ -6,7 +6,6 @@
 import type {
   BusinessOpinionDecision,
   EvaluationCategory,
-  ExecutiveApprovalDecision,
   LegalActionResult,
   PatentLifecycleStatus,
   Recommendation,
@@ -16,7 +15,6 @@ import type {
 export type {
   BusinessOpinionDecision,
   EvaluationCategory,
-  ExecutiveApprovalDecision,
   LegalActionResult,
   PatentLifecycleStatus,
   Recommendation,
@@ -44,11 +42,10 @@ export interface PatentListItem {
   departmentName: string;
   lifecycleStatus: PatentLifecycleStatus;
   reviewWorkflowStatus: ReviewWorkflowStatus;
-  annualFeeDueDate: string;
+  feeDueDate: string;
   reviewReason: string;
   currentRecommendation: Recommendation;
   businessOpinionDecision: BusinessOpinionDecision | null;
-  executiveApprovalDecision: ExecutiveApprovalDecision | null;
   legalActionResult: LegalActionResult | null;
 }
 
@@ -98,7 +95,6 @@ export interface AiEvaluationReport {
 
 export interface FinalDecisionRecord {
   decisionId: string | null;
-  decision: ExecutiveApprovalDecision | null;
   reason: string | null;
   decidedAt: string | null;
 }

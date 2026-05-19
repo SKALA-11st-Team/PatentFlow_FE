@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { getStoredAuthUser } from "../../api/authStorage";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
 import { getPatentDetail } from "../../api/patents";
+import { getActiveQuarter } from "../../api/settings";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
@@ -33,8 +35,8 @@ type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
 
 const sortLabels: Record<SortKey, string> = {
-  DUE_DATE_ASC: "마감 기한 빠른순",
-  DUE_DATE_DESC: "마감 기한 늦은순",
+  DUE_DATE_ASC: "납부 기한 빠른순",
+  DUE_DATE_DESC: "납부 기한 늦은순",
   TITLE_ASC: "특허명 가나다순",
 };
 
@@ -52,7 +54,13 @@ export function BusinessReviewRequestPage() {
   const [selectedPatent, setSelectedPatent] = useState<PatentDetail | null>(null);
   const [detailMessage, setDetailMessage] = useState("");
   const [submittedOpinions, setSubmittedOpinions] = useState<Record<string, BusinessChecklistSubmission>>({});
-  const { errorMessage, isLoading, patents } = usePatentList();
+  const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
+  const user = getStoredAuthUser();
+
+  useEffect(() => {
+    getActiveQuarter().then((q) => setSubmissionDeadline(q?.submissionDeadline ?? null)).catch(() => {});
+  }, []);
+  const { errorMessage, isLoading, patents } = usePatentList({ departmentId: user?.departmentId ?? undefined });
   const assigned = useMemo(
     () => patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE"),
     [patents],
@@ -141,27 +149,29 @@ export function BusinessReviewRequestPage() {
                 <th>관련제품</th>
                 <th>AI 레포트 권고</th>
                 <th>사업부 의견</th>
-                <th>마감 기한</th>
+                <th>의견 제출 마감</th>
               </tr>
             </thead>
             <tbody>
               {displayedPatents.map((patent) => {
                 const submittedOpinion = submittedOpinions[patent.patentId]?.finalOpinion;
                 const displayedOpinion = submittedOpinion ?? patent.businessOpinionDecision;
+                const alreadySubmitted = Boolean(displayedOpinion);
 
                 return (
                   <tr
-                    className="clickable-row"
+                    className={alreadySubmitted ? undefined : "clickable-row"}
                     key={patent.patentId}
-                    onClick={() => handleSelectPatent(patent.patentId)}
-                    onKeyDown={(event) => {
+                    onClick={alreadySubmitted ? undefined : () => handleSelectPatent(patent.patentId)}
+                    onKeyDown={alreadySubmitted ? undefined : (event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
                         handleSelectPatent(patent.patentId);
                       }
                     }}
-                    role="button"
-                    tabIndex={0}
+                    role={alreadySubmitted ? undefined : "button"}
+                    tabIndex={alreadySubmitted ? undefined : 0}
+                    title={alreadySubmitted ? "이미 제출한 의견은 변경할 수 없습니다." : undefined}
                   >
                     <td>
                       <strong title={patent.title}>{patent.title}</strong>
@@ -183,7 +193,7 @@ export function BusinessReviewRequestPage() {
                       )}
                     </td>
                     <td>
-                      <DeadlineCell dueDate={patent.annualFeeDueDate} />
+                      <DeadlineCell dueDate={submissionDeadline} />
                     </td>
                   </tr>
                 );
@@ -297,14 +307,14 @@ function getFilteredAndSortedPatents(
  */
 function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
   if (sortKey === "DUE_DATE_DESC") {
-    return secondPatent.annualFeeDueDate.localeCompare(firstPatent.annualFeeDueDate);
+    return secondPatent.feeDueDate.localeCompare(firstPatent.feeDueDate);
   }
 
   if (sortKey === "TITLE_ASC") {
     return firstPatent.title.localeCompare(secondPatent.title, "ko");
   }
 
-  return firstPatent.annualFeeDueDate.localeCompare(secondPatent.annualFeeDueDate);
+  return firstPatent.feeDueDate.localeCompare(secondPatent.feeDueDate);
 }
 
 /**

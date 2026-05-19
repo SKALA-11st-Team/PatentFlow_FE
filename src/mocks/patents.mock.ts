@@ -8,7 +8,6 @@ import type {
   BusinessOpinionDecision,
   EvaluationEvidenceDetail,
   EvaluationCategory,
-  ExecutiveApprovalDecision,
   LegalActionResult,
   PatentDetail,
   PatentListItem,
@@ -24,25 +23,12 @@ import { skaxPatentRows, type SkaxPatentRow } from "./skaxPatents.raw";
 
 const reviewTargetWorkflowCycle: ReviewWorkflowStatus[] = [
   "REVIEW_QUARTER_STARTED",
-  "REPORT_GENERATED",
   "MAIL_READY",
+  "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "WAITING_EXECUTIVE_APPROVAL",
-  "APPROVAL_COMPLETED",
   "LEGAL_ACTION_RECORDED",
 ];
 
-const businessAreaDepartmentMap: Record<string, { id: string; name: string }> = {
-  AI: { id: "DEPT-AI", name: "AI 사업부" },
-  Blockchain: { id: "DEPT-CHAIN", name: "Blockchain 사업부" },
-  Data: { id: "DEPT-DATA", name: "Data 사업부" },
-  ESG: { id: "DEPT-ESG", name: "ESG 사업부" },
-  "금융/전략": { id: "DEPT-FIN", name: "금융/전략 사업부" },
-  기존사업: { id: "DEPT-LEGACY", name: "기존사업 담당" },
-  솔루션: { id: "DEPT-SOLUTION", name: "솔루션 사업부" },
-  제조: { id: "DEPT-MFG", name: "제조 사업부" },
-  통신: { id: "DEPT-COMM", name: "통신 사업부" },
-};
 
 const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
   "P202405001-KR0": {
@@ -227,11 +213,10 @@ export const patents: PatentListItem[] = patentDetails.map(
     departmentName,
     lifecycleStatus,
     reviewWorkflowStatus,
-    annualFeeDueDate,
+    feeDueDate,
     reviewReason,
     currentRecommendation,
     businessOpinionDecision,
-    executiveApprovalDecision,
     legalActionResult,
   }) => ({
     patentId,
@@ -252,25 +237,22 @@ export const patents: PatentListItem[] = patentDetails.map(
     departmentName,
     lifecycleStatus,
     reviewWorkflowStatus,
-    annualFeeDueDate,
+    feeDueDate,
     reviewReason,
     currentRecommendation,
     businessOpinionDecision,
-    executiveApprovalDecision,
     legalActionResult,
   }),
 );
 
 function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
-  const department = getDepartment(row.businessArea);
   const generatedReport = aiReportsByManagementNumber[row.managementNumber];
   const generatedSummary = patentSummariesByManagementNumber[row.managementNumber];
   const reviewWorkflowStatus = getMockReviewWorkflowStatus(index, Boolean(generatedReport));
   const recommendation = generatedReport?.recommendation ?? getRecommendation(row, reviewWorkflowStatus, index);
   const businessOpinionDecision = getBusinessOpinion(reviewWorkflowStatus, recommendation);
   const legalActionResult = getLegalActionResult(reviewWorkflowStatus, recommendation);
-  const executiveApprovalDecision = getExecutiveApprovalDecision(legalActionResult);
-  const annualFeeDueDate = getMockDeadlineDate(row.registrationDate);
+  const feeDueDate = getMockDeadlineDate(row.registrationDate);
   const title = normalizeDisplayText(row.title || row.draftTitle || row.managementNumber);
   const draftTitle = normalizeDisplayText(row.draftTitle || row.title || row.managementNumber);
   const businessArea = normalizeDisplayText(row.businessArea || "N/A");
@@ -293,15 +275,14 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
     applicationDate: row.applicationDate,
     registrationDate: row.registrationDate,
     expectedExpirationDate: row.expectedExpirationDate,
-    departmentId: department.id,
-    departmentName: department.name,
+    departmentId: "",
+    departmentName: "",
     lifecycleStatus: legalActionResult === "SOLD" ? "SOLD" : legalActionResult === "ABANDONED" ? "ABANDONED" : "ACTIVE",
     reviewWorkflowStatus,
-    annualFeeDueDate,
-    reviewReason: getReviewReason(reviewWorkflowStatus, annualFeeDueDate),
+    feeDueDate,
+    reviewReason: getReviewReason(reviewWorkflowStatus, feeDueDate),
     currentRecommendation: recommendation,
     businessOpinionDecision,
-    executiveApprovalDecision,
     legalActionResult,
     summary: generatedSummary ?? {
       summaryText: `${title}은(는) ${businessArea} 분야의 ${technologyArea} 특허입니다. ${productName ? `관련 제품은 ${productName}입니다.` : "관련 제품 정보는 비어 있습니다."}`,
@@ -317,32 +298,19 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
     aiEvaluationReport: getAiEvaluationReport(row, recommendation, index),
     finalDecisionRecord: {
       decisionId: legalActionResult ? `DEC-${row.managementNumber}` : null,
-      decision: executiveApprovalDecision,
       reason: legalActionResult ? `${getLegalActionText(legalActionResult)} 결과가 데모 데이터로 입력되었습니다.` : null,
       decidedAt: legalActionResult ? "2026-05-01T11:10:00+09:00" : null,
     },
     businessOpinion: {
       opinion: businessOpinionDecision,
       comment: businessOpinionDecision
-        ? `${department.name}에서 ${businessOpinionDecision === "MAINTAIN" ? "유지" : "포기"} 의견을 제출했습니다.`
-        : `${department.name} 의견 대기 중입니다.`,
+        ? `${businessOpinionDecision === "MAINTAIN" ? "유지" : "포기"} 의견이 제출되었습니다.`
+        : "의견 대기 중입니다.",
       submittedAt: businessOpinionDecision ? "2026-05-01T14:20:00+09:00" : null,
     },
   };
 }
 
-function getExecutiveApprovalDecision(legalActionResult: LegalActionResult | null): ExecutiveApprovalDecision | null {
-  if (legalActionResult === "ABANDONED") {
-    return "APPROVED_ABANDON";
-  }
-  if (legalActionResult === "SOLD") {
-    return "APPROVED_SELL";
-  }
-  if (legalActionResult === "MAINTAINED") {
-    return "APPROVED_MAINTAIN";
-  }
-  return null;
-}
 
 function normalizeProductName(productName: string) {
   const normalizedProductName = normalizeDisplayText(productName);
@@ -384,20 +352,17 @@ function getMockDeadlineDate(registrationDate: string) {
   return getNextAnnualFeeDueDate(registrationDate);
 }
 
-function getDepartment(businessArea: string) {
-  return businessAreaDepartmentMap[businessArea] ?? { id: "DEPT-ETC", name: `${businessArea || "미분류"} 담당` };
-}
 
-function getReviewReason(status: ReviewWorkflowStatus, annualFeeDueDate: string) {
+function getReviewReason(status: ReviewWorkflowStatus, feeDueDate: string) {
   const reasonMap: Record<ReviewWorkflowStatus, string> = {
     NOT_IN_REVIEW_QUARTER: "이번 분기 연차료 납부 대상이 아닙니다.",
-    REVIEW_QUARTER_STARTED: `이번 분기 연차료 납부 대상이며 납부 기한은 ${annualFeeDueDate}입니다.`,
-    REPORT_GENERATED: "이번 분기 납부 대상이며 AI 특허 평가 레포트가 생성되었습니다.",
+    REVIEW_QUARTER_STARTED: `이번 분기 연차료 납부 대상이며 납부 기한은 ${feeDueDate}입니다.`,
+    REPORT_GENERATED: "AI 특허 평가 레포트가 생성되어 사업부 검토 요청 준비가 필요합니다.",
     MAIL_READY: "AI 특허 평가 레포트가 생성되었고 관리자 메일 발송 명령이 필요합니다.",
     WAITING_BUSINESS_RESPONSE: "메일과 레포트를 발송했고 사업부서 담당자의 응답을 기다리고 있습니다.",
     BUSINESS_RESPONSE_RECEIVED: "사업부서 담당자의 응답이 제출되어 최종 처리 결과 입력이 필요합니다.",
-    WAITING_EXECUTIVE_APPROVAL: "사업부 의견이 제출되어 임원 승인 대기 중입니다.",
-    APPROVAL_COMPLETED: "임원 승인이 완료되어 법무 처리 결과 기록이 필요합니다.",
+    WAITING_EXECUTIVE_APPROVAL: "최종 의사결정 승인을 기다리고 있습니다.",
+    APPROVAL_COMPLETED: "임원 승인 결과에 따른 법무 처리 기록이 필요합니다.",
     LEGAL_ACTION_RECORDED: "최종 처리 결과가 입력되어 이번 검토 workflow가 완료되었습니다.",
   };
   return reasonMap[status];

@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getDepartments, type Department } from "../../api/departments";
+import { assignPatentDepartment } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { BusinessAreaReviewCards } from "../../components/admin/BusinessAreaReviewCards";
 import { KpiCard } from "../../components/common/KpiCard";
@@ -15,19 +17,15 @@ import {
   reviewWorkflowStatusLabels,
 } from "../../constants/status";
 import type { PatentListItem } from "../../types/patent";
-import {
-  isQuarterlyReviewTarget,
-  matchesReviewTargetScope,
-  type ReviewTargetScope,
-} from "../../utils/reviewWorkflow";
+import { isQuarterlyReviewTarget } from "../../utils/reviewWorkflow";
 
-type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
+type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
+type DashboardScope = "ALL" | "QUARTER" | "NOT_IN_QUARTER";
 
 const sortLabels: Record<SortKey, string> = {
   DUE_DATE_ASC: "마감 기한 빠른순",
   DUE_DATE_DESC: "마감 기한 늦은순",
   TITLE_ASC: "특허명 가나다순",
-  DEPARTMENT_ASC: "부서명 가나다순",
 };
 
 /**
@@ -38,13 +36,23 @@ const sortLabels: Record<SortKey, string> = {
 export function AdminDashboardPage() {
   const navigate = useNavigate();
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [reviewScope, setReviewScope] = useState<ReviewTargetScope>("QUARTER");
+  const [reviewScope, setReviewScope] = useState<DashboardScope>("QUARTER");
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
-  const { errorMessage, isLoading, patents } = usePatentList();
+  const { errorMessage, isLoading, patents, setPatents } = usePatentList();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [assigningPatentId, setAssigningPatentId] = useState<string | null>(null);
+  const [assigningDeptId, setAssigningDeptId] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  useEffect(() => {
+    getDepartments().then(setDepartments).catch(() => {});
+  }, []);
   const quarterlyTargets = patents.filter(isQuarterlyReviewTarget);
   const mailReady = patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
   const waitingBusiness = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE");
+  const businessResponseReceived = patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED");
+  const sellCandidates = businessResponseReceived.filter((patent) => patent.businessOpinionDecision === "ABANDON");
   const actionRecorded = patents.filter((patent) => patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED");
   const quarterlyTargetCount = quarterlyTargets.length;
   const filteredPatents = useMemo(
@@ -59,14 +67,31 @@ export function AdminDashboardPage() {
     totalItems,
     totalPages,
   } = useClientPagination(filteredPatents, [reviewScope, searchKeyword, workflowFilter, sortKey]);
-  const workflowFilterOptions = getDashboardWorkflowFilterOptions(reviewScope);
+  const workflowFilterOptions = getDashboardWorkflowFilterOptions();
 
-  function handleReviewScopeChange(nextScope: ReviewTargetScope) {
-    setReviewScope(nextScope);
-
-    if (nextScope === "QUARTER" && workflowFilter === "NOT_IN_REVIEW_QUARTER") {
-      setWorkflowFilter("ALL");
+  async function handleAssignDepartment(patentId: string) {
+    if (!assigningDeptId) return;
+    setIsAssigning(true);
+    try {
+      await assignPatentDepartment(patentId, assigningDeptId);
+      const assigned = departments.find((d) => d.departmentId === assigningDeptId);
+      setPatents((prev) =>
+        prev.map((p) =>
+          p.patentId === patentId
+            ? { ...p, departmentId: assigningDeptId, departmentName: assigned?.departmentName ?? assigningDeptId }
+            : p,
+        ),
+      );
+      setAssigningPatentId(null);
+      setAssigningDeptId("");
+    } finally {
+      setIsAssigning(false);
     }
+  }
+
+  function handleReviewScopeChange(nextScope: DashboardScope) {
+    setReviewScope(nextScope);
+    setWorkflowFilter("ALL");
   }
 
   return (
@@ -113,6 +138,14 @@ export function AdminDashboardPage() {
           />
           <KpiCard
             denominator={quarterlyTargetCount}
+            helper="사업부 포기 의견 — 매각 대기"
+            label="매각 후보"
+            value={sellCandidates.length}
+            to="/admin/review-targets?workflow=BUSINESS_RESPONSE_RECEIVED"
+            tone="warning"
+          />
+          <KpiCard
+            denominator={quarterlyTargetCount}
             helper={`완료율 ${formatPercent(actionRecorded.length, quarterlyTargetCount)}`}
             label="처리 완료"
             value={actionRecorded.length}
@@ -140,7 +173,7 @@ export function AdminDashboardPage() {
           <div>
             <h2>특허 조회</h2>
             <p>
-              {errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "특허명, 출원번호, 부서와 검토 단계 기준으로 조회하고 마감 기한 순서를 확인합니다.")}
+              {errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "특허명, 출원번호, 사업부명과 검토 단계 기준으로 조회하고 마감 기한 순서를 확인합니다.")}
             </p>
           </div>
         </div>
@@ -148,18 +181,19 @@ export function AdminDashboardPage() {
           <label>
             <span>조회 범위</span>
             <select
-              onChange={(event) => handleReviewScopeChange(event.target.value as ReviewTargetScope)}
+              onChange={(event) => handleReviewScopeChange(event.target.value as DashboardScope)}
               value={reviewScope}
             >
-              <option value="QUARTER">이번 분기 납부 대상</option>
               <option value="ALL">전체 특허</option>
+              <option value="QUARTER">이번 분기 납부 대상</option>
+              <option value="NOT_IN_QUARTER">검토 분기 아님</option>
             </select>
           </label>
           <label>
             <span>검색</span>
             <input
               onChange={(event) => setSearchKeyword(event.target.value)}
-              placeholder="특허명, 출원번호, 부서"
+              placeholder="특허명, 출원번호, 사업부명"
               type="search"
               value={searchKeyword}
             />
@@ -193,7 +227,6 @@ export function AdminDashboardPage() {
             <thead>
               <tr>
                 <th>특허명</th>
-                <th>부서</th>
                 <th>검토 단계</th>
                 <th>마감 기한</th>
               </tr>
@@ -217,18 +250,52 @@ export function AdminDashboardPage() {
                     <strong title={patent.title}>{truncatePatentTitle(patent.title)}</strong>
                     <span className="table-subtext">{patent.applicationNumber}</span>
                   </td>
-                  <td>{patent.departmentName}</td>
-                  <td>
+                  <td
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
                     <WorkflowStatusBadge status={patent.reviewWorkflowStatus} />
+                    {(patent.reviewWorkflowStatus === "REVIEW_QUARTER_STARTED" || patent.reviewWorkflowStatus === "MAIL_READY") ? (
+                      assigningPatentId === patent.patentId ? (
+                        <div style={{ display: "flex", gap: "4px", alignItems: "center", marginTop: "4px" }}>
+                          <select
+                            onChange={(e) => setAssigningDeptId(e.target.value)}
+                            style={{ fontSize: "0.85em" }}
+                            value={assigningDeptId}
+                          >
+                            <option value="">선택</option>
+                            {departments.map((d) => (
+                              <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
+                            ))}
+                          </select>
+                          <button disabled={!assigningDeptId || isAssigning} onClick={() => handleAssignDepartment(patent.patentId)} style={{ fontSize: "0.8em", padding: "2px 8px" }} type="button">
+                            {isAssigning ? "저장 중" : "확인"}
+                          </button>
+                          <button onClick={() => { setAssigningPatentId(null); setAssigningDeptId(""); }} style={{ fontSize: "0.8em", padding: "2px 6px" }} type="button">✕</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => { setAssigningPatentId(patent.patentId); setAssigningDeptId(patent.departmentId ?? ""); }}
+                          style={{ background: "none", border: "none", cursor: "pointer", display: "block", fontSize: "0.85em", marginTop: "4px", padding: 0, textAlign: "left" }}
+                          type="button"
+                        >
+                          🏢 {patent.departmentName || "미지정"}
+                        </button>
+                      )
+                    ) : (
+                      isQuarterlyReviewTarget(patent) && patent.departmentName
+                        ? <span className="table-subtext">🏢 {patent.departmentName}</span>
+                        : null
+                    )}
                   </td>
                   <td>
-                    <DeadlineCell dueDate={patent.annualFeeDueDate} />
+                    <DeadlineCell dueDate={patent.feeDueDate} />
                   </td>
                 </tr>
               ))}
               {filteredPatents.length === 0 ? (
                 <tr>
-                  <td className="empty-table-cell" colSpan={4}>
+                  <td className="empty-table-cell" colSpan={3}>
                     조회 조건에 맞는 특허가 없습니다.
                   </td>
                 </tr>
@@ -256,7 +323,7 @@ export function AdminDashboardPage() {
 function getFilteredAndSortedPatents(
   patentList: PatentListItem[],
   searchKeyword: string,
-  reviewScope: ReviewTargetScope,
+  reviewScope: DashboardScope,
   workflowFilter: ReviewWorkflowFilter,
   sortKey: SortKey,
 ) {
@@ -270,7 +337,10 @@ function getFilteredAndSortedPatents(
           value.toLowerCase().includes(normalizedKeyword),
         );
       const matchesWorkflow = workflowFilter === "ALL" || patent.reviewWorkflowStatus === workflowFilter;
-      const matchesScope = matchesReviewTargetScope(patent.reviewWorkflowStatus, reviewScope);
+      const matchesScope =
+        reviewScope === "ALL" ||
+        (reviewScope === "QUARTER" && patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER") ||
+        (reviewScope === "NOT_IN_QUARTER" && patent.reviewWorkflowStatus === "NOT_IN_REVIEW_QUARTER");
 
       return matchesKeyword && matchesWorkflow && matchesScope;
     })
@@ -282,11 +352,7 @@ function getFilteredAndSortedPatents(
  * @relatedUI UI-LEGAL-01
  * @description 이번 분기 조회 범위에서는 검토 분기 아님 상태 필터를 숨겨 KPI 대상 기준과 충돌하지 않게 한다.
  */
-function getDashboardWorkflowFilterOptions(reviewScope: ReviewTargetScope) {
-  if (reviewScope === "ALL") {
-    return REVIEW_WORKFLOW_FILTER_OPTIONS;
-  }
-
+function getDashboardWorkflowFilterOptions() {
   return REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW_QUARTER");
 }
 
@@ -297,18 +363,14 @@ function getDashboardWorkflowFilterOptions(reviewScope: ReviewTargetScope) {
  */
 function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
   if (sortKey === "DUE_DATE_DESC") {
-    return secondPatent.annualFeeDueDate.localeCompare(firstPatent.annualFeeDueDate);
+    return secondPatent.feeDueDate.localeCompare(firstPatent.feeDueDate);
   }
 
   if (sortKey === "TITLE_ASC") {
     return firstPatent.title.localeCompare(secondPatent.title, "ko");
   }
 
-  if (sortKey === "DEPARTMENT_ASC") {
-    return firstPatent.departmentName.localeCompare(secondPatent.departmentName, "ko");
-  }
-
-  return firstPatent.annualFeeDueDate.localeCompare(secondPatent.annualFeeDueDate);
+  return firstPatent.feeDueDate.localeCompare(secondPatent.feeDueDate);
 }
 
 /**

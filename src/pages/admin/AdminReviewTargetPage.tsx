@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getDepartmentRecipientMappings } from "../../api/mailing";
-import { getPatents, sendBusinessReviewMails } from "../../api/patents";
+import { assignPatentDepartment, getPatents, sendBusinessReviewMails } from "../../api/patents";
+import { getDepartments, type Department } from "../../api/departments";
 import { Button } from "../../components/common/Button";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { AppLayout } from "../../components/layout/AppLayout";
@@ -12,7 +13,6 @@ import { usePatentList } from "../../hooks/usePatentList";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import {
   createGroupedBusinessReviewMailDrafts,
-  getDepartmentRecipient,
   toBusinessReviewMailSendDraft,
   type BusinessReviewMailDraft,
 } from "../../utils/businessReviewMail";
@@ -24,7 +24,6 @@ import {
 import type { PatentListItem, ReviewWorkflowStatus } from "../../types/patent";
 import type { DepartmentRecipientMapping } from "../../types/mailing";
 import { matchesReviewTargetScope, type ReviewTargetScope } from "../../utils/reviewWorkflow";
-
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
 type ContextFilterKey = "businessArea" | "technologyArea" | "productName";
 
@@ -38,7 +37,7 @@ const sortLabels: Record<SortKey, string> = {
   DUE_DATE_ASC: "마감 기한 빠른순",
   DUE_DATE_DESC: "마감 기한 늦은순",
   TITLE_ASC: "특허명 가나다순",
-  DEPARTMENT_ASC: "부서명 가나다순",
+  DEPARTMENT_ASC: "사업부명 가나다순",
 };
 
 const contextFilterConfigs: ContextFilterConfig[] = [
@@ -84,6 +83,14 @@ export function AdminReviewTargetPage() {
   const [recipientMappings, setRecipientMappings] = useState<DepartmentRecipientMapping[]>([]);
   const [activeMailIndex, setActiveMailIndex] = useState(0);
   const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [assigningPatentId, setAssigningPatentId] = useState<string | null>(null);
+  const [assigningDeptId, setAssigningDeptId] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  useEffect(() => {
+    getDepartments().then(setDepartments).catch(() => {});
+  }, []);
   const activeContextConfig = getContextFilterConfig(contextFilterKey);
   const filteredPatents = useMemo(
     () =>
@@ -123,10 +130,30 @@ export function AdminReviewTargetPage() {
   const areAllRowsSelected =
     selectablePatentIds.length > 0 && selectablePatentIds.every((patentId) => selectedPatentIds.includes(patentId));
   const tableColumnCount =
-    4 +
+    5 +
     (canSelectRows ? 1 : 0) +
     (shouldShowWorkflowColumn ? 1 : 0) +
     (isActionableMailList ? 2 : 0);
+
+  async function handleAssignDepartment(patentId: string) {
+    if (!assigningDeptId) return;
+    setIsAssigning(true);
+    try {
+      await assignPatentDepartment(patentId, assigningDeptId);
+      const assigned = departments.find((d) => d.departmentId === assigningDeptId);
+      setPatentList((prev) =>
+        prev.map((p) =>
+          p.patentId === patentId
+            ? { ...p, departmentId: assigningDeptId, departmentName: assigned?.departmentName ?? assigningDeptId }
+            : p,
+        ),
+      );
+      setAssigningPatentId(null);
+      setAssigningDeptId("");
+    } finally {
+      setIsAssigning(false);
+    }
+  }
 
   useEffect(() => {
     setSelectedPatentIds((currentIds) => currentIds.filter((patentId) => selectablePatentIds.includes(patentId)));
@@ -227,6 +254,7 @@ export function AdminReviewTargetPage() {
     }
   }
 
+
   return (
     <AppLayout
       role="ADMIN"
@@ -257,7 +285,7 @@ export function AdminReviewTargetPage() {
             <span>검색</span>
             <input
               onChange={(event) => setSearchKeyword(event.target.value)}
-              placeholder="특허명, 출원번호, 관리번호, 부서"
+              placeholder="특허명, 출원번호, 관리번호, 사업부명"
               type="search"
               value={searchKeyword}
             />
@@ -324,7 +352,6 @@ export function AdminReviewTargetPage() {
                 ) : null}
                 <th>특허명</th>
                 <th>관리번호</th>
-                <th>부서</th>
                 {isActionableMailList ? (
                   <>
                     <th>담당자 이름</th>
@@ -332,12 +359,13 @@ export function AdminReviewTargetPage() {
                   </>
                 ) : null}
                 {shouldShowWorkflowColumn ? <th>검토 단계</th> : null}
+                <th>담당 사업부</th>
                 <th>마감 기한</th>
               </tr>
             </thead>
             <tbody>
               {displayedPatents.map((patent) => {
-                const recipient = getDepartmentRecipient(patent, recipientMappings);
+                const mapping = recipientMappings.find((m) => m.departmentId === patent.departmentId);
 
                 return (
                   <tr
@@ -368,11 +396,10 @@ export function AdminReviewTargetPage() {
                       <span className="table-subtext">{patent.applicationNumber}</span>
                     </td>
                     <td>{patent.managementNumber}</td>
-                    <td>{patent.departmentName}</td>
                     {isActionableMailList ? (
                       <>
-                        <td>{recipient.name}</td>
-                        <td>{recipient.email}</td>
+                        <td>{mapping ? mapping.managerName : <span style={{ color: "var(--color-error, #c0392b)" }}>미등록</span>}</td>
+                        <td>{mapping ? mapping.managerEmail : <span style={{ color: "var(--color-error, #c0392b)" }}>계정 없음</span>}</td>
                       </>
                     ) : null}
                     {shouldShowWorkflowColumn ? (
@@ -380,8 +407,57 @@ export function AdminReviewTargetPage() {
                         <WorkflowStatusBadge status={patent.reviewWorkflowStatus} />
                       </td>
                     ) : null}
+                    <td
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      {(patent.reviewWorkflowStatus === "REVIEW_QUARTER_STARTED" || patent.reviewWorkflowStatus === "MAIL_READY") ? (
+                        assigningPatentId === patent.patentId ? (
+                          <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+                            <select
+                              onChange={(e) => setAssigningDeptId(e.target.value)}
+                              style={{ fontSize: "0.85em" }}
+                              value={assigningDeptId}
+                            >
+                              <option value="">선택</option>
+                              {departments.map((d) => (
+                                <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
+                              ))}
+                            </select>
+                            <button
+                              disabled={!assigningDeptId || isAssigning}
+                              onClick={() => handleAssignDepartment(patent.patentId)}
+                              style={{ fontSize: "0.8em", padding: "2px 8px" }}
+                              type="button"
+                            >
+                              {isAssigning ? "저장 중" : "확인"}
+                            </button>
+                            <button
+                              onClick={() => { setAssigningPatentId(null); setAssigningDeptId(""); }}
+                              style={{ fontSize: "0.8em", padding: "2px 6px" }}
+                              type="button"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setAssigningPatentId(patent.patentId);
+                              setAssigningDeptId(patent.departmentId ?? "");
+                            }}
+                            style={{ background: "none", border: "1px solid var(--color-border)", borderRadius: "4px", cursor: "pointer", fontSize: "0.85em", padding: "3px 10px" }}
+                            type="button"
+                          >
+                            {patent.departmentName ? patent.departmentName : "사업부 배정"}
+                          </button>
+                        )
+                      ) : (
+                        <span className="table-subtext">{patent.departmentName || "—"}</span>
+                      )}
+                    </td>
                     <td>
-                      <DeadlineCell dueDate={patent.annualFeeDueDate} />
+                      <DeadlineCell dueDate={patent.feeDueDate} />
                     </td>
                   </tr>
                 );
@@ -502,7 +578,7 @@ function getFilteredAndSortedReviewTargets(
  */
 function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
   if (sortKey === "DUE_DATE_DESC") {
-    return secondPatent.annualFeeDueDate.localeCompare(firstPatent.annualFeeDueDate);
+    return secondPatent.feeDueDate.localeCompare(firstPatent.feeDueDate);
   }
 
   if (sortKey === "TITLE_ASC") {
@@ -513,7 +589,7 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
     return firstPatent.departmentName.localeCompare(secondPatent.departmentName, "ko");
   }
 
-  return firstPatent.annualFeeDueDate.localeCompare(secondPatent.annualFeeDueDate);
+  return firstPatent.feeDueDate.localeCompare(secondPatent.feeDueDate);
 }
 
 /**

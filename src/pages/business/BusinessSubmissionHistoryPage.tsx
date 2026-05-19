@@ -51,7 +51,7 @@ export function BusinessSubmissionHistoryPage() {
     <AppLayout
       role="BUSINESS"
       title="특허별 제출 이력"
-      description="내 부서에서 의견을 제출한 특허별 기록과 이후 처리 상태를 확인합니다."
+      description="내 사업부에서 의견을 제출한 특허별 기록과 이후 처리 상태를 확인합니다."
     >
       <Section
         title="특허별 의견 제출 이력"
@@ -106,7 +106,7 @@ export function BusinessSubmissionHistoryPage() {
                     </td>
                     <td>{submissionCount}회</td>
                     <td>{latestSubmission ? formatDate(latestSubmission.submittedAt) : "N/A"}</td>
-                    <td>{getNextDecisionQuarter(patent.annualFeeDueDate)}</td>
+                    <td>{getNextDecisionQuarter(patent.feeDueDate)}</td>
                     <td>{reviewWorkflowStatusLabels[patent.reviewWorkflowStatus]}</td>
                   </tr>
                 );
@@ -138,8 +138,8 @@ export function BusinessSubmissionHistoryPage() {
  * @relatedUI UI-BUS-04
  * @description 다음 연차료 납부 기한 기준으로 사업부가 다시 판단해야 할 분기를 표시한다.
  */
-function getNextDecisionQuarter(annualFeeDueDate: string) {
-  const [year, month] = annualFeeDueDate.split("-").map(Number);
+function getNextDecisionQuarter(feeDueDate: string) {
+  const [year, month] = feeDueDate.split("-").map(Number);
   return `${year}년 ${Math.ceil(month / 3)}분기`;
 }
 
