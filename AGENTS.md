@@ -282,7 +282,6 @@ AI report recommendation labels:
 Workflow status labels should describe process state, such as:
 
 - 사업부 응답 대기
-- 결재 대기
 - 처리 완료
 
 Frontend should present AI output as a patent evaluation report or recommendation, not as an already-recorded decision.
@@ -304,7 +303,7 @@ The following decisions came from implementation review and should not be accide
 1. 사업 연계성 is a current AI evaluation criterion. Current scoring uses 권리성, 기술성, 시장성, and 사업 연계성. Keep `BUSINESS_ALIGNMENT` in `EvaluationCategory` and AI report displays. Do not include `LIFECYCLE_ECONOMICS` as a current AI evaluation axis.
 2. Do not put individual patent detail pages in the main nav. Patent detail screens are reached from dashboard/list rows.
 3. The business dashboard is for current work. The `의견 요청 특허` table should show actionable request status only; do not add past-history links such as `제출 이력` inside the business opinion column. Submission history belongs in the dedicated `제출 이력` nav/page.
-4. Business submission history detail is separate from normal business patent detail. `/business/submissions/:patentId` should show why the business made a prior choice, the AI report at that time, checklist evaluation history, and a small request/opinion/approval/action timeline.
+4. Business submission history detail is separate from normal business patent detail. `/business/submissions/:patentId` should show why the business made a prior choice, the AI report at that time, checklist evaluation history, and a small request/opinion/action timeline.
 5. Checklist totals and detail scores must use the same source. Checklist total is item score sum plus qualitative score. Do not mix AI 0-100 evaluation scores with business checklist 1-4 item scores in the same total/detail display.
 6. Avoid `N/A` for not-yet-written user input. Use action/state copy such as `작성 필요`, `대기 중`, or `의견 대기`. Reserve `N/A` for true not-applicable or missing source data.
 7. Dashboard deadline cells should combine remaining days and date in one column:
@@ -488,22 +487,12 @@ const REVIEW_WORKFLOW_STATUSES = [
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "WAITING_EXECUTIVE_APPROVAL",
-  "APPROVAL_COMPLETED",
   "LEGAL_ACTION_RECORDED",
 ] as const;
 
 const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "SALES_CANDIDATE", "HOLD"] as const;
 
 const BUSINESS_OPINION_DECISIONS = ["MAINTAIN", "ABANDON"] as const;
-
-const EXECUTIVE_APPROVAL_DECISIONS = [
-  "APPROVED_MAINTAIN",
-  "APPROVED_ABANDON",
-  "APPROVED_SELL",
-  "REJECTED",
-  "REQUEST_CHANGES",
-] as const;
 
 const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const;
 
@@ -524,8 +513,6 @@ Current Korean display labels:
 | ReviewWorkflowStatus | `MAIL_READY` | 메일 발송 대기 |
 | ReviewWorkflowStatus | `WAITING_BUSINESS_RESPONSE` | 사업부 응답 대기 |
 | ReviewWorkflowStatus | `BUSINESS_RESPONSE_RECEIVED` | 사업부 응답 완료 |
-| ReviewWorkflowStatus | `WAITING_EXECUTIVE_APPROVAL` | 결재 대기 |
-| ReviewWorkflowStatus | `APPROVAL_COMPLETED` | 결재 완료 |
 | ReviewWorkflowStatus | `LEGAL_ACTION_RECORDED` | 처리 완료 |
 | Recommendation | `MAINTAIN` | 유지 권고 |
 | Recommendation | `REVIEW_AGAIN` | 추가 정보 필요 |
@@ -534,11 +521,6 @@ Current Korean display labels:
 | Recommendation | `HOLD` | 추가 정보 필요 |
 | BusinessOpinionDecision | `MAINTAIN` | 유지 |
 | BusinessOpinionDecision | `ABANDON` | 포기 |
-| ExecutiveApprovalDecision | `APPROVED_MAINTAIN` | 유지 승인 |
-| ExecutiveApprovalDecision | `APPROVED_ABANDON` | 포기 승인 |
-| ExecutiveApprovalDecision | `APPROVED_SELL` | 매각 승인 |
-| ExecutiveApprovalDecision | `REJECTED` | 반려 |
-| ExecutiveApprovalDecision | `REQUEST_CHANGES` | 수정 요청 |
 | LegalActionResult | `MAINTAINED` | 유지 처리 |
 | LegalActionResult | `ABANDONED` | 포기 처리 |
 | LegalActionResult | `SOLD` | 매각 처리 |
@@ -555,8 +537,6 @@ const REVIEW_WORKFLOW_PROGRESS_STATUSES = [
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "WAITING_EXECUTIVE_APPROVAL",
-  "APPROVAL_COMPLETED",
   "LEGAL_ACTION_RECORDED",
 ] as const;
 ```
@@ -628,7 +608,7 @@ Current official UI IDs:
 | `UI-COM-02` | 공통 앱 레이아웃 | 공통 | 역할별 내비게이션, 페이지 헤더, 알림 진입점 제공 |
 | `UI-COM-03` | 알림 패널 | 공통 | 역할 대상 알림을 그룹별로 보여주고 읽음 상태를 변경 |
 | `UI-LEGAL-01` | 관리자 대시보드 | 관리자 | 검토 대상 특허, 상태 요약, KPI, 관련 사업별 현황 확인 |
-| `UI-LEGAL-02` | 검토 대상 특허 목록 / 일괄 처리 | 관리자 | KPI 드릴다운, 검토 대상 검색/필터/정렬, 메일/결재 일괄 처리 |
+| `UI-LEGAL-02` | 검토 대상 특허 목록 / 일괄 처리 | 관리자 | KPI 드릴다운, 검토 대상 검색/필터/정렬, 메일 일괄 처리 |
 | `UI-LEGAL-03` | 특허관리 | 관리자 | 특허 등록, 전체 특허 목록 조회, 검색, 필터링, 정렬 |
 | `UI-LEGAL-04` | 특허 등록/수정 상세 | 관리자 | 특허 기본 정보와 회사 컨텍스트 정보 수정 |
 | `UI-LEGAL-05` | 관리자 특허 상세 | 관리자 | 특허 요약, AI 평가 레포트, 근거, 사업부 의견, 최종 판단 확인 |
