@@ -4,6 +4,9 @@ import {
   mapBackendEvaluationScores, 
   getTotalScoreText 
 } from "./patents";
+import type { EvaluationScore } from "../types/patent";
+
+type BackendEvaluationScores = Parameters<typeof mapBackendEvaluationScores>[0];
 
 describe("patents API Utils", () => {
   describe("getAverageScore", () => {
@@ -13,7 +16,7 @@ describe("patents API Utils", () => {
         { category: "TECHNOLOGY", score: 90, evidenceSummary: "" },
         { category: "MARKET", score: 75, evidenceSummary: "" },
         { category: "BUSINESS_ALIGNMENT", score: 85, evidenceSummary: "" },
-      ] as any;
+      ] satisfies EvaluationScore[];
       expect(getAverageScore(scores)).toBe(82.5);
     });
 
@@ -25,7 +28,7 @@ describe("patents API Utils", () => {
       const scores = [
         { category: "RIGHTS", score: 0, evidenceSummary: "" },
         { category: "MARKET", score: 100, evidenceSummary: "" },
-      ] as any;
+      ] satisfies EvaluationScore[];
       expect(getAverageScore(scores)).toBe(50);
     });
   });
@@ -38,19 +41,19 @@ describe("patents API Utils", () => {
         { category: "MARKET", score: 70, evidence: "C" },
         { category: "BUSINESS_ALIGNMENT", score: 60, evidence: "D" },
         { category: "UNKNOWN_EXTRA_AXIS", score: 100, evidence: "E" }, // 필터링 대상
-      ];
-      const mapped = mapBackendEvaluationScores(backendScores as any);
+      ] satisfies BackendEvaluationScores;
+      const mapped = mapBackendEvaluationScores(backendScores);
       expect(mapped).toHaveLength(4);
-      expect(mapped.some(s => s.category === "UNKNOWN_EXTRA_AXIS")).toBe(false);
+      expect(mapped.map((score) => score.category)).not.toContain("UNKNOWN_EXTRA_AXIS");
     });
   });
 
   describe("getTotalScoreText", () => {
     it("총점과 평균을 포함한 텍스트를 올바르게 생성한다", () => {
       const scores = [
-        { category: "A", score: 80 },
-        { category: "B", score: 90 }
-      ] as any;
+        { category: "RIGHTS", score: 80, evidenceSummary: "" },
+        { category: "TECHNOLOGY", score: 90, evidenceSummary: "" },
+      ] satisfies EvaluationScore[];
       expect(getTotalScoreText(scores, 85)).toBe("170/200점, 평균 85점");
     });
 

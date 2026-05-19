@@ -20,6 +20,7 @@ import type {
   LegalActionResult,
   PatentLifecycleStatus,
   PatentListItem,
+  Recommendation,
   PatentSummary,
   PatentUpsertPayload,
   ReviewWorkflowStatus,
@@ -261,7 +262,7 @@ export async function requestPatentAiReport(patentId: string): Promise<PatentDet
     });
     return response.data ? mapBackendPatentDetail(response.data) : undefined;
   }
-  return getPatentDetail(patentId);
+  return requestMockPatentAiReport(patentId);
 }
 
 /**
@@ -558,6 +559,94 @@ function applyPatentPayload(patent: PatentListItem, payload: PatentUpsertPayload
   patent.applicationDate = payload.applicationDate;
   patent.registrationDate = payload.registrationDate;
   patent.expectedExpirationDate = payload.expectedExpirationDate;
+}
+
+/**
+ * @relatedFR FR-005, FR-006, FR-007, FR-008
+ * @relatedUI UI-LEGAL-05
+ * @description mock 특허 상세에 AI 평가 생성 결과와 MAIL_READY 상태 전환을 반영한다.
+ */
+function requestMockPatentAiReport(patentId: string): PatentDetail | undefined {
+  const listItem = patents.find((patent) => patent.patentId === patentId);
+  const detailItem = patentDetails.find((patent) => patent.patentId === patentId);
+
+  if (!detailItem) {
+    return undefined;
+  }
+
+  if (detailItem.reviewWorkflowStatus !== "REVIEW_QUARTER_STARTED") {
+    return detailItem;
+  }
+
+  const recommendation = getMockGeneratedRecommendation(detailItem);
+  const report = createGeneratedMockAiReport(detailItem, recommendation);
+  const summaryText = `${detailItem.title} 특허의 핵심 기술과 사업 적용 가능성을 AI 평가 레포트 기준으로 다시 요약했습니다.`;
+  const reviewReason = "AI 특허 평가 레포트가 생성되었고 관리자 메일 발송 명령이 필요합니다.";
+
+  detailItem.reviewWorkflowStatus = "MAIL_READY";
+  detailItem.reviewReason = reviewReason;
+  detailItem.currentRecommendation = recommendation;
+  detailItem.aiEvaluationReport = report;
+  detailItem.summary = {
+    ...detailItem.summary,
+    summaryText,
+  };
+
+  if (listItem) {
+    listItem.reviewWorkflowStatus = "MAIL_READY";
+    listItem.reviewReason = reviewReason;
+    listItem.currentRecommendation = recommendation;
+  }
+
+  return detailItem;
+}
+
+function getMockGeneratedRecommendation(patent: PatentDetail): Recommendation {
+  if (!patent.productName || patent.productName === "해당사항없음") {
+    return "REVIEW_AGAIN";
+  }
+
+  return patent.currentRecommendation === "HOLD" ? "REVIEW_AGAIN" : patent.currentRecommendation;
+}
+
+function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recommendation): AiEvaluationReport {
+  const scores = patent.aiEvaluationReport.scores.length
+    ? patent.aiEvaluationReport.scores
+    : EVALUATION_CATEGORIES.map((category) => ({
+        category,
+        evidenceSummary: "AI 평가 생성 후 상세 근거 확인이 필요한 항목입니다.",
+        score: null,
+      }));
+  const scoredValues = scores.flatMap((score) => (score.score == null ? [] : [score.score]));
+  const averageScore = scoredValues.length
+    ? Number((scoredValues.reduce((sum, score) => sum + score, 0) / scoredValues.length).toFixed(1))
+    : patent.aiEvaluationReport.totalScore;
+
+  return {
+    ...patent.aiEvaluationReport,
+    averageScore,
+    createdAt: new Date().toISOString(),
+    evaluationId: `REPORT-${patent.patentId}-${Date.now()}`,
+    recommendation,
+    recommendationText: getGeneratedMockRecommendationText(recommendation),
+    totalScore: averageScore,
+    totalScoreText: scoredValues.length
+      ? `평균 ${averageScore}점`
+      : patent.aiEvaluationReport.totalScoreText,
+    scores,
+  };
+}
+
+function getGeneratedMockRecommendationText(recommendation: Recommendation) {
+  const textMap: Record<Recommendation, string> = {
+    ABANDON: "AI 평가 결과 사업 연계성과 유지 필요성 근거가 부족해 포기 검토가 필요합니다.",
+    HOLD: "AI 평가 결과 일부 근거가 부족해 추가 확인 후 판단하는 것이 적절합니다.",
+    MAINTAIN: "AI 평가 결과 권리성, 기술성, 사업 연계성 근거가 확인되어 유지 검토가 가능합니다.",
+    REVIEW_AGAIN: "AI 평가 결과 일부 평가 근거 보완 후 다시 검토하는 것이 적절합니다.",
+    SALES_CANDIDATE: "AI 평가 결과 내부 활용도는 낮지만 외부 활용 가능성이 있어 매각 후보 검토가 필요합니다.",
+  };
+
+  return textMap[recommendation];
 }
 
 /**
