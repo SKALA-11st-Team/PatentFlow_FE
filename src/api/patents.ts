@@ -430,7 +430,7 @@ function mapBackendSummary(summary: BackendPatentDetail["summary"]): PatentSumma
   };
 }
 
-function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationReport"]): AiEvaluationReport {
+export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationReport"]): AiEvaluationReport {
   const scores = mapBackendEvaluationScores(report.scores);
   const averageScore = getAverageScore(scores);
 
@@ -453,7 +453,7 @@ function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationR
  * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 백엔드가 이전 5축 응답을 보내도 현재 FE/API 계약의 4축 평가 점수만 화면 모델로 통과시킨다.
  */
-function mapBackendEvaluationScores(scores: BackendPatentDetail["aiEvaluationReport"]["scores"]): EvaluationScore[] {
+export function mapBackendEvaluationScores(scores: BackendPatentDetail["aiEvaluationReport"]["scores"]): EvaluationScore[] {
   return scores.flatMap((score) => {
     if (!isEvaluationCategory(score.category)) {
       return [];
@@ -467,11 +467,11 @@ function mapBackendEvaluationScores(scores: BackendPatentDetail["aiEvaluationRep
   });
 }
 
-function isEvaluationCategory(category: string): category is EvaluationScore["category"] {
+export function isEvaluationCategory(category: string): category is EvaluationScore["category"] {
   return EVALUATION_CATEGORIES.includes(category as EvaluationScore["category"]);
 }
 
-function getAverageScore(scores: EvaluationScore[]) {
+export function getAverageScore(scores: EvaluationScore[]) {
   const scoreValues = scores.map((score) => score.score).filter((score): score is number => typeof score === "number");
 
   if (scoreValues.length === 0) {
@@ -481,7 +481,7 @@ function getAverageScore(scores: EvaluationScore[]) {
   return Math.round((scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length) * 10) / 10;
 }
 
-function getTotalScoreText(scores: EvaluationScore[], averageScore: number | undefined) {
+export function getTotalScoreText(scores: EvaluationScore[], averageScore: number | undefined) {
   const scoreValues = scores.map((score) => score.score).filter((score): score is number => typeof score === "number");
 
   if (averageScore === undefined || scoreValues.length === 0) {
@@ -492,6 +492,7 @@ function getTotalScoreText(scores: EvaluationScore[], averageScore: number | und
 
   return `${totalScore}/${scores.length * 100}점, 평균 ${averageScore}점`;
 }
+
 
 function mapBackendFinalDecisionRecord(
   finalDecisionRecord: BackendPatentDetail["finalDecisionRecord"],

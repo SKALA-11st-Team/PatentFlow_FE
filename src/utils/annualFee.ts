@@ -5,6 +5,12 @@
  */
 export function getNextAnnualFeeDueDate(registrationDateText: string, baseDate = new Date()) {
   const registrationDate = parseDate(registrationDateText);
+  
+  if (!registrationDate) {
+    // 유효하지 않은 날짜인 경우 계산이 불가능하므로 빈 문자열 반환
+    return "";
+  }
+
   const todayStart = getDateStart(baseDate);
   const dueDate = new Date(registrationDate.getFullYear() + 3, registrationDate.getMonth(), registrationDate.getDate());
 
@@ -24,13 +30,39 @@ export function getRemainingDaysUntilDate(dueDateText: string, baseDate = new Da
   const todayStart = getDateStart(baseDate);
   const dueDate = parseDate(dueDateText);
 
+  if (!dueDate) {
+    return 0;
+  }
+
   return Math.ceil((dueDate.getTime() - todayStart.getTime()) / 86_400_000);
 }
 
-function parseDate(dateText: string) {
-  const [year, month, day] = dateText.split("-").map(Number);
-  return new Date(year, month - 1, day);
+function parseDate(dateText: string | null | undefined): Date | null {
+  if (!dateText || typeof dateText !== "string") {
+    return null;
+  }
+
+  const parts = dateText.split("-");
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const [year, month, day] = parts.map(Number);
+  
+  if (isNaN(year) || isNaN(month) || isNaN(day)) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+  
+  // Date 객체의 특성상 2024-02-30 같은 입력도 유효하게 처리될 수 있으므로 실제 값이 일치하는지 확인
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+
+  return date;
 }
+
 
 function getDateStart(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
