@@ -217,7 +217,7 @@ export function appendMockMailingHistory(drafts: BusinessReviewMailSendDraft[]) 
 
   const nextItems = drafts.map((draft, index) => ({
     body: draft.body,
-    ccEmails: getCcEmailsByRecipient(draft.recipientEmail),
+    ccEmails: draft.ccEmails.length > 0 ? draft.ccEmails : getCcEmailsByRecipient(draft.recipientEmail),
     mailingId: `MAIL-${Date.now()}-${index + 1}`,
     patentCount: draft.patents.length,
     patents: draft.patents,

@@ -3,6 +3,7 @@ import type { BusinessReviewMailSendDraft, DepartmentRecipientMapping } from "..
 
 export interface BusinessReviewMailDraft {
   body: string;
+  ccEmails: string[];
   patents: PatentListItem[];
   recipientEmail: string;
   recipientName: string;
@@ -55,6 +56,7 @@ export function createBusinessReviewMailDraftFromPatents(
       "각 특허의 AI 특허 평가 레포트와 평가 근거를 확인한 뒤 유지 또는 포기 의견을 제출해 주세요.",
       "접속 URL: https://patentflow.example.com (실제 URL로 변경 필요)",
     ].join("\n"),
+    ccEmails: recipient.ccEmails,
     patents,
     recipientEmail: recipient.email,
     recipientName: recipient.name,
@@ -103,10 +105,12 @@ export function getDepartmentRecipient(
     return {
       email: savedMapping.managerEmail,
       name: savedMapping.managerName,
+      ccEmails: savedMapping.ccEmails,
     };
   }
 
   return {
+    ccEmails: [],
     email: "",
     name: `${patent.departmentName} 담당자`,
   };
@@ -120,6 +124,7 @@ export function getDepartmentRecipient(
 export function toBusinessReviewMailSendDraft(draft: BusinessReviewMailDraft): BusinessReviewMailSendDraft {
   return {
     body: draft.body,
+    ccEmails: draft.ccEmails.map((email) => email.trim()).filter(Boolean),
     patents: draft.patents.map((patent) => ({
       managementNumber: patent.managementNumber,
       patentId: patent.patentId,

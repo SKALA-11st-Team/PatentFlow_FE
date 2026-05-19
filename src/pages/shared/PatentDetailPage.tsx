@@ -875,6 +875,7 @@ function MailingHistoryModal({
 const mailingHistoryStatusLabels: Record<MailingDeliveryStatus, string> = {
   FAILED: "실패",
   PENDING: "대기",
+  RECORDED: "발송 기록",
   SENT: "발송 완료",
 };
 
@@ -890,6 +891,10 @@ function getMailingHistoryStatusTone(status: MailingDeliveryStatus): BadgeTone {
 
   if (status === "FAILED") {
     return "danger";
+  }
+
+  if (status === "RECORDED") {
+    return "neutral";
   }
 
   return "warning";

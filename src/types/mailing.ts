@@ -20,13 +20,14 @@ export interface BusinessReviewMailPatentSummary {
 
 export interface BusinessReviewMailSendDraft {
   body: string;
+  ccEmails: string[];
   patents: BusinessReviewMailPatentSummary[];
   recipientEmail: string;
   recipientName: string;
   subject: string;
 }
 
-export type MailingDeliveryStatus = "SENT" | "FAILED" | "PENDING";
+export type MailingDeliveryStatus = "SENT" | "FAILED" | "PENDING" | "RECORDED";
 
 export interface MailingHistoryItem {
   body: string;

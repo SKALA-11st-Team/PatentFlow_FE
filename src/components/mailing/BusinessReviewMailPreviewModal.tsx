@@ -121,6 +121,21 @@ export function BusinessReviewMailPreviewModal({
             ) : null}
           </label>
           <label>
+            <span>참조</span>
+            <input
+              onChange={(event) => onDraftChange({
+                ...activeDraft,
+                ccEmails: event.target.value
+                  .split(",")
+                  .map((email) => email.trim())
+                  .filter(Boolean),
+              })}
+              placeholder="참조 이메일을 쉼표로 구분"
+              type="text"
+              value={activeDraft.ccEmails.join(", ")}
+            />
+          </label>
+          <label>
             <span>특허 건수</span>
             <input readOnly value={`${activeDraft.patents.length}건`} />
           </label>
