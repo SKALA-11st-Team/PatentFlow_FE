@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getDepartmentRecipientMappings } from "../../api/mailing";
-import { assignPatentDepartment, getPatents, sendBusinessReviewMails } from "../../api/patents";
+import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { getDepartments, type Department } from "../../api/departments";
 import { Button } from "../../components/common/Button";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { BusinessReviewMailPreviewModal } from "../../components/mailing/BusinessReviewMailPreviewModal";
+import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { usePatentList } from "../../hooks/usePatentList";
@@ -84,9 +85,6 @@ export function AdminReviewTargetPage() {
   const [activeMailIndex, setActiveMailIndex] = useState(0);
   const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [assigningPatentId, setAssigningPatentId] = useState<string | null>(null);
-  const [assigningDeptId, setAssigningDeptId] = useState("");
-  const [isAssigning, setIsAssigning] = useState(false);
 
   useEffect(() => {
     getDepartments().then(setDepartments).catch(() => {});
@@ -135,24 +133,14 @@ export function AdminReviewTargetPage() {
     (shouldShowWorkflowColumn ? 1 : 0) +
     (isActionableMailList ? 2 : 0);
 
-  async function handleAssignDepartment(patentId: string) {
-    if (!assigningDeptId) return;
-    setIsAssigning(true);
-    try {
-      await assignPatentDepartment(patentId, assigningDeptId);
-      const assigned = departments.find((d) => d.departmentId === assigningDeptId);
-      setPatentList((prev) =>
-        prev.map((p) =>
-          p.patentId === patentId
-            ? { ...p, departmentId: assigningDeptId, departmentName: assigned?.departmentName ?? assigningDeptId }
-            : p,
-        ),
-      );
-      setAssigningPatentId(null);
-      setAssigningDeptId("");
-    } finally {
-      setIsAssigning(false);
-    }
+  function handleAssignSuccess(patentId: string, deptId: string, deptName: string) {
+    setPatentList((prev) =>
+      prev.map((p) =>
+        p.patentId === patentId
+          ? { ...p, departmentId: deptId, departmentName: deptName }
+          : p,
+      ),
+    );
   }
 
   useEffect(() => {
@@ -398,8 +386,8 @@ export function AdminReviewTargetPage() {
                     <td>{patent.managementNumber}</td>
                     {isActionableMailList ? (
                       <>
-                        <td>{mapping ? mapping.managerName : <span style={{ color: "var(--color-error, #c0392b)" }}>미등록</span>}</td>
-                        <td>{mapping ? mapping.managerEmail : <span style={{ color: "var(--color-error, #c0392b)" }}>계정 없음</span>}</td>
+                        <td>{mapping ? mapping.managerName : <span className="text-error">미등록</span>}</td>
+                        <td>{mapping ? mapping.managerEmail : <span className="text-error">계정 없음</span>}</td>
                       </>
                     ) : null}
                     {shouldShowWorkflowColumn ? (
@@ -412,46 +400,14 @@ export function AdminReviewTargetPage() {
                       onKeyDown={(e) => e.stopPropagation()}
                     >
                       {(patent.reviewWorkflowStatus === "REVIEW_QUARTER_STARTED" || patent.reviewWorkflowStatus === "MAIL_READY") ? (
-                        assigningPatentId === patent.patentId ? (
-                          <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                            <select
-                              onChange={(e) => setAssigningDeptId(e.target.value)}
-                              style={{ fontSize: "0.85em" }}
-                              value={assigningDeptId}
-                            >
-                              <option value="">선택</option>
-                              {departments.map((d) => (
-                                <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
-                              ))}
-                            </select>
-                            <button
-                              disabled={!assigningDeptId || isAssigning}
-                              onClick={() => handleAssignDepartment(patent.patentId)}
-                              style={{ fontSize: "0.8em", padding: "2px 8px" }}
-                              type="button"
-                            >
-                              {isAssigning ? "저장 중" : "확인"}
-                            </button>
-                            <button
-                              onClick={() => { setAssigningPatentId(null); setAssigningDeptId(""); }}
-                              style={{ fontSize: "0.8em", padding: "2px 6px" }}
-                              type="button"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setAssigningPatentId(patent.patentId);
-                              setAssigningDeptId(patent.departmentId ?? "");
-                            }}
-                            style={{ background: "none", border: "1px solid var(--color-border)", borderRadius: "4px", cursor: "pointer", fontSize: "0.85em", padding: "3px 10px" }}
-                            type="button"
-                          >
-                            {patent.departmentName ? patent.departmentName : "사업부 배정"}
-                          </button>
-                        )
+                        <DepartmentAssigner
+                          currentDepartmentId={patent.departmentId}
+                          currentDepartmentName={patent.departmentName}
+                          departments={departments}
+                          onAssignSuccess={(deptId, deptName) => handleAssignSuccess(patent.patentId, deptId, deptName)}
+                          patentId={patent.patentId}
+                          variant="border"
+                        />
                       ) : (
                         <span className="table-subtext">{patent.departmentName || "—"}</span>
                       )}

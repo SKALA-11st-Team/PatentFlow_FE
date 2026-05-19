@@ -6,7 +6,8 @@ import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { getDepartments, type Department } from "../../api/departments";
-import { assignPatentDepartment, createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
+import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
+import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
 import { REVIEW_WORKFLOW_FILTER_OPTIONS, reviewWorkflowStatusLabels, type ReviewWorkflowFilter } from "../../constants/status";
@@ -53,9 +54,6 @@ export function AdminPatentListPage() {
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isManualMetadataEditEnabled, setIsManualMetadataEditEnabled] = useState(false);
-  const [assigningPatentId, setAssigningPatentId] = useState<string | null>(null);
-  const [assigningDeptId, setAssigningDeptId] = useState("");
-  const [isAssigning, setIsAssigning] = useState(false);
 
   useEffect(() => {
     getDepartments().then(setDepartments).catch(() => {});
@@ -73,6 +71,16 @@ export function AdminPatentListPage() {
     totalItems,
     totalPages,
   } = useClientPagination(listedPatents, [keyword, reviewScope, sort, workflowFilter]);
+
+  function handleAssignSuccess(patentId: string, deptId: string, deptName: string) {
+    setPatentList((prev) =>
+      prev.map((p) =>
+        p.patentId === patentId
+          ? { ...p, departmentId: deptId, departmentName: deptName }
+          : p,
+      ),
+    );
+  }
 
   async function handleLookupPatent() {
     if (!form.registrationNumber?.trim()) {
@@ -186,26 +194,6 @@ export function AdminPatentListPage() {
       );
     } finally {
       setIsSuggestingContext(false);
-    }
-  }
-
-  async function handleAssignDepartment(patentId: string) {
-    if (!assigningDeptId) return;
-    setIsAssigning(true);
-    try {
-      await assignPatentDepartment(patentId, assigningDeptId);
-      const assigned = departments.find((d) => d.departmentId === assigningDeptId);
-      setPatentList((prev) =>
-        prev.map((p) =>
-          p.patentId === patentId
-            ? { ...p, departmentId: assigningDeptId, departmentName: assigned?.departmentName ?? assigningDeptId }
-            : p,
-        ),
-      );
-      setAssigningPatentId(null);
-      setAssigningDeptId("");
-    } finally {
-      setIsAssigning(false);
     }
   }
 
@@ -474,46 +462,14 @@ export function AdminPatentListPage() {
                     onKeyDown={(e) => e.stopPropagation()}
                   >
                     {(patent.reviewWorkflowStatus === "REVIEW_QUARTER_STARTED" || patent.reviewWorkflowStatus === "MAIL_READY") ? (
-                      assigningPatentId === patent.patentId ? (
-                        <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
-                          <select
-                            onChange={(e) => setAssigningDeptId(e.target.value)}
-                            style={{ fontSize: "0.85em" }}
-                            value={assigningDeptId}
-                          >
-                            <option value="">선택</option>
-                            {departments.map((d) => (
-                              <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
-                            ))}
-                          </select>
-                          <button
-                            disabled={!assigningDeptId || isAssigning}
-                            onClick={() => handleAssignDepartment(patent.patentId)}
-                            style={{ fontSize: "0.8em", padding: "2px 8px" }}
-                            type="button"
-                          >
-                            {isAssigning ? "저장 중" : "확인"}
-                          </button>
-                          <button
-                            onClick={() => { setAssigningPatentId(null); setAssigningDeptId(""); }}
-                            style={{ fontSize: "0.8em", padding: "2px 6px" }}
-                            type="button"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setAssigningPatentId(patent.patentId);
-                            setAssigningDeptId(patent.departmentId ?? "");
-                          }}
-                          style={{ background: "none", border: "1px solid var(--color-border)", borderRadius: "4px", cursor: "pointer", fontSize: "0.85em", padding: "3px 10px" }}
-                          type="button"
-                        >
-                          {patent.departmentName ? patent.departmentName : "사업부 배정"}
-                        </button>
-                      )
+                      <DepartmentAssigner
+                        currentDepartmentId={patent.departmentId}
+                        currentDepartmentName={patent.departmentName}
+                        departments={departments}
+                        onAssignSuccess={(deptId, deptName) => handleAssignSuccess(patent.patentId, deptId, deptName)}
+                        patentId={patent.patentId}
+                        variant="border"
+                      />
                     ) : (
                       <span className="table-subtext">{patent.departmentName || "—"}</span>
                     )}

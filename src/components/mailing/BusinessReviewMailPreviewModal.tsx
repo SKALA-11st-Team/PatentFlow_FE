@@ -115,7 +115,7 @@ export function BusinessReviewMailPreviewModal({
               value={activeDraft.recipientEmail}
             />
             {!activeDraft.recipientEmail ? (
-              <small style={{ color: "var(--color-error, #c0392b)" }}>
+              <small className="text-error">
                 계정 미등록 사업부입니다. 수신 이메일을 직접 입력하세요.
               </small>
             ) : null}

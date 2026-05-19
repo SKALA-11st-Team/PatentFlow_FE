@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDepartments, type Department } from "../../api/departments";
-import { assignPatentDepartment } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { BusinessAreaReviewCards } from "../../components/admin/BusinessAreaReviewCards";
+import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
 import { KpiCard } from "../../components/common/KpiCard";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { QuarterCompletionDonut } from "../../components/dashboard/QuarterCompletionDonut";
@@ -41,9 +41,6 @@ export function AdminDashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const { errorMessage, isLoading, patents, setPatents } = usePatentList();
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [assigningPatentId, setAssigningPatentId] = useState<string | null>(null);
-  const [assigningDeptId, setAssigningDeptId] = useState("");
-  const [isAssigning, setIsAssigning] = useState(false);
 
   useEffect(() => {
     getDepartments().then(setDepartments).catch(() => {});
@@ -69,30 +66,21 @@ export function AdminDashboardPage() {
   } = useClientPagination(filteredPatents, [reviewScope, searchKeyword, workflowFilter, sortKey]);
   const workflowFilterOptions = getDashboardWorkflowFilterOptions();
 
-  async function handleAssignDepartment(patentId: string) {
-    if (!assigningDeptId) return;
-    setIsAssigning(true);
-    try {
-      await assignPatentDepartment(patentId, assigningDeptId);
-      const assigned = departments.find((d) => d.departmentId === assigningDeptId);
-      setPatents((prev) =>
-        prev.map((p) =>
-          p.patentId === patentId
-            ? { ...p, departmentId: assigningDeptId, departmentName: assigned?.departmentName ?? assigningDeptId }
-            : p,
-        ),
-      );
-      setAssigningPatentId(null);
-      setAssigningDeptId("");
-    } finally {
-      setIsAssigning(false);
-    }
+  function handleAssignSuccess(patentId: string, deptId: string, deptName: string) {
+    setPatents((prev) =>
+      prev.map((p) =>
+        p.patentId === patentId
+          ? { ...p, departmentId: deptId, departmentName: deptName }
+          : p,
+      ),
+    );
   }
 
   function handleReviewScopeChange(nextScope: DashboardScope) {
     setReviewScope(nextScope);
     setWorkflowFilter("ALL");
   }
+
 
   return (
     <AppLayout
@@ -256,32 +244,13 @@ export function AdminDashboardPage() {
                   >
                     <WorkflowStatusBadge status={patent.reviewWorkflowStatus} />
                     {(patent.reviewWorkflowStatus === "REVIEW_QUARTER_STARTED" || patent.reviewWorkflowStatus === "MAIL_READY") ? (
-                      assigningPatentId === patent.patentId ? (
-                        <div style={{ display: "flex", gap: "4px", alignItems: "center", marginTop: "4px" }}>
-                          <select
-                            onChange={(e) => setAssigningDeptId(e.target.value)}
-                            style={{ fontSize: "0.85em" }}
-                            value={assigningDeptId}
-                          >
-                            <option value="">선택</option>
-                            {departments.map((d) => (
-                              <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
-                            ))}
-                          </select>
-                          <button disabled={!assigningDeptId || isAssigning} onClick={() => handleAssignDepartment(patent.patentId)} style={{ fontSize: "0.8em", padding: "2px 8px" }} type="button">
-                            {isAssigning ? "저장 중" : "확인"}
-                          </button>
-                          <button onClick={() => { setAssigningPatentId(null); setAssigningDeptId(""); }} style={{ fontSize: "0.8em", padding: "2px 6px" }} type="button">✕</button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => { setAssigningPatentId(patent.patentId); setAssigningDeptId(patent.departmentId ?? ""); }}
-                          style={{ background: "none", border: "none", cursor: "pointer", display: "block", fontSize: "0.85em", marginTop: "4px", padding: 0, textAlign: "left" }}
-                          type="button"
-                        >
-                          🏢 {patent.departmentName || "미지정"}
-                        </button>
-                      )
+                      <DepartmentAssigner
+                        currentDepartmentId={patent.departmentId}
+                        currentDepartmentName={patent.departmentName}
+                        departments={departments}
+                        onAssignSuccess={(deptId, deptName) => handleAssignSuccess(patent.patentId, deptId, deptName)}
+                        patentId={patent.patentId}
+                      />
                     ) : (
                       isQuarterlyReviewTarget(patent) && patent.departmentName
                         ? <span className="table-subtext">🏢 {patent.departmentName}</span>

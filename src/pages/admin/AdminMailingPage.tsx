@@ -125,9 +125,9 @@ export function AdminMailingPage() {
     >
       <Section title="메일 발송 준비" description="메일 발송 대기 특허를 담당자 이메일 기준으로 묶어 미리봅니다.">
         {isMailNotConfigured ? (
-          <p className="notice" style={{ color: "var(--color-warning, #b45309)", marginBottom: "1rem" }}>
+          <p className="notice notice-warning" style={{ marginBottom: "1rem" }}>
             Gmail 메일 발송 설정이 완료되지 않았습니다. 메일 발송을 눌러도 실제 이메일이 전송되지 않습니다.{" "}
-            <Link to="/admin/settings" style={{ fontWeight: 600, textDecoration: "underline" }}>
+            <Link to="/admin/settings" className="text-link">
               설정
             </Link>
             에서 Gmail 계정과 앱 비밀번호를 등록해 주세요.
@@ -139,9 +139,9 @@ export function AdminMailingPage() {
           <SummaryItem label="등록 사업부" value={`${recipientMappings.length}개`} />
         </div>
         {hasNoRecipients ? (
-          <p className="notice" style={{ color: "var(--color-warning, #b45309)" }}>
+          <p className="notice notice-warning">
             등록된 사업부 계정이 없습니다.{" "}
-            <Link to="/admin/users" style={{ fontWeight: 600, textDecoration: "underline" }}>
+            <Link to="/admin/users" className="text-link">
               계정 관리
             </Link>
             에서 사업부 계정을 추가하면 해당 이메일로 메일이 발송됩니다.

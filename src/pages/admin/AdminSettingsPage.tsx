@@ -107,13 +107,13 @@ export function AdminSettingsPage() {
           </div>
         </div>
 
-        <div className="card" style={{ maxWidth: 480, padding: "1.25rem", marginBottom: "1rem" }}>
+        <div className="settings-card" style={{ marginBottom: "1rem" }}>
           <div style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
             <span>현재 상태:</span>
             {mailSettings?.gmailUsername ? (
               <>
                 <span className="badge badge-success">설정됨</span>
-                <span style={{ fontSize: "0.875rem", color: "var(--color-text-secondary)" }}>
+                <span className="form-helper-text">
                   {mailSettings.gmailUsername}
                   {mailSettings.isAppPasswordConfigured ? " · 앱 비밀번호 등록됨" : " · 앱 비밀번호 미등록"}
                 </span>
@@ -123,9 +123,9 @@ export function AdminSettingsPage() {
             )}
           </div>
 
-          <form onSubmit={handleSaveMail} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-              <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>Gmail 계정</span>
+          <form onSubmit={handleSaveMail} className="settings-form">
+            <label className="form-field">
+              <span className="form-label-text">Gmail 계정</span>
               <input
                 onChange={(e) => setMailForm((f) => ({ ...f, gmailUsername: e.target.value }))}
                 placeholder="your@gmail.com"
@@ -134,20 +134,20 @@ export function AdminSettingsPage() {
                 value={mailForm.gmailUsername}
               />
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-              <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>Gmail 앱 비밀번호</span>
+            <label className="form-field">
+              <span className="form-label-text">Gmail 앱 비밀번호</span>
               <input
                 onChange={(e) => setMailForm((f) => ({ ...f, gmailAppPassword: e.target.value }))}
                 placeholder={mailSettings?.isAppPasswordConfigured ? "변경하려면 새로 입력 (공백이면 유지)" : "xxxx xxxx xxxx xxxx"}
                 type="password"
                 value={mailForm.gmailAppPassword}
               />
-              <small style={{ color: "var(--color-text-secondary)" }}>
+              <small className="form-helper-text">
                 Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호에서 발급
               </small>
             </label>
             {mailMessage ? (
-              <p className="notice" style={{ margin: 0 }}>{mailMessage}</p>
+              <p className="notice notice-compact">{mailMessage}</p>
             ) : null}
             <div>
               <Button disabled={isSavingMail || !mailForm.gmailUsername} type="submit">
@@ -170,7 +170,7 @@ export function AdminSettingsPage() {
           </div>
         </div>
         {message ? (
-          <p className="notice" style={{ marginBottom: "1rem" }}>
+          <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>
             {message}
           </p>
         ) : null}
@@ -216,7 +216,7 @@ export function AdminSettingsPage() {
             <p>관리자가 특허를 유지 처리하면 납부 기한이 아래 설정값(개월)만큼 자동 연장됩니다.</p>
           </div>
         </div>
-        {extMessage ? <p className="notice" style={{ marginBottom: "1rem" }}>{extMessage}</p> : null}
+        {extMessage ? <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>{extMessage}</p> : null}
         <div className="table-wrap">
           <table>
             <thead>
@@ -385,7 +385,7 @@ function QuarterRow({
           <span className="badge badge-neutral">미시작</span>
         )}
       </td>
-      <td style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+      <td className="table-cell-actions">
         {!quarter.ended && (
           <Button
             disabled={isSaving || !isDirty}

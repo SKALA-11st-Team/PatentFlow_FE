@@ -596,7 +596,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
             </Button>
           ) : null}
           {role === "BUSINESS" && hasSubmittedBusinessChecklist ? (
-            <p className="notice" style={{ margin: 0, fontSize: "0.85em" }}>
+            <p className="notice notice-compact">
               이미 제출한 의견은 변경할 수 없습니다.
             </p>
           ) : null}

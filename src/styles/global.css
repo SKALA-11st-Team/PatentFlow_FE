@@ -2772,3 +2772,114 @@ tbody tr:hover {
     padding: var(--spacing-lg);
   }
 }
+
+/* Settings & Form Refactoring */
+.settings-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  max-width: 480px;
+  padding: 1.25rem;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-label-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.form-helper-text {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* Notice Modifiers */
+.notice-compact {
+  margin: 0 !important;
+}
+
+.notice-warning {
+  color: var(--color-warning, #b45309) !important;
+}
+
+.notice-error {
+  color: var(--color-error, #c0392b) !important;
+}
+
+/* Table & Utility Classes */
+.table-cell-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.text-error {
+  color: var(--color-error, #c0392b) !important;
+}
+
+/* Department Assigner Component Styles */
+.department-assigner {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.department-assigner-select {
+  font-size: 0.85em;
+  padding: 2px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.department-assigner-btn {
+  font-size: 0.8em;
+  padding: 2px 8px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.department-assigner-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.department-assigner-cancel {
+  font-size: 0.8em;
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.department-assigner-trigger {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: block;
+  font-size: 0.85em;
+  margin-top: 4px;
+  padding: 3px 10px;
+  text-align: left;
+}
+
+.department-assigner-trigger-no-border {
+  border: none;
+  padding: 0;
+}
+

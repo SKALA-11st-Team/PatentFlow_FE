@@ -119,7 +119,7 @@ export function AdminUsersPage() {
             <p>특허 등록 및 메일 발송 시 선택 가능한 사업부를 관리합니다.</p>
           </div>
         </div>
-        {deptMessage ? <p className="notice" style={{ marginBottom: "1rem" }}>{deptMessage}</p> : null}
+        {deptMessage ? <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>{deptMessage}</p> : null}
         <div className="table-wrap" style={{ marginBottom: "1rem" }}>
           <table>
             <thead>
@@ -134,7 +134,7 @@ export function AdminUsersPage() {
                 <tr key={dept.departmentId}>
                   <td><code>{dept.departmentId}</code></td>
                   <td>{dept.departmentName}</td>
-                  <td>
+                  <td className="table-cell-actions">
                     <Button
                       onClick={async () => {
                         if (!confirm(`"${dept.departmentName}" 사업부를 삭제하시겠습니까?`)) return;
@@ -177,10 +177,11 @@ export function AdminUsersPage() {
               setIsSavingDept(false);
             }
           }}
-          style={{ display: "flex", gap: "0.5rem", alignItems: "flex-end", flexWrap: "wrap" }}
+          className="table-cell-actions"
+          style={{ alignItems: "flex-end" }}
         >
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-            <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>사업부 ID</span>
+          <label className="form-field">
+            <span className="form-label-text">사업부 ID</span>
             <input
               onChange={(e) => setDeptForm((f) => ({ ...f, departmentId: e.target.value }))}
               placeholder="DEPT-NEW"
@@ -189,8 +190,8 @@ export function AdminUsersPage() {
               value={deptForm.departmentId}
             />
           </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-            <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>사업부명</span>
+          <label className="form-field">
+            <span className="form-label-text">사업부명</span>
             <input
               onChange={(e) => setDeptForm((f) => ({ ...f, departmentName: e.target.value }))}
               placeholder="신규사업부"
@@ -222,17 +223,17 @@ export function AdminUsersPage() {
         </div>
 
         {message ? (
-          <p className="notice" style={{ color: isError ? "var(--color-error, #c0392b)" : undefined, marginBottom: "1rem" }}>
+          <p className={`notice notice-compact ${isError ? "notice-error" : ""}`} style={{ marginBottom: "1rem" }}>
             {message}
           </p>
         ) : null}
 
         {showForm ? (
-          <form className="card" onSubmit={handleCreate} style={{ marginBottom: "1.5rem", padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <form className="settings-card settings-form" onSubmit={handleCreate} style={{ marginBottom: "1.5rem" }}>
             <h3 style={{ margin: 0 }}>새 계정 생성</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <span>이메일 (로그인 ID)</span>
+              <label className="form-field">
+                <span className="form-label-text">이메일 (로그인 ID)</span>
                 <input
                   onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
                   placeholder="user@company.com"
@@ -241,8 +242,8 @@ export function AdminUsersPage() {
                   value={form.username}
                 />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <span>이름</span>
+              <label className="form-field">
+                <span className="form-label-text">이름</span>
                 <input
                   onChange={(e) => setForm((f) => ({ ...f, displayName: e.target.value }))}
                   placeholder="홍길동"
@@ -251,8 +252,8 @@ export function AdminUsersPage() {
                   value={form.displayName}
                 />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <span>역할</span>
+              <label className="form-field">
+                <span className="form-label-text">역할</span>
                 <select
                   onChange={(e) => handleRoleChange(e.target.value as "ADMIN" | "BUSINESS")}
                   value={form.role}
@@ -262,8 +263,8 @@ export function AdminUsersPage() {
                 </select>
               </label>
               {form.role === "BUSINESS" ? (
-                <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                  <span>사업부명</span>
+                <label className="form-field">
+                  <span className="form-label-text">사업부명</span>
                   <select
                     onChange={(e) => handleDeptChange(e.target.value)}
                     value={form.departmentId ?? ""}
@@ -277,7 +278,7 @@ export function AdminUsersPage() {
                 <div />
               )}
             </div>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div className="table-cell-actions">
               <Button disabled={isSubmitting} type="submit">
                 {isSubmitting ? "생성 중…" : "계정 생성"}
               </Button>
@@ -312,7 +313,7 @@ export function AdminUsersPage() {
                   </td>
                   <td>{user.departmentName ?? "-"}</td>
                   <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString("ko-KR") : "-"}</td>
-                  <td style={{ display: "flex", gap: "0.5rem" }}>
+                  <td className="table-cell-actions">
                     <Button
                       onClick={() => handleResetPassword(user)}
                       type="button"

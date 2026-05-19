@@ -53,38 +53,38 @@ export function BusinessSettingsPage() {
           </div>
         </div>
 
-        <div className="card" style={{ maxWidth: 480, padding: "1.25rem" }}>
-          <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-              <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>수신 이메일 (변경 불가)</span>
+        <div className="settings-card">
+          <form onSubmit={handleSave} className="settings-form">
+            <label className="form-field">
+              <span className="form-label-text">수신 이메일 (변경 불가)</span>
               <input
                 disabled
-                style={{ background: "var(--color-surface-secondary, #f3f4f6)", color: "var(--color-text-secondary)" }}
+                className="form-helper-text"
                 type="email"
                 value={user?.email ?? user?.username ?? ""}
               />
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-              <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>사업부</span>
+            <label className="form-field">
+              <span className="form-label-text">사업부</span>
               <input
                 disabled
-                style={{ background: "var(--color-surface-secondary, #f3f4f6)", color: "var(--color-text-secondary)" }}
+                className="form-helper-text"
                 value={user?.departmentName ?? "—"}
               />
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-              <span style={{ fontSize: "0.875rem", fontWeight: 500 }}>담당자 이름</span>
+            <label className="form-field">
+              <span className="form-label-text">담당자 이름</span>
               <input
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="메일에 표시될 담당자 이름"
                 required
                 value={displayName}
               />
-              <small style={{ color: "var(--color-text-secondary)" }}>
+              <small className="form-helper-text">
                 메일 수신 시 "OOO 담당자님"으로 표시됩니다.
               </small>
             </label>
-            {message ? <p className="notice" style={{ margin: 0 }}>{message}</p> : null}
+            {message ? <p className="notice notice-compact">{message}</p> : null}
             <div>
               <Button disabled={isSaving || !isDirty || !displayName.trim()} type="submit">
                 {isSaving ? "저장 중…" : "저장"}
