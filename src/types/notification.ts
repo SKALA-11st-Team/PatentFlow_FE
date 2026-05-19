@@ -14,4 +14,5 @@ export interface AppNotification {
   message: string;
   createdAt: string;
   isRead: boolean;
+  link?: string | null;
 }

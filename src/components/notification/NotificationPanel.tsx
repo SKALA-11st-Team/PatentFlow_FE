@@ -1,7 +1,9 @@
+import { Link } from "react-router-dom";
 import type { AppNotification } from "../../types/notification";
 
 interface NotificationPanelProps {
   notifications: AppNotification[];
+  onClose: () => void;
   onToggleRead: (notificationId: string, isRead: boolean) => void;
 }
 
@@ -10,7 +12,7 @@ interface NotificationPanelProps {
  * @relatedUI UI-COM-03
  * @description 공통 헤더에서 관리자/사업부 대상 알림 목록을 오늘, 지난주, 그 이전으로 묶어 표시한다.
  */
-export function NotificationPanel({ notifications, onToggleRead }: NotificationPanelProps) {
+export function NotificationPanel({ notifications, onClose, onToggleRead }: NotificationPanelProps) {
   const groupedNotifications = getGroupedNotifications(notifications);
 
   return (
@@ -25,19 +27,29 @@ export function NotificationPanel({ notifications, onToggleRead }: NotificationP
             <h3>{group.label}</h3>
             <div className="notification-group-list">
               {group.notifications.map((notification) => (
-                <article className={`notification-item ${notification.isRead ? "is-read" : ""}`} key={notification.id}>
+                <article className={`notification-item ${notification.isRead ? "is-read" : ""} ${notification.link ? "has-link" : ""}`} key={notification.id}>
                   <div className="notification-item-header">
                     <strong>{notification.title}</strong>
                     <time>{formatNotificationTime(notification.createdAt)}</time>
                     <button
                       className="notification-read-toggle"
-                      onClick={() => onToggleRead(notification.id, !notification.isRead)}
+                      onClick={(e) => { e.stopPropagation(); onToggleRead(notification.id, !notification.isRead); }}
                       type="button"
                     >
                       {notification.isRead ? "읽지 않음으로 표시" : "읽음으로 표시"}
                     </button>
                   </div>
-                  <p>{notification.message}</p>
+                  {notification.link ? (
+                    <Link
+                      className="notification-link"
+                      to={notification.link}
+                      onClick={() => { onToggleRead(notification.id, true); onClose(); }}
+                    >
+                      {notification.message}
+                    </Link>
+                  ) : (
+                    <p>{notification.message}</p>
+                  )}
                 </article>
               ))}
             </div>

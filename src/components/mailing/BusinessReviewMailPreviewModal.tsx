@@ -38,6 +38,7 @@ export function BusinessReviewMailPreviewModal({
   const activeDraft = drafts[activeIndex];
   const isFirstMail = activeIndex === 0;
   const isLastMail = activeIndex === drafts.length - 1;
+  const hasEmptyRecipient = drafts.some((d) => !d.recipientEmail.trim());
 
   function handleSubjectChange(subject: string) {
     onDraftChange({ ...activeDraft, subject });
@@ -61,38 +62,63 @@ export function BusinessReviewMailPreviewModal({
         </div>
 
         <div className="mail-preview-toolbar">
-          <button
-            aria-label="이전 메일"
-            className="mail-preview-arrow"
-            disabled={isFirstMail}
-            onClick={() => onIndexChange(activeIndex - 1)}
-            type="button"
-          >
-            ‹
-          </button>
+          {drafts.length > 1 ? (
+            <button
+              aria-label="이전 메일"
+              className="mail-preview-arrow"
+              disabled={isFirstMail}
+              onClick={() => onIndexChange(activeIndex - 1)}
+              type="button"
+            >
+              ‹
+            </button>
+          ) : <div />}
           <div>
-            <strong>
-              {activeIndex + 1} / {drafts.length}
-            </strong>
+            {drafts.length > 1 ? (
+              <strong>
+                {activeIndex + 1} / {drafts.length}
+              </strong>
+            ) : null}
             <span>
               {activeDraft.recipientName}에게 보낼 특허 {activeDraft.patents.length}건 묶음 메일을 확인합니다.
             </span>
           </div>
-          <button
-            aria-label="다음 메일"
-            className="mail-preview-arrow"
-            disabled={isLastMail}
-            onClick={() => onIndexChange(activeIndex + 1)}
-            type="button"
-          >
-            ›
-          </button>
+          {drafts.length > 1 ? (
+            <button
+              aria-label="다음 메일"
+              className="mail-preview-arrow"
+              disabled={isLastMail}
+              onClick={() => onIndexChange(activeIndex + 1)}
+              type="button"
+            >
+              ›
+            </button>
+          ) : <div />}
         </div>
 
         <div className="mail-preview-meta">
           <label>
-            <span>받는 사람</span>
-            <input readOnly value={`${activeDraft.recipientName} <${activeDraft.recipientEmail}>`} />
+            <span>받는 사람 (이름)</span>
+            <input
+              onChange={(event) => onDraftChange({ ...activeDraft, recipientName: event.target.value })}
+              placeholder="담당자 이름"
+              value={activeDraft.recipientName}
+            />
+          </label>
+          <label>
+            <span>받는 사람 (이메일)</span>
+            <input
+              onChange={(event) => onDraftChange({ ...activeDraft, recipientEmail: event.target.value })}
+              placeholder="수신 이메일을 입력하세요"
+              style={activeDraft.recipientEmail ? undefined : { borderColor: "var(--color-error, #c0392b)" }}
+              type="email"
+              value={activeDraft.recipientEmail}
+            />
+            {!activeDraft.recipientEmail ? (
+              <small style={{ color: "var(--color-error, #c0392b)" }}>
+                계정 미등록 사업부입니다. 수신 이메일을 직접 입력하세요.
+              </small>
+            ) : null}
           </label>
           <label>
             <span>특허 건수</span>
@@ -109,15 +135,11 @@ export function BusinessReviewMailPreviewModal({
           <textarea onChange={(event) => handleBodyChange(event.target.value)} value={activeDraft.body} />
         </label>
 
-        <p className="mail-preview-integration-note">
-          실제 Gmail 발송과 발송 이력 저장은 BE/Gmail 연동 시 연결할 예정인 UI placeholder입니다.
-        </p>
-
         <div className="modal-actions">
           <Button disabled={isProcessing} onClick={onClose} type="button" variant="secondary">
             취소
           </Button>
-          <Button disabled={isProcessing} onClick={() => onConfirmToggle(true)} type="button">
+          <Button disabled={isProcessing || hasEmptyRecipient} onClick={() => onConfirmToggle(true)} type="button" title={hasEmptyRecipient ? "수신 이메일이 비어 있는 메일이 있습니다" : undefined}>
             최종 발송 확인
           </Button>
         </div>
@@ -140,8 +162,8 @@ export function BusinessReviewMailPreviewModal({
             </button>
           </div>
           <p className="mail-confirm-copy">
-            {drafts.length}통의 사업부 검토 요청 메일로 총 {getDraftPatentCount(drafts)}건의 특허를 발송 처리합니다. 현재는
-            UI 확인용이며, 실제 발송은 Gmail 연동 후 연결됩니다.
+            {drafts.length}통의 사업부 검토 요청 메일로 총 {getDraftPatentCount(drafts)}건의 특허를 발송 처리합니다.
+            Gmail 설정이 완료된 경우 실제 메일이 발송됩니다.
           </p>
           <div className="modal-actions">
             <Button disabled={isProcessing} onClick={() => onConfirmToggle(false)} type="button" variant="secondary">

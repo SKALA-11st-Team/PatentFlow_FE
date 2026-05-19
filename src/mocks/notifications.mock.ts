@@ -13,6 +13,7 @@ export const notifications: AppNotification[] = [
     message: "사업부 평가 체크리스트가 관리자 검토 화면에 반영되었습니다.",
     createdAt: "2026-05-03T09:30:00+09:00",
     isRead: false,
+    link: null,
   },
   {
     id: "NTF-COMMON-001",
@@ -21,6 +22,7 @@ export const notifications: AppNotification[] = [
     message: "이번 분기 검토 대상 특허의 사업부 의견 제출 기한이 가까워졌습니다.",
     createdAt: "2026-05-02T09:00:00+09:00",
     isRead: false,
+    link: null,
   },
   {
     id: "NTF-ADMIN-001",
@@ -29,6 +31,7 @@ export const notifications: AppNotification[] = [
     message: "AI 평가 레포트가 생성된 특허 4건의 사업부 메일 발송이 필요합니다.",
     createdAt: "2026-05-02T10:20:00+09:00",
     isRead: false,
+    link: "/admin/mailing",
   },
   {
     id: "NTF-BUSINESS-001",
@@ -37,6 +40,7 @@ export const notifications: AppNotification[] = [
     message: "배정된 특허 검토 후 유지/포기 의견을 입력해 주세요.",
     createdAt: "2026-05-02T11:15:00+09:00",
     isRead: false,
+    link: "/business/review-requests",
   },
   {
     id: "NTF-COMMON-002",
@@ -45,6 +49,7 @@ export const notifications: AppNotification[] = [
     message: "최근 특허 평가와 판단 이력이 정상적으로 반영되었습니다.",
     createdAt: "2026-05-01T17:30:00+09:00",
     isRead: true,
+    link: null,
   },
   {
     id: "NTF-COMMON-004",
@@ -53,5 +58,6 @@ export const notifications: AppNotification[] = [
     message: "연차료 검토 운영 기준 변경 사항이 설정에 반영되었습니다.",
     createdAt: "2026-04-18T13:00:00+09:00",
     isRead: true,
+    link: null,
   },
 ];

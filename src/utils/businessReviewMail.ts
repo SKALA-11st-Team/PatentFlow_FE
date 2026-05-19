@@ -41,7 +41,7 @@ export function createBusinessReviewMailDraftFromPatents(
     `${index + 1}. ${patent.managementNumber} · ${patent.title}`,
     `   - 관련 사업: ${getDisplayValue(patent.businessArea)}`,
     `   - 관련 기술: ${getDisplayValue(patent.technologyArea)}`,
-    `   - 납부 기한: ${patent.annualFeeDueDate}`,
+    `   - 납부 기한: ${patent.feeDueDate}`,
   ]);
 
   return {
@@ -53,7 +53,7 @@ export function createBusinessReviewMailDraftFromPatents(
       ...patentLines,
       "",
       "각 특허의 AI 특허 평가 레포트와 평가 근거를 확인한 뒤 유지 또는 포기 의견을 제출해 주세요.",
-      "본 메일 내용은 Gmail/BE 연동 전까지 UI 미리보기용 mock 초안입니다.",
+      "접속 URL: https://patentflow.example.com (실제 URL로 변경 필요)",
     ].join("\n"),
     patents,
     recipientEmail: recipient.email,
@@ -106,10 +106,8 @@ export function getDepartmentRecipient(
     };
   }
 
-  const localPart = patent.departmentId.replace(/^DEPT-/, "").toLowerCase();
-
   return {
-    email: `${localPart}.owner@syuuk.test`,
+    email: "",
     name: `${patent.departmentName} 담당자`,
   };
 }
