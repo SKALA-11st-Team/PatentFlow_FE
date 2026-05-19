@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getStoredAuthUser } from "../../api/authStorage";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
-import { getPatentDetail } from "../../api/patents";
+import { getBusinessPatentDetail } from "../../api/patents";
 import { getActiveQuarter } from "../../api/settings";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
@@ -239,7 +239,7 @@ export function BusinessReviewRequestPage() {
     setDetailMessage("");
 
     try {
-      const detail = await getPatentDetail(selectedPatentId);
+      const detail = await getBusinessPatentDetail(selectedPatentId);
 
       if (!detail) {
         setDetailMessage("특허 상세 정보를 불러오지 못했습니다.");

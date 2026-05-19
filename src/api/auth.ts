@@ -1,5 +1,5 @@
 import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
-import { clearAuthSession, getStoredAccessToken, storeAuthSession, type AuthUser } from "./authStorage";
+import { clearAuthSession, storeAuthSession, type AuthUser } from "./authStorage";
 
 export interface LoginRequest {
   password: string;
@@ -18,7 +18,7 @@ export async function login(request: LoginRequest): Promise<LoginResult> {
   if (!isBackendApiEnabled()) {
     const mockLoginResult = createMockLoginResult(request.username);
 
-    storeAuthSession(mockLoginResult.accessToken, mockLoginResult.user);
+    storeAuthSession(mockLoginResult.user);
 
     return mockLoginResult;
   }
@@ -32,7 +32,7 @@ export async function login(request: LoginRequest): Promise<LoginResult> {
     throw new Error("로그인 응답이 비어 있습니다.");
   }
 
-  storeAuthSession(response.data.accessToken, response.data.user);
+  storeAuthSession(response.data.user);
 
   return response.data;
 }
@@ -46,7 +46,7 @@ export async function updateProfile(displayName: string): Promise<void> {
 }
 
 export function logout() {
-  if (isBackendApiEnabled() && getStoredAccessToken()) {
+  if (isBackendApiEnabled()) {
     requestJson("/auth/logout", { method: "POST" }).catch(() => undefined);
   }
   clearAuthSession();

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getStoredAuthUser, storeAuthSession, getStoredAccessToken } from "../../api/authStorage";
+import { getStoredAuthUser, storeAuthSession } from "../../api/authStorage";
 import { updateProfile } from "../../api/auth";
 import { Button } from "../../components/common/Button";
 import { AppLayout } from "../../components/layout/AppLayout";
@@ -26,8 +26,7 @@ export function BusinessSettingsPage() {
     try {
       await updateProfile(displayName.trim());
       if (user) {
-        const token = getStoredAccessToken() ?? "";
-        storeAuthSession(token, { ...user, displayName: displayName.trim(), name: displayName.trim() });
+        storeAuthSession({ ...user, displayName: displayName.trim(), name: displayName.trim() });
       }
       setMessage("저장되었습니다.");
     } catch (error) {

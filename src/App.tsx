@@ -1,5 +1,5 @@
 import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
-import { getStoredAccessToken } from "./api/authStorage";
+import { hasStoredAuthSession } from "./api/authStorage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { AdminMailingPage } from "./pages/admin/AdminMailingPage";
 import { AdminPatentDetailPage } from "./pages/admin/AdminPatentDetailPage";
@@ -17,8 +17,7 @@ import { BusinessSubmissionHistoryPage } from "./pages/business/BusinessSubmissi
 import { LoginPage } from "./pages/LoginPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const token = getStoredAccessToken();
-  if (!token) return <Navigate to="/login" replace />;
+  if (!hasStoredAuthSession()) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 

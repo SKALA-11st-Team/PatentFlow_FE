@@ -16,7 +16,11 @@ export interface AuthUser {
 }
 
 export function getStoredAccessToken() {
-  return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  return null;
+}
+
+export function hasStoredAuthSession() {
+  return getStoredAuthUser() !== null;
 }
 
 export function getStoredAuthUser(): AuthUser | null {
@@ -34,8 +38,8 @@ export function getStoredAuthUser(): AuthUser | null {
   }
 }
 
-export function storeAuthSession(accessToken: string, user: AuthUser) {
-  window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
+export function storeAuthSession(user: AuthUser) {
+  window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
   window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
 }
 

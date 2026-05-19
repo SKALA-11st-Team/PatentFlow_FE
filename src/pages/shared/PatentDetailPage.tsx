@@ -5,6 +5,7 @@ import { getLatestBusinessSubmission } from "../../api/businessSubmissions";
 import { getDepartmentRecipientMappings, getMailingHistory } from "../../api/mailing";
 import {
   getPatentDetail,
+  getBusinessPatentDetail,
   getPatents,
 
   recordPatentFinalDecision,
@@ -108,7 +109,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
       setLoadMessage("특허 상세 정보를 불러오는 중입니다.");
 
       try {
-        const nextPatent = await getPatentDetail(patentId);
+        const nextPatent = isAdmin ? await getPatentDetail(patentId) : await getBusinessPatentDetail(patentId);
 
         if (!isMounted) {
           return;

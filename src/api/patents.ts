@@ -212,6 +212,16 @@ export async function getPatentDetail(patentId: string): Promise<PatentDetail | 
   return patentDetails.find((patent) => patent.patentId === patentId);
 }
 
+export async function getBusinessPatentDetail(patentId: string): Promise<PatentDetail | undefined> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<BackendPatentDetail>>(`/business/patents/${patentId}`);
+
+    return response.data ? mapBackendPatentDetail(response.data) : undefined;
+  }
+
+  return patentDetails.find((patent) => patent.patentId === patentId);
+}
+
 /**
  * @relatedFR FR-014, FR-015, FR-016
  * @relatedUI UI-LEGAL-02, UI-LEGAL-06
