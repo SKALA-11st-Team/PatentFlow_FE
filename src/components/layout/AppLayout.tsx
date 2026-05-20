@@ -3,7 +3,6 @@ import { Link, NavLink } from "react-router-dom";
 import { logout } from "../../api/auth";
 import { getNotifications, updateNotificationReadState } from "../../api/notifications";
 import { BellIcon, NotificationPanel } from "../notification/NotificationPanel";
-import { notifications as mockNotifications } from "../../mocks/notifications.mock";
 import type { AppNotification } from "../../types/notification";
 import type { UserRole } from "../../types/patent";
 
@@ -21,7 +20,7 @@ interface AppLayoutProps {
  */
 export function AppLayout({ children, role, title, description }: AppLayoutProps) {
   const isAdmin = role === "ADMIN";
-  const [notificationItems, setNotificationItems] = useState<AppNotification[]>(mockNotifications);
+  const [notificationItems, setNotificationItems] = useState<AppNotification[]>([]);
 
   useEffect(() => {
     getNotifications(role).then(setNotificationItems).catch(() => {});

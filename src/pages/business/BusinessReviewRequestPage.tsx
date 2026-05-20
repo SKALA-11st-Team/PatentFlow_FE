@@ -14,7 +14,7 @@ import {
   createBusinessChecklistDraft,
   getBusinessChecklistTotal,
   getChecklistResponse,
-} from "../../mocks/businessChecklist.mock";
+} from "../../utils/businessChecklist";
 import { useBusinessChecklistItems } from "../../hooks/useBusinessChecklistItems";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";

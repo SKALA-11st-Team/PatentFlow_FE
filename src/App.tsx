@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
-import { hasStoredAuthSession } from "./api/authStorage";
+import { getCurrentUser } from "./api/auth";
+import { isBackendApiEnabled, isMockApiEnabled } from "./api/client";
+import { clearAuthSession, getStoredAuthUser, hasStoredAuthSession } from "./api/authStorage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
 import { AdminMailingPage } from "./pages/admin/AdminMailingPage";
 import { AdminPatentDetailPage } from "./pages/admin/AdminPatentDetailPage";
@@ -15,9 +18,58 @@ import { BusinessReviewRequestPage } from "./pages/business/BusinessReviewReques
 import { BusinessSettingsPage } from "./pages/business/BusinessSettingsPage";
 import { BusinessSubmissionHistoryPage } from "./pages/business/BusinessSubmissionHistoryPage";
 import { LoginPage } from "./pages/LoginPage";
+import type { UserRole } from "./types/patent";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  if (!hasStoredAuthSession()) return <Navigate to="/login" replace />;
+function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; children: React.ReactNode }) {
+  const [authState, setAuthState] = useState<"checking" | "allowed" | "denied" | "unauthenticated">(
+    hasStoredAuthSession() ? "checking" : "unauthenticated",
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function verifySession() {
+      const storedUser = getStoredAuthUser();
+
+      if (!storedUser) {
+        if (isMounted) setAuthState("unauthenticated");
+        return;
+      }
+
+      if (isMockApiEnabled()) {
+        if (isMounted) setAuthState(storedUser.role === allowedRole ? "allowed" : "denied");
+        return;
+      }
+
+      if (!isBackendApiEnabled()) {
+        clearAuthSession();
+        if (isMounted) setAuthState("unauthenticated");
+        return;
+      }
+
+      try {
+        const currentUser = await getCurrentUser();
+        if (!isMounted) return;
+        setAuthState(currentUser?.role === allowedRole ? "allowed" : currentUser ? "denied" : "unauthenticated");
+      } catch {
+        clearAuthSession();
+        if (isMounted) setAuthState("unauthenticated");
+      }
+    }
+
+    verifySession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [allowedRole]);
+
+  if (authState === "checking") return <main className="login-page">인증 정보를 확인하는 중입니다.</main>;
+  if (authState === "unauthenticated") return <Navigate to="/login" replace />;
+  if (authState === "denied") {
+    const storedUser = getStoredAuthUser();
+    return <Navigate to={storedUser?.role === "ADMIN" ? "/admin/dashboard" : "/business/dashboard"} replace />;
+  }
   return <>{children}</>;
 }
 
@@ -29,20 +81,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/login" replace /> },
   { path: "/login", element: <LoginPage /> },
-  { path: "/admin/dashboard", element: <ProtectedRoute><AdminDashboardPage /></ProtectedRoute> },
-  { path: "/admin/review-targets", element: <ProtectedRoute><AdminReviewTargetPage /></ProtectedRoute> },
-  { path: "/admin/patents", element: <ProtectedRoute><AdminPatentListPage /></ProtectedRoute> },
-  { path: "/admin/patents/:patentId/edit", element: <ProtectedRoute><AdminPatentEditPage /></ProtectedRoute> },
-  { path: "/admin/mailing", element: <ProtectedRoute><AdminMailingPage /></ProtectedRoute> },
-  { path: "/admin/sales-candidates", element: <ProtectedRoute><AdminSalesCandidatePage /></ProtectedRoute> },
-  { path: "/admin/settings", element: <ProtectedRoute><AdminSettingsPage /></ProtectedRoute> },
-  { path: "/admin/users", element: <ProtectedRoute><AdminUsersPage /></ProtectedRoute> },
-  { path: "/admin/patents/:patentId", element: <ProtectedRoute><AdminPatentDetailPage /></ProtectedRoute> },
-  { path: "/business/dashboard", element: <ProtectedRoute><BusinessDashboardPage /></ProtectedRoute> },
-  { path: "/business/review-requests", element: <ProtectedRoute><BusinessReviewRequestPage /></ProtectedRoute> },
-  { path: "/business/submissions", element: <ProtectedRoute><BusinessSubmissionHistoryPage /></ProtectedRoute> },
-  { path: "/business/settings", element: <ProtectedRoute><BusinessSettingsPage /></ProtectedRoute> },
-  { path: "/business/patents/:patentId", element: <ProtectedRoute><BusinessPatentDetailPage /></ProtectedRoute> },
+  { path: "/admin/dashboard", element: <ProtectedRoute allowedRole="ADMIN"><AdminDashboardPage /></ProtectedRoute> },
+  { path: "/admin/review-targets", element: <ProtectedRoute allowedRole="ADMIN"><AdminReviewTargetPage /></ProtectedRoute> },
+  { path: "/admin/patents", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentListPage /></ProtectedRoute> },
+  { path: "/admin/patents/:patentId/edit", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentEditPage /></ProtectedRoute> },
+  { path: "/admin/mailing", element: <ProtectedRoute allowedRole="ADMIN"><AdminMailingPage /></ProtectedRoute> },
+  { path: "/admin/sales-candidates", element: <ProtectedRoute allowedRole="ADMIN"><AdminSalesCandidatePage /></ProtectedRoute> },
+  { path: "/admin/settings", element: <ProtectedRoute allowedRole="ADMIN"><AdminSettingsPage /></ProtectedRoute> },
+  { path: "/admin/users", element: <ProtectedRoute allowedRole="ADMIN"><AdminUsersPage /></ProtectedRoute> },
+  { path: "/admin/patents/:patentId", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentDetailPage /></ProtectedRoute> },
+  { path: "/business/dashboard", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessDashboardPage /></ProtectedRoute> },
+  { path: "/business/review-requests", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessReviewRequestPage /></ProtectedRoute> },
+  { path: "/business/submissions", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessSubmissionHistoryPage /></ProtectedRoute> },
+  { path: "/business/settings", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessSettingsPage /></ProtectedRoute> },
+  { path: "/business/patents/:patentId", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessPatentDetailPage /></ProtectedRoute> },
   { path: "*", element: <Navigate to="/login" replace /> },
 ]);
 

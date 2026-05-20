@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { getPatents, type PatentListQuery } from "../api/patents";
+import { getBusinessPatents, getPatents, type PatentListQuery } from "../api/patents";
 import { getApiErrorMessage } from "../api/client";
+import { getStoredAuthUser } from "../api/authStorage";
 import type { PatentListItem } from "../types/patent";
 
 /**
@@ -20,7 +21,10 @@ export function usePatentList(query: PatentListQuery = {}) {
     setIsLoading(true);
     setErrorMessage("");
 
-    getPatents({ departmentId, keyword, page, reviewWorkflowStatus, size, sort })
+    const user = getStoredAuthUser();
+    const loadPatents = user?.role === "BUSINESS" ? getBusinessPatents : getPatents;
+
+    loadPatents({ departmentId, keyword, page, reviewWorkflowStatus, size, sort })
       .then((items) => {
         if (isMounted) {
           setPatents(items);

@@ -1,4 +1,4 @@
-import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
+import { isBackendApiEnabled, isMockApiEnabled, requestJson, type ApiEnvelope } from "./client";
 import { clearAuthSession, storeAuthSession, type AuthUser } from "./authStorage";
 
 export interface LoginRequest {
@@ -15,12 +15,16 @@ export interface LoginResult {
 }
 
 export async function login(request: LoginRequest): Promise<LoginResult> {
-  if (!isBackendApiEnabled()) {
+  if (isMockApiEnabled()) {
     const mockLoginResult = createMockLoginResult(request.username);
 
     storeAuthSession(mockLoginResult.user);
 
     return mockLoginResult;
+  }
+
+  if (!isBackendApiEnabled()) {
+    throw new Error("백엔드 API 주소가 설정되어 있지 않습니다. VITE_API_BASE_URL을 확인해 주세요.");
   }
 
   const response = await requestJson<ApiEnvelope<LoginResult>>("/auth/login", {
@@ -43,6 +47,26 @@ export async function updateProfile(displayName: string): Promise<void> {
     body: JSON.stringify({ displayName }),
     method: "PATCH",
   });
+}
+
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  if (isMockApiEnabled()) {
+    return null;
+  }
+  if (!isBackendApiEnabled()) {
+    clearAuthSession();
+    return null;
+  }
+
+  const response = await requestJson<ApiEnvelope<AuthUser>>("/auth/me");
+
+  if (!response.data) {
+    clearAuthSession();
+    return null;
+  }
+
+  storeAuthSession(response.data);
+  return response.data;
 }
 
 export function logout() {

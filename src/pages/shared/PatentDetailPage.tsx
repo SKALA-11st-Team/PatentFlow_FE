@@ -23,7 +23,7 @@ import {
   createBusinessChecklistDraft,
   getBusinessChecklistTotal,
   getChecklistResponse,
-} from "../../mocks/businessChecklist.mock";
+} from "../../utils/businessChecklist";
 import { useBusinessChecklistItems } from "../../hooks/useBusinessChecklistItems";
 import type { BusinessChecklistItem, BusinessChecklistSubmission } from "../../types/businessChecklist";
 import type { DepartmentRecipientMapping, MailingDeliveryStatus, MailingHistoryItem } from "../../types/mailing";
@@ -168,7 +168,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     return () => {
       isMounted = false;
     };
-  }, [patentId]);
+  }, [isAdmin, patentId]);
 
   useEffect(() => {
     let isMounted = true;

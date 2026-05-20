@@ -198,6 +198,46 @@ export async function getPatentPage(query: PatentListQuery = {}): Promise<Patent
   return getMockPatentPage(query);
 }
 
+export async function getBusinessPatents(query: PatentListQuery = {}): Promise<PatentListItem[]> {
+  if (isBackendApiEnabled()) {
+    if (query.page !== undefined || query.size !== undefined) {
+      return (await getBusinessPatentPage(query)).items;
+    }
+
+    const firstPage = await getBusinessPatentPage({ ...query, page: query.page ?? 1, size: query.size ?? 20 });
+    const patentItems = [...firstPage.items];
+
+    for (let page = firstPage.page.page + 1; page <= firstPage.page.totalPages; page += 1) {
+      const nextPage = await getBusinessPatentPage({ ...query, page, size: firstPage.page.size });
+      patentItems.push(...nextPage.items);
+    }
+
+    return patentItems;
+  }
+
+  return getFilteredMockPatents(query);
+}
+
+export async function getBusinessPatentPage(query: PatentListQuery = {}): Promise<PatentListPage> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<PaginatedApiEnvelope<BackendPatentListItem>>(
+      `/business/patents${toQueryString({
+        keyword: query.keyword,
+        page: query.page,
+        reviewWorkflowStatus: query.reviewWorkflowStatus,
+        size: query.size,
+      })}`,
+    );
+
+    return {
+      items: (response.data ?? []).map(mapBackendPatentListItem),
+      page: response.page,
+    };
+  }
+
+  return getMockPatentPage(query);
+}
+
 /**
  * @relatedFR FR-005, FR-006, FR-007, FR-008, FR-011, FR-012
  * @relatedUI UI-LEGAL-05, UI-BUS-03

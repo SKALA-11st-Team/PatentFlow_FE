@@ -49,6 +49,10 @@ export function isBackendApiEnabled() {
   return !USE_MOCK_API && API_BASE_URL.length > 0;
 }
 
+export function isMockApiEnabled() {
+  return USE_MOCK_API;
+}
+
 /**
  * @relatedFR N/A
  * @relatedUI COMMON
