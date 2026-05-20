@@ -63,14 +63,25 @@ export async function requestJson<T>(path: string, init: RequestInit = {}): Prom
 }
 
 async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefresh: boolean): Promise<T> {
+  const method = init.method?.toUpperCase() ?? "GET";
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...init.headers,
+  };
+
+  // CSRF protection: add X-XSRF-TOKEN header for state-changing requests
+  if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
+    const xsrfToken = getCookie("XSRF-TOKEN");
+    if (xsrfToken) {
+      headers["X-XSRF-TOKEN"] = xsrfToken;
+    }
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     credentials: "include",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...init.headers,
-    },
+    headers,
   });
 
   if (response.status === 401 && allowRefresh && path !== "/auth/login" && path !== "/auth/refresh") {
@@ -83,6 +94,15 @@ async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefr
   }
 
   return response.json() as Promise<T>;
+}
+
+function getCookie(name: string): string | undefined {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(";").shift();
+  }
+  return undefined;
 }
 
 export function getApiErrorMessage(error: unknown, fallbackMessage: string) {
