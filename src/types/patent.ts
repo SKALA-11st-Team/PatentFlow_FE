@@ -91,6 +91,7 @@ export interface AiEvaluationReport {
     url: string;
   }[];
   rawMarkdown?: string;
+  markdownFilePath?: string;
 }
 
 export interface FinalDecisionRecord {

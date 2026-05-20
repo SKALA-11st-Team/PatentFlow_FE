@@ -120,6 +120,7 @@ interface BackendPatentDetail extends BackendPatentListItem {
     }>;
     missingInformation: string[];
     rawMarkdown?: string;
+    markdownFilePath?: string;
   };
   finalDecisionRecord: {
     decisionId: string | null;
@@ -456,6 +457,7 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
     scores,
     missingInformation: report.missingInformation,
     rawMarkdown: report.rawMarkdown,
+    markdownFilePath: report.markdownFilePath,
   };
 }
 
