@@ -64,17 +64,21 @@ export async function requestJson<T>(path: string, init: RequestInit = {}): Prom
 
 async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefresh: boolean): Promise<T> {
   const method = init.method?.toUpperCase() ?? "GET";
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    ...init.headers,
-  };
+  const headers = new Headers(init.headers);
+
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
 
   // CSRF protection: add X-XSRF-TOKEN header for state-changing requests
   if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
     const xsrfToken = getCookie("XSRF-TOKEN");
     if (xsrfToken) {
-      headers["X-XSRF-TOKEN"] = xsrfToken;
+      headers.set("X-XSRF-TOKEN", xsrfToken);
     }
   }
 
