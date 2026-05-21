@@ -45,7 +45,7 @@ export function AdminPatentListPage() {
   const [form, setForm] = useState<PatentFormState>(emptyPatentForm);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [keyword, setKeyword] = useState("");
-  const [reviewScope, setReviewScope] = useState<DashboardScope>("QUARTER");
+  const [reviewScope, setReviewScope] = useState<DashboardScope>("ALL");
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>("ALL");
   const [sort, setSort] = useState("feeDueDate,asc");
   const [lookupMessage, setLookupMessage] = useState("");
