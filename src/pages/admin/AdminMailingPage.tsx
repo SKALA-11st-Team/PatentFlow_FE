@@ -17,8 +17,8 @@ import type { DepartmentRecipientMapping, MailingDeliveryStatus, MailingHistoryI
 import type { PatentListItem } from "../../types/patent";
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-05
  * @description 관리자 메일 미리보기, 담당자별 묶음 발송, 발송 이력을 관리하는 화면.
  *              메일 수신자는 계정 관리에서 등록한 사업부 계정을 자동으로 사용합니다.
  */

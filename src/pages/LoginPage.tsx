@@ -17,7 +17,7 @@ const DEV_ACCOUNTS: Record<UserRole, { password: string; username: string }> = {
 };
 
 /**
- * @relatedFR N/A
+ * @relatedFR FR-COM-01
  * @relatedUI UI-COM-01
  * @description 관리자/사업부서 사용자가 역할을 선택해 실제 백엔드 JWT 로그인 후 PatentFlow 화면에 진입하는 로그인 화면
  */

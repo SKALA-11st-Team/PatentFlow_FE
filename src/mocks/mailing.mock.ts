@@ -160,8 +160,8 @@ export const mailingHistoryItems: MailingHistoryItem[] = [
 ];
 
 /**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12
+ * @relatedUI UI-LEGAL-05
  * @description mock 부서별 담당자 매핑 목록을 조회한다.
  */
 export function getMockDepartmentRecipientMappings() {
@@ -169,8 +169,8 @@ export function getMockDepartmentRecipientMappings() {
 }
 
 /**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12
+ * @relatedUI UI-LEGAL-05
  * @description mock 부서별 담당자 이름, 이메일, 부서명을 수정한다.
  */
 export function updateMockDepartmentRecipientMapping(nextMapping: DepartmentRecipientMapping) {
@@ -188,8 +188,8 @@ export function updateMockDepartmentRecipientMapping(nextMapping: DepartmentReci
 }
 
 /**
- * @relatedFR FR-016
- * @relatedUI UI-LEGAL-05, UI-LEGAL-06
+ * @relatedFR FR-LEGAL-14
+ * @relatedUI UI-LEGAL-04, UI-LEGAL-05
  * @description mock 메일 발송 이력을 특허, 수신자 기준으로 조회한다.
  */
 export function getMockMailingHistory({
@@ -208,8 +208,8 @@ export function getMockMailingHistory({
 }
 
 /**
- * @relatedFR FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @relatedFR FR-LEGAL-14
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-05
  * @description mock 메일 발송 처리 결과를 발송 이력 목록 상단에 추가한다.
  */
 export function appendMockMailingHistory(drafts: BusinessReviewMailSendDraft[]) {

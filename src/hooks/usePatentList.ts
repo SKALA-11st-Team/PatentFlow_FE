@@ -5,8 +5,8 @@ import { getStoredAuthUser } from "../api/authStorage";
 import type { PatentListItem } from "../types/patent";
 
 /**
- * @relatedFR FR-001, FR-002
- * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-07, UI-BUS-01, UI-BUS-02, UI-BUS-04
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-06, UI-BUS-01, UI-BUS-02, UI-BUS-04
  * @description 특허 목록 화면들이 mock fixture 대신 백엔드 특허 목록 API를 공통으로 조회하도록 돕는다.
  */
 export function usePatentList(query: PatentListQuery = {}) {

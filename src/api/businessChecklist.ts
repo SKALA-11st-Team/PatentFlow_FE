@@ -7,8 +7,8 @@ type BackendBusinessChecklistItem = BusinessChecklistItem & {
 };
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-BUS-02, UI-BUS-03, UI-LEGAL-05
+ * @relatedFR FR-BUS-01, FR-BUS-04
+ * @relatedUI UI-BUS-02, UI-BUS-03, UI-LEGAL-04
  * @description 사업부 의견 작성 모달에서 사용할 체크리스트 정의를 조회한다.
  */
 export async function getBusinessChecklistItems(): Promise<BusinessChecklistItem[]> {
@@ -25,8 +25,8 @@ export async function getBusinessChecklistItems(): Promise<BusinessChecklistItem
 }
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-BUS-02, UI-BUS-03, UI-LEGAL-05
+ * @relatedFR FR-BUS-01, FR-BUS-04
+ * @relatedUI UI-BUS-02, UI-BUS-03, UI-LEGAL-04
  * @description 사업부 체크리스트 점수, 정성 평가, 최종 의견을 백엔드에 제출한다.
  */
 export async function submitBusinessChecklist(

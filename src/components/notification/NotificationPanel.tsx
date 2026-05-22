@@ -8,7 +8,7 @@ interface NotificationPanelProps {
 }
 
 /**
- * @relatedFR N/A
+ * @relatedFR FR-COM-02
  * @relatedUI UI-COM-03
  * @description 공통 헤더에서 관리자/사업부 대상 알림 목록을 오늘, 지난주, 그 이전으로 묶어 표시한다.
  */
@@ -61,7 +61,7 @@ export function NotificationPanel({ notifications, onClose, onToggleRead }: Noti
 }
 
 /**
- * @relatedFR N/A
+ * @relatedFR FR-COM-02
  * @relatedUI UI-COM-03
  * @description 알림 버튼에 사용할 종 모양 아이콘을 렌더링한다.
  */
@@ -87,7 +87,7 @@ export function BellIcon() {
 }
 
 /**
- * @relatedFR N/A
+ * @relatedFR FR-COM-02
  * @relatedUI UI-COM-03
  * @description 알림 생성 시간을 헤더 알림 창에서 표시할 날짜 형식으로 변환한다.
  */
@@ -109,7 +109,7 @@ function formatNotificationTime(createdAt: string) {
 }
 
 /**
- * @relatedFR N/A
+ * @relatedFR FR-COM-02
  * @relatedUI UI-COM-03
  * @description 알림 목록을 오늘, 지난주, 그 이전으로 묶는다.
  */

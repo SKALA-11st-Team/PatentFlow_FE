@@ -1,7 +1,7 @@
 import type { AppNotification } from "../types/notification";
 
 /**
- * @relatedFR N/A
+ * @relatedFR FR-COM-02
  * @relatedUI UI-COM-03
  * @description 관리자와 사업부 공통 헤더 알림 창에 표시할 데모 알림 데이터
  */

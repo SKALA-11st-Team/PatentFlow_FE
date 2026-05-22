@@ -10,8 +10,8 @@ export {
 export type { BusinessReviewMailDraft } from "../../utils/businessReviewMail";
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-05
  * @description 메일 발송 대기 특허의 사업부 검토 요청 메일을 담당자별로 미리보고 수정한다.
  */
 export function BusinessReviewMailPreviewModal({

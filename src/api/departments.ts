@@ -39,8 +39,8 @@ export async function createDepartment(departmentId: string, departmentName: str
 }
 
 /**
- * @relatedFR FR-003, FR-004
- * @relatedUI UI-LEGAL-08
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-16
+ * @relatedUI UI-LEGAL-07
  * @description 관리자 설정 화면에서 사업부 이름을 수정한다.
  */
 export async function updateDepartment(departmentId: string, departmentName: string): Promise<Department> {

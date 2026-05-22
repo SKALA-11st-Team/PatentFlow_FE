@@ -7,7 +7,7 @@ interface PaginationControlsProps {
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI COMMON
  * @description 목록 하단에서 20개 단위 페이지 이동을 제공한다.
  */

@@ -11,8 +11,8 @@ export interface BusinessReviewMailDraft {
 }
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04
  * @description 선택 특허와 부서 담당자 정보를 기반으로 사업부 검토 요청 메일 초안을 만든다.
  */
 export function createBusinessReviewMailDraft(
@@ -23,8 +23,8 @@ export function createBusinessReviewMailDraft(
 }
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-05
  * @description 같은 담당자에게 보낼 여러 특허를 하나의 사업부 검토 요청 메일 초안으로 묶는다.
  */
 export function createBusinessReviewMailDraftFromPatents(
@@ -68,8 +68,8 @@ export function createBusinessReviewMailDraftFromPatents(
 }
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-05
  * @description 선택 특허를 부서 담당자 이메일 기준으로 묶어 메일 초안 목록을 만든다.
  */
 export function createGroupedBusinessReviewMailDrafts(
@@ -91,8 +91,8 @@ export function createGroupedBusinessReviewMailDrafts(
 }
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-05
  * @description 메일 발송 대기 목록과 상세 화면에서 부서별 담당자 이름과 이메일을 표시한다.
  */
 export function getDepartmentRecipient(
@@ -117,8 +117,8 @@ export function getDepartmentRecipient(
 }
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-05
  * @description 화면에서 수정한 메일 초안을 BE 발송 요청 payload로 변환한다.
  */
 export function toBusinessReviewMailSendDraft(draft: BusinessReviewMailDraft): BusinessReviewMailSendDraft {
@@ -137,8 +137,8 @@ export function toBusinessReviewMailSendDraft(draft: BusinessReviewMailDraft): B
 }
 
 /**
- * @relatedFR FR-014, FR-015
- * @relatedUI UI-LEGAL-02, UI-LEGAL-05
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04
  * @description 메일 초안에서 빈 특허 컨텍스트 값을 표시 가능한 문구로 변환한다.
  */
 function getDisplayValue(value: string) {

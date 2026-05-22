@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 export const DEFAULT_PAGE_SIZE = 20;
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI COMMON
  * @description 클라이언트에서 필터링된 목록을 20개 단위 페이지로 나누고 필터 변경 시 첫 페이지로 되돌린다.
  */

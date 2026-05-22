@@ -15,7 +15,7 @@ import { Modal } from "../../components/common/Modal";
 import { AppLayout } from "../../components/layout/AppLayout";
 
 /**
- * @relatedFR FR-003, FR-004, FR-014
+ * @relatedFR FR-COM-01, FR-LEGAL-12, FR-LEGAL-16
  * @relatedUI UI-LEGAL-08
  * @description 사업부와 사용자 계정을 모달 기반으로 추가/수정/삭제하는 관리자 설정 화면
  */

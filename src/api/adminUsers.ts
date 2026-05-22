@@ -45,7 +45,7 @@ export async function deleteUser(userId: string): Promise<void> {
 }
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-COM-01, FR-LEGAL-16
  * @relatedUI UI-LEGAL-08
  * @description 관리자 설정 화면에서 사용자 계정 정보를 수정한다.
  */

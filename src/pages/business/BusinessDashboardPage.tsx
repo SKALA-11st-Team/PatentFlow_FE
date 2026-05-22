@@ -31,7 +31,7 @@ const sortLabels: Record<SortKey, string> = {
 };
 
 /**
- * @relatedFR FR-001, FR-002, FR-009
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-BUS-01
  * @relatedUI UI-BUS-01
  * @description 사업부 대시보드에서 이번 분기 의견 요청 특허를 검색, 필터링, 정렬한다.
  */
@@ -216,7 +216,7 @@ export function BusinessDashboardPage() {
 }
 
 /**
- * @relatedFR FR-001, FR-002, FR-009
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-BUS-01
  * @relatedUI UI-BUS-01
  * @description 사업부 의견 요청 특허 목록에 검색, 의견 상태 필터, AI 권고 필터, 정렬을 적용한다.
  */
@@ -250,7 +250,7 @@ function getFilteredAndSortedPatents(
 }
 
 /**
- * @relatedFR FR-002, FR-009
+ * @relatedFR FR-LEGAL-02, FR-BUS-01
  * @relatedUI UI-BUS-01
  * @description 사업부 의견 요청 특허 목록의 정렬 순서를 계산한다.
  */
@@ -267,7 +267,7 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
 }
 
 /**
- * @relatedFR FR-001, FR-009
+ * @relatedFR FR-LEGAL-01, FR-BUS-01
  * @relatedUI UI-BUS-01
  * @description 사업부 대시보드 테이블에서 값이 없거나 N/A인 항목은 공란으로 표시한다.
  */

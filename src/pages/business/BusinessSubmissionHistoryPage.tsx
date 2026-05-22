@@ -11,7 +11,7 @@ import { businessOpinionLabels, getBusinessOpinionTone, reviewWorkflowStatusLabe
 import type { BusinessSubmissionVersion } from "../../types/businessSubmission";
 
 /**
- * @relatedFR FR-009, FR-013
+ * @relatedFR FR-BUS-01, FR-LEGAL-11
  * @relatedUI UI-BUS-04
  * @description 사업부 사용자가 제출한 의견 이력을 확인하는 화면
  */
@@ -134,7 +134,7 @@ export function BusinessSubmissionHistoryPage() {
 }
 
 /**
- * @relatedFR FR-009, FR-013
+ * @relatedFR FR-BUS-01, FR-LEGAL-11
  * @relatedUI UI-BUS-04
  * @description 다음 연차료 납부 기한 기준으로 사업부가 다시 판단해야 할 분기를 표시한다.
  */
@@ -148,7 +148,7 @@ function formatDate(dateText: string) {
 }
 
 /**
- * @relatedFR FR-013
+ * @relatedFR FR-LEGAL-11
  * @relatedUI UI-BUS-04
  * @description 제출 이력 목록에서 긴 특허명을 안정적으로 축약해 표시한다.
  */

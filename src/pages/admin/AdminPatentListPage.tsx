@@ -35,7 +35,7 @@ const emptyPatentForm: PatentFormState = {
 };
 
 /**
- * @relatedFR FR-001, FR-002, FR-003, FR-004
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-03, UI-LEGAL-04
  * @description 관리자 특허 기본 정보 등록과 수정 대상 특허 테이블 조회 화면
  */
@@ -161,7 +161,7 @@ export function AdminPatentListPage() {
   }
 
   /**
-   * @relatedFR FR-003, FR-004
+   * @relatedFR FR-LEGAL-03, FR-LEGAL-04
    * @relatedUI UI-LEGAL-04
    * @description 등록 폼의 특허명/제품 정보를 기준으로 관련사업/관련기술 분야 AI 추천값을 적용한다.
    */
@@ -499,7 +499,7 @@ export function AdminPatentListPage() {
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-03, UI-LEGAL-04
  * @description 관리자 특허관리 검색, 필터, 정렬 조건에 맞는 수정 대상 특허 행을 반환한다.
  */
@@ -533,7 +533,7 @@ function getEditablePatentRows(
 }
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-04
  * @description 등록 폼 데이터를 특허관리 테이블에서 즉시 확인할 수 있는 특허 항목으로 변환한다.
  */

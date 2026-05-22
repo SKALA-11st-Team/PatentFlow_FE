@@ -12,7 +12,7 @@ interface BackendBusinessSubmissionVersion extends Omit<BusinessSubmissionVersio
 }
 
 /**
- * @relatedFR FR-009, FR-013
+ * @relatedFR FR-BUS-01, FR-LEGAL-11
  * @relatedUI UI-BUS-04, UI-BUS-05
  * @description 특허별 사업부 제출 이력 목록을 조회한다.
  */
@@ -31,7 +31,7 @@ export async function getBusinessSubmissionVersions(
 }
 
 /**
- * @relatedFR FR-009, FR-013
+ * @relatedFR FR-BUS-01, FR-LEGAL-11
  * @relatedUI UI-BUS-04, UI-BUS-05
  * @description 특허별 최신 사업부 제출 이력을 조회한다.
  */

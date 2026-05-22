@@ -27,8 +27,8 @@ interface SubmissionLogItem {
 }
 
 /**
- * @relatedFR FR-009, FR-013
- * @relatedUI UI-LEGAL-05, UI-BUS-03, UI-BUS-05
+ * @relatedFR FR-BUS-01, FR-LEGAL-11
+ * @relatedUI UI-LEGAL-04, UI-BUS-03, UI-BUS-05
  * @description 특허 상세 화면 안에서 사업부 제출 버전, 당시 AI 레포트, 체크리스트 이력, 처리 로그를 상세 표시한다.
  */
 export function BusinessSubmissionHistoryDetail({ patent }: { patent: PatentDetail }) {

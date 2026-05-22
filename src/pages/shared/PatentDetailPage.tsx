@@ -51,8 +51,8 @@ import {
 type BadgeTone = "neutral" | "primary" | "success" | "warning" | "danger";
 
 /**
- * @relatedFR FR-005, FR-006, FR-007, FR-008, FR-011, FR-012, FR-013, FR-017
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-11, FR-LEGAL-15
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 관리자와 사업부 사용자가 각 역할에 맞게 특허 상세, AI 특허 평가 레포트, 의견/판단 정보를 확인하는 화면
  */
 export function PatentDetailPage({ role }: { role: UserRole }) {
@@ -697,8 +697,8 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 }
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-BUS-01
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 사업부 의견 제출 완료 여부를 체크리스트, 정성 평가, 사업부 의견 수신 상태 기준으로 판정한다.
  */
 function hasPersistedBusinessOpinion(patent: { businessOpinion: { opinion: unknown; submittedAt: string | null } }) {
@@ -706,7 +706,7 @@ function hasPersistedBusinessOpinion(patent: { businessOpinion: { opinion: unkno
 }
 
 /**
- * @relatedFR FR-009
+ * @relatedFR FR-BUS-01
  * @relatedUI UI-BUS-03
  * @description 특허 상세 API 응답 전 체크리스트 상태 초기화를 위한 빈 제출 초안을 만든다.
  */
@@ -725,8 +725,8 @@ function createEmptyBusinessChecklistDraft(patentId: string): BusinessChecklistS
 }
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-BUS-01
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 체크리스트, 정성 평가, 사업부 의견이 모두 있는지 확인해 사업부 의견 전달 완료 여부를 판정한다.
  */
 function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSubmission) {
@@ -789,8 +789,8 @@ function FinalDecisionModal({
 }
 
 /**
- * @relatedFR FR-014, FR-016
- * @relatedUI UI-LEGAL-05
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-04
  * @description 특허 상세에서 해당 특허의 사업부 검토 요청 메일 발송 이력을 모달로 조회한다.
  */
 function MailingHistoryModal({
@@ -881,8 +881,8 @@ const mailingHistoryStatusLabels: Record<MailingDeliveryStatus, string> = {
 };
 
 /**
- * @relatedFR FR-016
- * @relatedUI UI-LEGAL-05
+ * @relatedFR FR-LEGAL-14
+ * @relatedUI UI-LEGAL-04
  * @description 메일 발송 처리 상태에 맞는 공통 Badge 톤을 반환한다.
  */
 function getMailingHistoryStatusTone(status: MailingDeliveryStatus): BadgeTone {
@@ -902,8 +902,8 @@ function getMailingHistoryStatusTone(status: MailingDeliveryStatus): BadgeTone {
 }
 
 /**
- * @relatedFR FR-016
- * @relatedUI UI-LEGAL-05
+ * @relatedFR FR-LEGAL-14
+ * @relatedUI UI-LEGAL-04
  * @description 메일 발송 시각을 목록 표시용 yyyy-mm-dd hh:mm 형식으로 줄인다.
  */
 function formatDateTime(dateText: string) {
@@ -911,8 +911,8 @@ function formatDateTime(dateText: string) {
 }
 
 /**
- * @relatedFR FR-011, FR-012
- * @relatedUI UI-LEGAL-05
+ * @relatedFR FR-LEGAL-09, FR-LEGAL-10
+ * @relatedUI UI-LEGAL-04
  * @description 관리자 최종 판단 입력 가능 workflow 상태를 판정한다.
  */
 function isFinalDecisionRecordable(patent: PatentDetail) {
@@ -924,8 +924,8 @@ function isFinalDecisionRecordable(patent: PatentDetail) {
 }
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-BUS-01
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 사업부 담당자가 AI 제안 점수를 참고해 평가 체크리스트를 작성하고 관리자에게 전달하는 모달
  */
 function BusinessChecklistModal({
@@ -1071,8 +1071,8 @@ function BusinessChecklistModal({
 }
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-BUS-01
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 사업부 체크리스트 항목 점수를 갱신한다.
  */
 function updateChecklistScore(submission: BusinessChecklistSubmission, itemId: string, score: number) {
@@ -1099,8 +1099,8 @@ function getScoreOptionClassName(selectedScore: number | null, aiSuggestedScore:
 }
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-BUS-01
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 사업부 체크리스트 항목별 평가 입력 메모를 갱신한다.
  */
 function updateChecklistMemo(submission: BusinessChecklistSubmission, itemId: string, memo: string) {
@@ -1113,8 +1113,8 @@ function updateChecklistMemo(submission: BusinessChecklistSubmission, itemId: st
 }
 
 /**
- * @relatedFR FR-005
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-05
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 특허 상세 상단 영역에 PatentLifecycleStatus 기준 상태 색상을 적용한다.
  */
 function getLifecycleHeroClassName(lifecycleStatus: PatentLifecycleStatus) {
@@ -1140,8 +1140,8 @@ function SummaryBlock({ title, content }: { title: string; content: string }) {
 }
 
 /**
- * @relatedFR FR-012
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-10
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 관리자 특허 상세의 현재 workflow 단계에 맞는 액션 제목을 반환한다.
  */
 function getAdminActionTitle(workflowStatus: ReviewWorkflowStatus) {
@@ -1153,8 +1153,8 @@ function getAdminActionTitle(workflowStatus: ReviewWorkflowStatus) {
 }
 
 /**
- * @relatedFR FR-012
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-10
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 관리자 특허 상세의 현재 workflow 단계에 맞는 액션 설명을 반환한다.
  */
 function getAdminActionDescription(workflowStatus: ReviewWorkflowStatus) {
@@ -1166,8 +1166,8 @@ function getAdminActionDescription(workflowStatus: ReviewWorkflowStatus) {
 }
 
 /**
- * @relatedFR FR-012
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-10
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 관리자 특허 상세의 현재 workflow 단계에 맞는 버튼 라벨을 반환한다.
  */
 function getAdminActionButtonLabel(workflowStatus: ReviewWorkflowStatus) {
@@ -1187,8 +1187,8 @@ function getAdminActionButtonLabel(workflowStatus: ReviewWorkflowStatus) {
 }
 
 /**
- * @relatedFR FR-001, FR-005
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-05
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 특허 상세 마감 기한을 yy-mm-dd 형식으로 표시한다.
  */
 function formatShortDate(dateText: string) {
@@ -1196,8 +1196,8 @@ function formatShortDate(dateText: string) {
 }
 
 /**
- * @relatedFR FR-006, FR-011
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-06, FR-LEGAL-09
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description AI 특허 평가 레포트 작성일을 yyyy-mm-dd 형식으로 표시한다.
  */
 function formatDate(dateText: string) {
@@ -1205,8 +1205,8 @@ function formatDate(dateText: string) {
 }
 
 /**
- * @relatedFR FR-006, FR-008
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-06, FR-LEGAL-08
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description AI 레포트 종합 점수는 원문 합산 점수가 아니라 평균 점수를 대표값으로 표시한다.
  */
 function formatReportDisplayScore(report: PatentDetail["aiEvaluationReport"]) {

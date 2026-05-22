@@ -16,8 +16,8 @@ import { Button } from "../../components/common/Button";
 import { AppLayout } from "../../components/layout/AppLayout";
 
 /**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-08
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-16, FR-LEGAL-21
+ * @relatedUI UI-LEGAL-07
  * @description 연차료 검토 분기 기간을 설정하고 분기를 시작하는 관리자 운영 설정 화면
  */
 export function AdminSettingsPage() {

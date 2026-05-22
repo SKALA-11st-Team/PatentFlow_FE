@@ -147,7 +147,7 @@ type BackendPatentBibliographicInfo = Omit<
 };
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-BUS-01, UI-BUS-02
  * @description 특허 목록을 조회한다. 백엔드 URL이 없으면 데모 mock 데이터를 동일 인터페이스로 반환한다.
  */
@@ -172,7 +172,7 @@ export async function getPatents(query: PatentListQuery = {}): Promise<PatentLis
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-BUS-01, UI-BUS-02
  * @description 특허 목록 단일 페이지와 페이지 메타데이터를 조회한다.
  */
@@ -239,7 +239,7 @@ export async function getBusinessPatentPage(query: PatentListQuery = {}): Promis
 }
 
 /**
- * @relatedFR FR-005, FR-006, FR-007, FR-008, FR-011, FR-012
+ * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-LEGAL-09, FR-LEGAL-10
  * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 특허 상세와 AI 평가 레포트, 최종 판단 정보를 조회한다.
  */
@@ -264,7 +264,7 @@ export async function getBusinessPatentDetail(patentId: string): Promise<PatentD
 }
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
  * @relatedUI UI-LEGAL-02, UI-LEGAL-06
  * @description 메일 발송 대기 상태의 선택 특허에 사업부 검토 요청 메일 발송 처리를 일괄 기록한다.
  */
@@ -282,7 +282,7 @@ export async function sendBusinessReviewMails(drafts: BusinessReviewMailSendDraf
 }
 
 /**
- * @relatedFR FR-011, FR-012, FR-017
+ * @relatedFR FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-15
  * @relatedUI UI-LEGAL-05
  * @description 관리자 특허 상세에서 AI 권고와 분리된 단건 최종 판단과 실제 법무 처리 결과를 기록한다.
  */
@@ -331,7 +331,7 @@ export async function markPatentsMailReady(patentIds: string[]): Promise<string[
 }
 
 /**
- * @relatedFR FR-003
+ * @relatedFR FR-LEGAL-03
  * @relatedUI UI-LEGAL-04
  * @description 등록번호로 KIPRIS 우선 검색 후 결과가 없으면 Google Patents 검색을 요청한다.
  */
@@ -353,7 +353,7 @@ export async function lookupPatentBibliographicInfo(registrationNumber: string):
 }
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-04
  * @description 외부 검색 메타데이터와 사용자가 입력한 회사 컨텍스트를 조합해 특허를 등록한다.
  */
@@ -374,7 +374,7 @@ export async function createPatent(payload: PatentUpsertPayload): Promise<Patent
 }
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-04
  * @description 특허 기본 정보와 회사 컨텍스트를 수정한다.
  */
@@ -412,7 +412,7 @@ export async function assignPatentDepartment(patentId: string, departmentId: str
 }
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-04
  * @description 특허명, 관련제품, 현재 회사 컨텍스트를 바탕으로 기존 특허 데이터에서 가장 가까운 관련사업/관련기술 분야를 추천한다.
  */
@@ -435,7 +435,7 @@ export async function suggestPatentContextFields(
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-BUS-01, UI-BUS-02
  * @description 백엔드 특허 목록 DTO의 null 허용 필드를 현재 화면 모델에 맞는 표시값으로 변환한다.
  */
@@ -457,7 +457,7 @@ function mapBackendPatentListItem(patent: BackendPatentListItem): PatentListItem
 }
 
 /**
- * @relatedFR FR-005, FR-006, FR-007, FR-008, FR-011, FR-012
+ * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-LEGAL-09, FR-LEGAL-10
  * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 백엔드 특허 상세 DTO를 AI 평가 레포트, 최종 판단, 사업부 의견이 분리된 화면 모델로 변환한다.
  */
@@ -502,7 +502,7 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
 }
 
 /**
- * @relatedFR FR-006, FR-007, FR-008
+ * @relatedFR FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08
  * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 백엔드가 이전 5축 응답을 보내도 현재 FE/API 계약의 4축 평가 점수만 화면 모델로 통과시킨다.
  */
@@ -580,7 +580,7 @@ function normalizeBibliographicInfo(info: BackendPatentBibliographicInfo): Paten
 }
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-04
  * @description mock 특허 목록과 상세 데이터에 특허 기본 정보 수정 결과를 반영한다.
  */
@@ -614,7 +614,7 @@ function applyPatentPayload(patent: PatentListItem, payload: PatentUpsertPayload
 }
 
 /**
- * @relatedFR FR-005, FR-006, FR-007, FR-008
+ * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08
  * @relatedUI UI-LEGAL-05
  * @description mock 특허 상세에 AI 평가 생성 결과와 MAIL_READY 상태 전환을 반영한다.
  */
@@ -702,7 +702,7 @@ function getGeneratedMockRecommendationText(recommendation: Recommendation) {
 }
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-04
  * @description 기존 특허 메타데이터와 입력 특허의 키워드 유사도를 비교해 mock 관련 분야 추천값을 만든다.
  */
@@ -819,7 +819,7 @@ function normalizeTechnologyArea(value: string) {
 }
 
 /**
- * @relatedFR FR-014, FR-015, FR-016
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
  * @relatedUI UI-LEGAL-02, UI-LEGAL-06
  * @description mock 데이터에서 메일 발송 대기 특허를 사업부 응답 대기 상태로 갱신한다.
  */
@@ -868,7 +868,7 @@ function sendMockBusinessReviewMails(drafts: BusinessReviewMailSendDraft[]): Bul
 }
 
 /**
- * @relatedFR FR-011, FR-012, FR-017
+ * @relatedFR FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-15
  * @relatedUI UI-LEGAL-05
  * @description mock 특허 상세에 단건 최종 판단과 법무 처리 결과를 반영한다.
  */
@@ -959,7 +959,7 @@ function getFilteredMockPatents(query: PatentListQuery) {
 }
 
 /**
- * @relatedFR FR-003
+ * @relatedFR FR-LEGAL-03
  * @relatedUI UI-LEGAL-04
  * @description docs/skax_patents_list.md 기반 mock 데이터에서 등록번호 KIPRIS 검색 결과를 흉내낸다.
  */

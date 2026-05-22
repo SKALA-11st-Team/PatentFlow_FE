@@ -60,7 +60,7 @@ const contextFilterConfigs: ContextFilterConfig[] = [
 ];
 
 /**
- * @relatedFR FR-001, FR-002, FR-011, FR-012, FR-014, FR-015, FR-016, FR-017
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14, FR-LEGAL-15
  * @relatedUI UI-LEGAL-02
  * @description 관리자 KPI 카드에서 진입하는 상태별 특허 조회와 메일 일괄 처리 화면
  */
@@ -461,7 +461,7 @@ export function AdminReviewTargetPage() {
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-02
  * @description KPI query parameter를 검토 단계 필터 초기값으로 변환한다.
  */
@@ -472,7 +472,7 @@ function getInitialWorkflowFilter(workflow: string | null): ReviewWorkflowFilter
 }
 
 /**
- * @relatedFR FR-001
+ * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-02
  * @description KPI query parameter를 전체/이번 분기 조회 범위로 변환한다.
  */
@@ -481,7 +481,7 @@ function getReviewTargetScope(scope: string | null): ReviewTargetScope {
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-02
  * @description 대시보드 관련 사업/기술/제품 query parameter를 검토 대상 컨텍스트 필터 초기값으로 변환한다.
  */
@@ -495,7 +495,7 @@ function getInitialContextFilter(searchParams: URLSearchParams) {
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-02
  * @description KPI 조건과 사용자가 입력한 검색/필터/정렬 조건을 적용한 특허 조회 결과를 반환한다.
  */
@@ -535,7 +535,7 @@ function getFilteredAndSortedReviewTargets(
 }
 
 /**
- * @relatedFR FR-002
+ * @relatedFR FR-LEGAL-02
  * @relatedUI UI-LEGAL-02
  * @description 관리자 특허 조회 결과의 정렬 순서를 계산한다.
  */
@@ -556,7 +556,7 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
 }
 
 /**
- * @relatedFR FR-001
+ * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-02
  * @description KPI 조회 결과 화면 제목을 선택 조건에 맞게 표시한다.
  */
@@ -577,7 +577,7 @@ function getReviewTargetPageTitle(
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-02
  * @description 특허 조회 결과 대신 현재 검토 단계 상태를 목록 제목으로 표시한다.
  */
@@ -599,7 +599,7 @@ function getReviewTargetSectionTitle(
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-02
  * @description 이번 분기 KPI 조회 화면에서는 검토 분기 아님 단계 필터를 숨겨 KPI 집계 기준과 조회 기준을 맞춘다.
  */
@@ -612,7 +612,7 @@ function getReviewTargetWorkflowFilterOptions(scope: ReviewTargetScope) {
 }
 
 /**
- * @relatedFR FR-001
+ * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-02
  * @description 특허 조회 결과의 특허명 표시 길이를 제한한다.
  */
@@ -621,7 +621,7 @@ function truncatePatentTitle(title: string) {
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-02
  * @description 선택된 컨텍스트 필터 기준의 설정을 반환한다.
  */
@@ -630,7 +630,7 @@ function getContextFilterConfig(contextFilterKey: ContextFilterKey) {
 }
 
 /**
- * @relatedFR FR-001
+ * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-02
  * @description 특허 컨텍스트 필터값이 비어 있을 때 목록 필터 표시용 문구를 반환한다.
  */

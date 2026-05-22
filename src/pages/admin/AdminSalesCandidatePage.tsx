@@ -7,8 +7,8 @@ import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
 
 /**
- * @relatedFR FR-017
- * @relatedUI UI-LEGAL-07
+ * @relatedFR FR-LEGAL-15
+ * @relatedUI UI-LEGAL-06
  * @description 매각 후보 권고 또는 매각 완료로 분류된 특허를 관리자가 조회하는 화면
  */
 export function AdminSalesCandidatePage() {

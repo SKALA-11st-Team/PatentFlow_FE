@@ -12,8 +12,8 @@ export interface MailingHistoryQuery {
 }
 
 /**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12
+ * @relatedUI UI-LEGAL-05
  * @description 부서별 사업부 검토 메일 담당자 매핑을 조회한다.
  */
 export async function getDepartmentRecipientMappings(): Promise<DepartmentRecipientMapping[]> {
@@ -29,8 +29,8 @@ export async function getDepartmentRecipientMappings(): Promise<DepartmentRecipi
 }
 
 /**
- * @relatedFR FR-014
- * @relatedUI UI-LEGAL-06
+ * @relatedFR FR-LEGAL-12
+ * @relatedUI UI-LEGAL-05
  * @description 부서명과 담당자 이름, 이메일, 참조자 매핑을 저장한다.
  */
 export async function updateDepartmentRecipientMapping(
@@ -61,8 +61,8 @@ export async function updateDepartmentRecipientMapping(
 }
 
 /**
- * @relatedFR FR-016
- * @relatedUI UI-LEGAL-05, UI-LEGAL-06
+ * @relatedFR FR-LEGAL-14
+ * @relatedUI UI-LEGAL-04, UI-LEGAL-05
  * @description 사업부 검토 요청 메일 발송 이력을 조회한다.
  */
 export async function getMailingHistory(query: MailingHistoryQuery = {}): Promise<MailingHistoryItem[]> {

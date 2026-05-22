@@ -7,8 +7,8 @@ export interface BusinessSubmissionChecklistScore {
 }
 
 /**
- * @relatedFR FR-009, FR-013
- * @relatedUI UI-LEGAL-05, UI-BUS-03, UI-BUS-04
+ * @relatedFR FR-BUS-01, FR-LEGAL-11
+ * @relatedUI UI-LEGAL-04, UI-BUS-03, UI-BUS-04
  * @description 사업부 제출 이력 API와 화면에서 공유하는 제출 버전 모델
  */
 export interface BusinessSubmissionVersion {

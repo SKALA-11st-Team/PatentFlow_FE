@@ -1,7 +1,7 @@
 import type { BusinessChecklistItem } from "../types/businessChecklist";
 
 /**
- * @relatedFR FR-009
+ * @relatedFR FR-BUS-04
  * @relatedUI UI-LEGAL-05, UI-BUS-02, UI-BUS-03
  * @description docs/business_evaluavte_checklist.md 기반 사업부 평가 체크리스트 정의
  */

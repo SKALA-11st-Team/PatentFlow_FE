@@ -1,6 +1,6 @@
 /**
- * @relatedFR FR-001
- * @relatedUI UI-LEGAL-01, UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-01
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-04, UI-BUS-03
  * @description 등록일 기준 첫 3년 후, 이후 매년 도래하는 다음 연차료 납부 기한을 계산한다.
  */
 export function getNextAnnualFeeDueDate(registrationDateText: string, baseDate = new Date()) {
@@ -22,7 +22,7 @@ export function getNextAnnualFeeDueDate(registrationDateText: string, baseDate =
 }
 
 /**
- * @relatedFR FR-001
+ * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-BUS-01, UI-BUS-02
  * @description 현재 날짜 기준 납부 기한까지 남은 일수를 계산한다.
  */

@@ -12,7 +12,7 @@ interface DepartmentAssignerProps {
 }
 
 /**
- * @relatedFR FR-001, FR-012
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-12
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03
  * @description 특허 목록에서 사업부를 즉시 배정하거나 수정하는 컴포넌트
  */

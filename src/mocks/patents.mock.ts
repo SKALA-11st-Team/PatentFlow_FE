@@ -1,6 +1,6 @@
 /**
- * @relatedFR FR-001, FR-002, FR-005, FR-006, FR-007, FR-008, FR-009, FR-011, FR-012, FR-013, FR-017
- * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-05, UI-LEGAL-07, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-BUS-01, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-11, FR-LEGAL-15
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-04, UI-LEGAL-06, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
  * @description docs 기반 특허 메타데이터에 발표용 AI 평가 레포트, workflow, 의견/판단 mock 데이터를 결합한다.
  */
 import type {
@@ -319,8 +319,8 @@ function normalizeProductName(productName: string) {
 }
 
 /**
- * @relatedFR FR-001, FR-005
- * @relatedUI UI-LEGAL-01, UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-05
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-04, UI-BUS-03
  * @description 원천 특허 목록에 섞인 전각 영문/숫자/괄호와 중복 공백을 화면 표시용 문자열로 정규화한다.
  */
 function normalizeDisplayText(value: string) {
@@ -344,7 +344,7 @@ function getMockReviewWorkflowStatus(index: number, hasGeneratedReport = false):
 }
 
 /**
- * @relatedFR FR-001, FR-009
+ * @relatedFR FR-LEGAL-01, FR-BUS-01
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-BUS-01, UI-BUS-02
  * @description mock 특허의 마감 기한을 등록일 기준 다음 연차료 납부일로 계산한다.
  */
@@ -448,8 +448,8 @@ function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRo
 }
 
 /**
- * @relatedFR FR-005, FR-006, FR-007, FR-008
- * @relatedUI UI-LEGAL-05, UI-BUS-03
+ * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 발표에서 바로 보여줄 수 있는 대표 특허의 작성 완료 AI 평가 레포트를 반환한다.
  */
 function getAiEvaluationReport(row: SkaxPatentRow, recommendation: Recommendation, index: number): AiEvaluationReport {

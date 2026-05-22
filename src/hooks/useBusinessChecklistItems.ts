@@ -3,8 +3,8 @@ import { getBusinessChecklistItems } from "../api/businessChecklist";
 import type { BusinessChecklistItem } from "../types/businessChecklist";
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-LEGAL-05, UI-BUS-02, UI-BUS-03, UI-BUS-05
+ * @relatedFR FR-BUS-01, FR-BUS-04
+ * @relatedUI UI-LEGAL-04, UI-BUS-02, UI-BUS-03, UI-BUS-05
  * @description 사업부 의견 화면들이 백엔드 체크리스트 항목 API를 공통으로 조회하도록 돕는다.
  */
 export function useBusinessChecklistItems() {

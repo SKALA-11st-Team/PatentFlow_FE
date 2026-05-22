@@ -3,7 +3,7 @@ import type { BusinessSubmissionChecklistScore, BusinessSubmissionVersion } from
 import type { BusinessOpinionDecision, PatentDetail, PatentListItem, Recommendation } from "../types/patent";
 
 /**
- * @relatedFR FR-009, FR-013
+ * @relatedFR FR-BUS-01, FR-LEGAL-11
  * @relatedUI UI-BUS-04, UI-BUS-05
  * @description 특허별 사업부 제출 이력 n건을 데모 데이터로 생성한다.
  */
@@ -41,7 +41,7 @@ export function getBusinessSubmissionVersions(patent: PatentDetail | PatentListI
 }
 
 /**
- * @relatedFR FR-009, FR-013
+ * @relatedFR FR-BUS-01, FR-LEGAL-11
  * @relatedUI UI-BUS-04, UI-BUS-05
  * @description 특허별 제출 이력 목록에서 최신 제출 요약을 조회한다.
  */

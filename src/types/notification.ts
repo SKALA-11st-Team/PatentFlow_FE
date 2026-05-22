@@ -3,7 +3,7 @@ import type { UserRole } from "./patent";
 export type NotificationTargetRole = UserRole | "COMMON";
 
 /**
- * @relatedFR N/A
+ * @relatedFR FR-COM-02
  * @relatedUI UI-COM-03
  * @description 공통 헤더 알림 창에서 사용하는 알림 도메인 타입
  */

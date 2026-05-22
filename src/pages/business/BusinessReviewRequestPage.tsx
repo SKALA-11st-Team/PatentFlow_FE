@@ -41,7 +41,7 @@ const sortLabels: Record<SortKey, string> = {
 };
 
 /**
- * @relatedFR FR-001, FR-002, FR-009
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description 사업부 KPI 카드에서 진입하는 의견 요청 특허 전용 조회와 의견 등록 모달 화면
  */
@@ -254,7 +254,7 @@ export function BusinessReviewRequestPage() {
 }
 
 /**
- * @relatedFR FR-001, FR-002, FR-009
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description KPI query parameter를 사업부 의견 상태 필터 초기값으로 변환한다.
  */
@@ -265,7 +265,7 @@ function getInitialOpinionFilter(searchParams: URLSearchParams): OpinionFilter {
 }
 
 /**
- * @relatedFR FR-001, FR-002, FR-009
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description 사업부 의견 요청 특허 목록에 검색, 의견 상태, AI 권고, 정렬 조건을 적용한다.
  */
@@ -301,7 +301,7 @@ function getFilteredAndSortedPatents(
 }
 
 /**
- * @relatedFR FR-002, FR-009
+ * @relatedFR FR-LEGAL-02, FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description 사업부 의견 요청 특허 목록의 정렬 순서를 계산한다.
  */
@@ -318,7 +318,7 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
 }
 
 /**
- * @relatedFR FR-009
+ * @relatedFR FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description 사업부 의견 요청 특허 row 선택 시 체크리스트, 정성 평가, 최종 의견을 입력하는 모달
  */
@@ -516,7 +516,7 @@ function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSub
 }
 
 /**
- * @relatedFR FR-006, FR-008, FR-009
+ * @relatedFR FR-LEGAL-06, FR-LEGAL-08, FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description 사업부 의견 모달의 AI 레포트 대표 점수는 평균 점수를 표시한다.
  */
@@ -525,7 +525,7 @@ function formatReportDisplayScore(report: PatentDetail["aiEvaluationReport"]) {
 }
 
 /**
- * @relatedFR FR-009
+ * @relatedFR FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description 사업부 체크리스트 항목 점수를 갱신한다.
  */
@@ -539,7 +539,7 @@ function updateChecklistScore(submission: BusinessChecklistSubmission, itemId: s
 }
 
 /**
- * @relatedFR FR-009
+ * @relatedFR FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description 사업부 체크리스트 항목별 평가 입력 메모를 갱신한다.
  */
@@ -579,7 +579,7 @@ function getPageTitle(opinionFilter: OpinionFilter) {
 }
 
 /**
- * @relatedFR FR-001, FR-009
+ * @relatedFR FR-LEGAL-01, FR-BUS-01
  * @relatedUI UI-BUS-02
  * @description 사업부 테이블에서 값이 없거나 N/A인 항목은 공란으로 표시한다.
  */

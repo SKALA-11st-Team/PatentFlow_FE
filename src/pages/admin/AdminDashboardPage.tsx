@@ -29,7 +29,7 @@ const sortLabels: Record<SortKey, string> = {
 };
 
 /**
- * @relatedFR FR-001, FR-002, FR-011, FR-012, FR-017
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-15
  * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드에서 특허 조회, 검색, 필터링, 정렬을 제공하고 행 클릭으로 특허 상세에 진입한다.
  */
@@ -286,7 +286,7 @@ export function AdminDashboardPage() {
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드 특허 조회 목록에 검색, 검토 단계 필터, 정렬 기준을 적용한다.
  */
@@ -318,7 +318,7 @@ function getFilteredAndSortedPatents(
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01
  * @description 이번 분기 조회 범위에서는 검토 분기 아님 상태 필터를 숨겨 KPI 대상 기준과 충돌하지 않게 한다.
  */
@@ -327,7 +327,7 @@ function getDashboardWorkflowFilterOptions() {
 }
 
 /**
- * @relatedFR FR-002
+ * @relatedFR FR-LEGAL-02
  * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드 특허 조회 목록의 정렬 순서를 계산한다.
  */
@@ -344,7 +344,7 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
 }
 
 /**
- * @relatedFR FR-001
+ * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-01
  * @description 특허명 컬럼의 표시 길이를 최대 30글자로 제한한다.
  */
@@ -353,7 +353,7 @@ function truncatePatentTitle(title: string) {
 }
 
 /**
- * @relatedFR FR-001, FR-012
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-10
  * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드 KPI 완료율을 백분율로 표시한다.
  */

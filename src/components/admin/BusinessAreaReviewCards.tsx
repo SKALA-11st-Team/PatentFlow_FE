@@ -66,7 +66,7 @@ const patentContextDimensions: PatentContextDimension[] = [
 ];
 
 /**
- * @relatedFR FR-001, FR-002, FR-009, FR-012
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01
  * @description 관리자 대시보드에서 관련 사업/기술/제품별 특허 검토 현황을 탭 카드로 요약한다.
  */
@@ -157,7 +157,7 @@ export function BusinessAreaReviewCards({
 }
 
 /**
- * @relatedFR FR-001, FR-002, FR-009, FR-012
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01
  * @description 선택된 특허 컨텍스트 기준별 특허 수와 연관 라벨을 집계한다.
  */
@@ -196,7 +196,7 @@ function getPatentContextSummaries(patentList: PatentListItem[], dimension: Pate
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01
  * @description 컨텍스트별 카드의 표시 순서를 특허 건수와 이름 기준으로 정렬한다.
  */
@@ -209,7 +209,7 @@ function compareBusinessAreaSummaries(firstSummary: PatentContextSummary, second
 }
 
 /**
- * @relatedFR FR-001, FR-002
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01
  * @description 대시보드 컨텍스트 카드 선택값을 검토 대상 드릴다운 query 정보로 변환한다.
  */
@@ -222,7 +222,7 @@ function toPatentContextSelection(dimension: PatentContextDimension, value: stri
 }
 
 /**
- * @relatedFR FR-001
+ * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-01
  * @description 특허 컨텍스트 분류값이 비어 있을 때 대시보드 표시용 문구를 반환한다.
  */

@@ -1,6 +1,6 @@
 /**
- * @relatedFR FR-001, FR-002, FR-006, FR-009, FR-011, FR-012, FR-017
- * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-05, UI-LEGAL-07, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-06, FR-BUS-01, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-15
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-06, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
  * @description PatentFlow FE에서 사용하는 상태값, 라벨, 표시 순서, 배지 tone을 한 곳에서 관리한다.
  */
 
@@ -153,8 +153,8 @@ export const recommendationTone: Record<Recommendation, StatusTone> = {
 };
 
 /**
- * @relatedFR FR-006, FR-008
- * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-05, UI-BUS-01, UI-BUS-02, UI-BUS-03
+ * @relatedFR FR-LEGAL-06, FR-LEGAL-08
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-04, UI-BUS-01, UI-BUS-02, UI-BUS-03
  * @description AI 권고값을 특허 목록과 상세 화면의 일관된 배지 tone으로 변환한다.
  */
 export function getRecommendationTone(recommendation: Recommendation) {
@@ -191,7 +191,7 @@ export const RECOMMENDATION_FILTER_OPTIONS = [
 export type RecommendationFilter = (typeof RECOMMENDATION_FILTER_OPTIONS)[number]["value"];
 
 /**
- * @relatedFR FR-001, FR-002, FR-006, FR-009
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-06, FR-BUS-01
  * @relatedUI UI-BUS-01, UI-BUS-02
  * @description 같은 표시 라벨을 공유하는 AI 권고값을 화면 필터용 그룹으로 변환한다.
  */
@@ -212,8 +212,8 @@ export const businessOpinionTone: Record<BusinessOpinionDecision, StatusTone> = 
 };
 
 /**
- * @relatedFR FR-009
- * @relatedUI UI-LEGAL-05, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
+ * @relatedFR FR-BUS-01
+ * @relatedUI UI-LEGAL-04, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
  * @description 사업부 유지/포기 의견을 일관된 배지 tone으로 변환한다.
  */
 export function getBusinessOpinionTone(opinion: BusinessOpinionDecision) {

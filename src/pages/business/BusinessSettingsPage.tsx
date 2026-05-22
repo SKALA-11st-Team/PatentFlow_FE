@@ -5,7 +5,7 @@ import { Button } from "../../components/common/Button";
 import { AppLayout } from "../../components/layout/AppLayout";
 
 /**
- * @relatedFR FR-009
+ * @relatedFR FR-BUS-01
  * @relatedUI UI-BUS-06
  * @description 사업부 사용자의 수신자 표시명을 관리하는 화면.
  *              이메일(로그인 계정)은 변경 불가, 담당자 이름(displayName)만 수정 가능.

@@ -74,7 +74,7 @@ function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; chil
 }
 
 /**
- * @relatedFR FR-001, FR-002, FR-003, FR-004, FR-009, FR-013, FR-014, FR-015, FR-016, FR-017
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-03, FR-LEGAL-04, FR-BUS-01, FR-LEGAL-11, FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14, FR-LEGAL-15
  * @relatedUI UI-COM-01, UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-04, UI-LEGAL-05, UI-LEGAL-06, UI-LEGAL-07, UI-LEGAL-08, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05, UI-BUS-06
  * @description PatentFlow 관리자/사업부 화면 라우트 정의
  */

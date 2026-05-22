@@ -14,8 +14,8 @@ interface AppLayoutProps {
 }
 
 /**
- * @relatedFR FR-001, FR-002, FR-003, FR-004, FR-009, FR-013, FR-014, FR-015, FR-016, FR-017
- * @relatedUI UI-COM-02, UI-COM-03, UI-LEGAL-01, UI-LEGAL-03, UI-LEGAL-06, UI-LEGAL-07, UI-LEGAL-08, UI-BUS-01, UI-BUS-04, UI-BUS-06
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-03, FR-LEGAL-04, FR-BUS-01, FR-LEGAL-11, FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14, FR-LEGAL-15
+ * @relatedUI UI-COM-02, UI-COM-03, UI-LEGAL-01, UI-LEGAL-03, UI-LEGAL-05, UI-LEGAL-06, UI-LEGAL-07, UI-LEGAL-08, UI-BUS-01, UI-BUS-04, UI-BUS-06
  * @description 관리자/사업부 공통 앱 레이아웃과 역할별 기본 내비게이션을 제공한다.
  */
 export function AppLayout({ children, role, title, description }: AppLayoutProps) {

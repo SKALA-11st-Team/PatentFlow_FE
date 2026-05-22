@@ -9,7 +9,7 @@ import type { PatentListItem, PatentUpsertPayload } from "../../types/patent";
 type PatentFormState = PatentUpsertPayload;
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-04
  * @description 특허관리 테이블에서 선택한 특허의 기본 정보와 회사 컨텍스트를 상세 수정한다.
  */
@@ -105,7 +105,7 @@ export function AdminPatentEditPage() {
   }
 
   /**
-   * @relatedFR FR-003, FR-004
+   * @relatedFR FR-LEGAL-03, FR-LEGAL-04
    * @relatedUI UI-LEGAL-04
    * @description 수정 폼의 특허명/제품 정보를 기준으로 관련사업/관련기술 분야 AI 추천값을 적용한다.
    */
@@ -236,7 +236,7 @@ export function AdminPatentEditPage() {
 }
 
 /**
- * @relatedFR FR-003, FR-004
+ * @relatedFR FR-LEGAL-03, FR-LEGAL-04
  * @relatedUI UI-LEGAL-04
  * @description 선택한 특허 행 데이터를 상세 수정 폼 상태로 변환한다.
  */
