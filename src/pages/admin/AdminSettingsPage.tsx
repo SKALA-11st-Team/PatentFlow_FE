@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import {
+  addClassification,
   activateReviewQuarter,
+  deleteClassification,
   endReviewQuarter,
+  getClassifications,
   getCountryExtensions,
   getMailSettings,
   getReviewQuarters,
+  renameClassification,
   updateCountryExtension,
   updateMailSettings,
   updateReviewQuarter,
+  updateReviewSchedule,
+  type ClassificationGroup,
+  type ClassificationType,
   type CountryExtension,
   type MailSettings,
   type QuarterSetting,
@@ -31,15 +38,26 @@ export function AdminSettingsPage() {
   const [mailMessage, setMailMessage] = useState("");
   const [countryExtensions, setCountryExtensions] = useState<CountryExtension[]>([]);
   const [extMessage, setExtMessage] = useState("");
+  const [scheduleForm, setScheduleForm] = useState({ businessResponseDueDate: "", mailLeadMonths: 2 });
+  const [scheduleMessage, setScheduleMessage] = useState("");
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+  const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
+  const [classificationMessage, setClassificationMessage] = useState("");
 
   useEffect(() => {
     setIsLoading(true);
-    Promise.all([getReviewQuarters(), getMailSettings(), getCountryExtensions()])
-      .then(([nextQuarters, nextMailSettings, nextExtensions]) => {
+    Promise.all([getReviewQuarters(), getMailSettings(), getCountryExtensions(), getClassifications()])
+      .then(([nextQuarters, nextMailSettings, nextExtensions, nextClassifications]) => {
         setQuarters(nextQuarters);
         setMailSettings(nextMailSettings);
         setMailForm({ gmailUsername: nextMailSettings.gmailUsername ?? "", gmailAppPassword: "" });
         setCountryExtensions(nextExtensions);
+        setClassifications(nextClassifications);
+        const firstQuarter = nextQuarters[0];
+        setScheduleForm({
+          businessResponseDueDate: firstQuarter?.businessResponseDueDate ?? firstQuarter?.submissionDeadline ?? "",
+          mailLeadMonths: firstQuarter?.mailLeadMonths ?? 2,
+        });
       })
       .catch(() => setMessage("설정을 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
@@ -68,6 +86,39 @@ export function AdminSettingsPage() {
       setMessage(`${quarterKey} 설정이 저장되었습니다.`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
+    }
+  }
+
+  async function handleSaveReviewSchedule(event: React.FormEvent) {
+    event.preventDefault();
+    setIsSavingSchedule(true);
+    setScheduleMessage("");
+    try {
+      const year = quarters[0]?.year ?? new Date().getFullYear();
+      const updated = await updateReviewSchedule(
+        year,
+        scheduleForm.mailLeadMonths,
+        scheduleForm.businessResponseDueDate || null,
+      );
+      setQuarters(updated);
+      setScheduleMessage("회신 기한과 메일 발송 기준이 저장되었습니다.");
+    } catch (error) {
+      setScheduleMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
+    } finally {
+      setIsSavingSchedule(false);
+    }
+  }
+
+  async function handleClassificationUpdate(
+    type: ClassificationType,
+    updater: () => Promise<ClassificationGroup>,
+  ) {
+    try {
+      const updated = await updater();
+      setClassifications((prev) => prev.map((group) => (group.type === type ? updated : group)));
+      setClassificationMessage("분류 설정이 저장되었습니다.");
+    } catch (error) {
+      setClassificationMessage(error instanceof Error ? error.message : "분류 설정 저장에 실패했습니다.");
     }
   }
 
@@ -179,6 +230,42 @@ export function AdminSettingsPage() {
       <section className="section">
         <div className="section-header">
           <div>
+            <h2>회신 기한 및 발송 기준</h2>
+            <p>사업부에는 회신 기한을 표시하고, 실제 법무 마감 기한과 분리해서 관리합니다.</p>
+          </div>
+        </div>
+        <form className="settings-card settings-form" onSubmit={handleSaveReviewSchedule}>
+          <label className="form-field">
+            <span className="form-label-text">일괄 회신 기한</span>
+            <input
+              onChange={(event) => setScheduleForm((form) => ({ ...form, businessResponseDueDate: event.target.value }))}
+              type="date"
+              value={scheduleForm.businessResponseDueDate}
+            />
+          </label>
+          <label className="form-field">
+            <span className="form-label-text">검토 요청 메일 발송 기준</span>
+            <input
+              max={24}
+              min={0}
+              onChange={(event) => setScheduleForm((form) => ({ ...form, mailLeadMonths: Number(event.target.value) }))}
+              type="number"
+              value={scheduleForm.mailLeadMonths}
+            />
+            <small className="form-helper-text">분기 시작일 몇 개월 전에 보낼지 설정합니다. 기본값은 2개월 전입니다.</small>
+          </label>
+          {scheduleMessage ? <p className="notice notice-compact">{scheduleMessage}</p> : null}
+          <div>
+            <Button disabled={isSavingSchedule} type="submit">
+              {isSavingSchedule ? "저장 중…" : "일괄 저장"}
+            </Button>
+          </div>
+        </form>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
             <h2>검토 분기 설정</h2>
             <p>
               {isLoading
@@ -200,6 +287,7 @@ export function AdminSettingsPage() {
                 <th>납부 기간 시작</th>
                 <th>납부 기간 종료</th>
                 <th>의견 제출 마감일</th>
+                <th>메일 발송 예정일</th>
                 <th>대상 특허</th>
                 <th>상태</th>
                 <th>작업</th>
@@ -217,13 +305,36 @@ export function AdminSettingsPage() {
               ))}
               {!isLoading && quarters.length === 0 ? (
                 <tr>
-                  <td className="empty-table-cell" colSpan={7}>
+                  <td className="empty-table-cell" colSpan={8}>
                     분기 설정이 없습니다. BE 실행 상태를 확인하세요.
                   </td>
                 </tr>
               ) : null}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>사업/기술 분류 관리</h2>
+            <p>기존 사업은 종료된 사업을 의미합니다. 특허 등록, 필터, AI 레포트에서 같은 기준값을 사용합니다.</p>
+          </div>
+        </div>
+        {classificationMessage ? <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>{classificationMessage}</p> : null}
+        <div className="settings-grid">
+          {classifications.map((group) => (
+            <ClassificationEditor
+              group={group}
+              key={group.type}
+              onAdd={(value) => handleClassificationUpdate(group.type, () => addClassification(group.type, value))}
+              onDelete={(value) => handleClassificationUpdate(group.type, () => deleteClassification(group.type, value))}
+              onRename={(currentValue, nextValue) =>
+                handleClassificationUpdate(group.type, () => renameClassification(group.type, currentValue, nextValue))
+              }
+            />
+          ))}
         </div>
       </section>
 
@@ -388,10 +499,14 @@ function QuarterRow({
         <input
           disabled={quarter.ended}
           onChange={(e) => setSubmissionDeadline(e.target.value)}
-          placeholder="마감일 설정"
+          placeholder="회신 기한 설정"
           type="date"
           value={submissionDeadline}
         />
+      </td>
+      <td>
+        <strong>{quarter.scheduledMailSendDate ?? "-"}</strong>
+        <span className="table-subtext">{quarter.mailLeadMonths}개월 전 발송</span>
       </td>
       <td>{quarter.activated ? `${quarter.targetPatentCount}건` : quarter.targetPatentCount > 0 ? `${quarter.targetPatentCount}건 (예정)` : "-"}</td>
       <td>
@@ -444,6 +559,119 @@ function QuarterRow({
         ) : null}
       </td>
     </tr>
+  );
+}
+
+function ClassificationEditor({
+  group,
+  onAdd,
+  onDelete,
+  onRename,
+}: {
+  group: ClassificationGroup;
+  onAdd: (value: string) => Promise<void>;
+  onDelete: (value: string) => Promise<void>;
+  onRename: (currentValue: string, nextValue: string) => Promise<void>;
+}) {
+  const [newValue, setNewValue] = useState("");
+  const [editingValue, setEditingValue] = useState("");
+  const [editingNextValue, setEditingNextValue] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const title = group.type === "BUSINESS" ? "사업 분류" : "기술 분류";
+
+  async function run(action: () => Promise<void>) {
+    setIsSaving(true);
+    await action().finally(() => setIsSaving(false));
+  }
+
+  return (
+    <div className="settings-card">
+      <div className="section-header section-header-compact">
+        <div>
+          <h3>{title}</h3>
+          <p>{group.values.length}개 기준값</p>
+        </div>
+      </div>
+      <div className="inline-form-row">
+        <input
+          onChange={(event) => setNewValue(event.target.value)}
+          placeholder={`${title} 추가`}
+          value={newValue}
+        />
+        <Button
+          disabled={isSaving || !newValue.trim()}
+          onClick={() => run(async () => {
+            await onAdd(newValue);
+            setNewValue("");
+          })}
+          type="button"
+          variant="secondary"
+        >
+          추가
+        </Button>
+      </div>
+      <div className="classification-list">
+        {group.values.map((value) => (
+          <div className="classification-row" key={value}>
+            {editingValue === value ? (
+              <input
+                autoFocus
+                onChange={(event) => setEditingNextValue(event.target.value)}
+                value={editingNextValue}
+              />
+            ) : (
+              <span>{value}</span>
+            )}
+            <div className="table-cell-actions">
+              {editingValue === value ? (
+                <>
+                  <Button
+                    disabled={isSaving || !editingNextValue.trim()}
+                    onClick={() => run(async () => {
+                      await onRename(value, editingNextValue);
+                      setEditingValue("");
+                      setEditingNextValue("");
+                    })}
+                    type="button"
+                    variant="secondary"
+                  >
+                    저장
+                  </Button>
+                  <Button
+                    disabled={isSaving}
+                    onClick={() => {
+                      setEditingValue("");
+                      setEditingNextValue("");
+                    }}
+                    type="button"
+                    variant="secondary"
+                  >
+                    취소
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    disabled={isSaving}
+                    onClick={() => {
+                      setEditingValue(value);
+                      setEditingNextValue(value);
+                    }}
+                    type="button"
+                    variant="secondary"
+                  >
+                    수정
+                  </Button>
+                  <Button disabled={isSaving} onClick={() => run(() => onDelete(value))} type="button" variant="secondary">
+                    삭제
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

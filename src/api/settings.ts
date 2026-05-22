@@ -35,6 +35,9 @@ export interface QuarterSetting {
   endedAt: string | null;
   targetPatentCount: number;
   submissionDeadline: string | null;
+  businessResponseDueDate: string | null;
+  mailLeadMonths: number;
+  scheduledMailSendDate: string | null;
 }
 
 export interface QuarterActivateResult {
@@ -58,16 +61,31 @@ export async function updateReviewQuarter(
   quarterKey: string,
   startDate: string | null,
   endDate: string | null,
-  submissionDeadline: string | null,
+  businessResponseDueDate: string | null,
 ): Promise<QuarterSetting> {
   const response = await requestJson<ApiEnvelope<QuarterSetting>>(
     `/settings/review-quarters/${quarterKey}`,
     {
-      body: JSON.stringify({ startDate, endDate, submissionDeadline }),
+      body: JSON.stringify({ startDate, endDate, businessResponseDueDate, submissionDeadline: businessResponseDueDate }),
       method: "PUT",
     },
   );
   return response.data!;
+}
+
+export async function updateReviewSchedule(
+  year: number,
+  mailLeadMonths: number,
+  businessResponseDueDate: string | null,
+): Promise<QuarterSetting[]> {
+  const response = await requestJson<ApiEnvelope<QuarterSetting[]>>(
+    "/settings/review-schedule",
+    {
+      method: "PATCH",
+      body: JSON.stringify({ year, mailLeadMonths, businessResponseDueDate }),
+    },
+  );
+  return response.data ?? [];
 }
 
 export async function getActiveQuarter(): Promise<QuarterSetting | null> {
@@ -116,4 +134,72 @@ export async function updateCountryExtension(country: string, extensionMonths: n
     { method: "PUT", body: JSON.stringify({ extensionMonths }) },
   );
   return response.data!;
+}
+
+export type ClassificationType = "BUSINESS" | "TECHNOLOGY";
+
+export interface ClassificationGroup {
+  type: ClassificationType;
+  values: string[];
+}
+
+const fallbackClassifications: ClassificationGroup[] = [
+  {
+    type: "BUSINESS",
+    values: ["AI", "Data", "Blockchain", "Cloud", "ESG", "제조", "통신", "금융/전략", "통합서비스", "기존 사업"],
+  },
+  {
+    type: "TECHNOLOGY",
+    values: ["데이터분석", "AB Testing", "Blockchain", "Cloud", "시스템 운영", "장애관리", "인증", "보안", "Network"],
+  },
+];
+
+export async function getClassifications(): Promise<ClassificationGroup[]> {
+  if (!isBackendApiEnabled()) return fallbackClassifications;
+  const response = await requestJson<ApiEnvelope<ClassificationGroup[]>>("/settings/classifications");
+  return response.data ?? fallbackClassifications;
+}
+
+export async function addClassification(type: ClassificationType, value: string): Promise<ClassificationGroup> {
+  if (!isBackendApiEnabled()) return updateFallbackClassification(type, value);
+  const response = await requestJson<ApiEnvelope<ClassificationGroup>>(`/settings/classifications/${type}`, {
+    method: "POST",
+    body: JSON.stringify({ value }),
+  });
+  return response.data!;
+}
+
+export async function renameClassification(
+  type: ClassificationType,
+  currentValue: string,
+  nextValue: string,
+): Promise<ClassificationGroup> {
+  if (!isBackendApiEnabled()) return updateFallbackClassification(type, nextValue, currentValue);
+  const response = await requestJson<ApiEnvelope<ClassificationGroup>>(
+    `/settings/classifications/${type}/${encodeURIComponent(currentValue)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ value: nextValue }),
+    },
+  );
+  return response.data!;
+}
+
+export async function deleteClassification(type: ClassificationType, value: string): Promise<ClassificationGroup> {
+  if (!isBackendApiEnabled()) {
+    const group = fallbackClassifications.find((item) => item.type === type)!;
+    return { ...group, values: group.values.filter((item) => item !== value) };
+  }
+  const response = await requestJson<ApiEnvelope<ClassificationGroup>>(
+    `/settings/classifications/${type}/${encodeURIComponent(value)}`,
+    { method: "DELETE" },
+  );
+  return response.data!;
+}
+
+function updateFallbackClassification(type: ClassificationType, nextValue: string, currentValue?: string) {
+  const group = fallbackClassifications.find((item) => item.type === type)!;
+  const values = group.values.filter((item) => item !== currentValue);
+  if (!values.includes(nextValue)) values.push(nextValue);
+  return { ...group, values: values.sort((a, b) => a.localeCompare(b, "ko")) };
 }
