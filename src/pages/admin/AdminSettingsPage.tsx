@@ -26,6 +26,7 @@ export function AdminSettingsPage() {
   const [message, setMessage] = useState("");
   const [mailSettings, setMailSettings] = useState<MailSettings | null>(null);
   const [mailForm, setMailForm] = useState({ gmailUsername: "", gmailAppPassword: "" });
+  const [showLegacyMailForm, setShowLegacyMailForm] = useState(false);
   const [isSavingMail, setIsSavingMail] = useState(false);
   const [mailMessage, setMailMessage] = useState("");
   const [countryExtensions, setCountryExtensions] = useState<CountryExtension[]>([]);
@@ -101,9 +102,7 @@ export function AdminSettingsPage() {
         <div className="section-header">
           <div>
             <h2>메일 발송 설정</h2>
-            <p>
-              Gmail 계정과 앱 비밀번호를 등록하면 계정 생성 알림과 사업부 검토 요청 메일이 실제로 발송됩니다.
-            </p>
+            <p>Gmail 발송은 Google OAuth 연동이 기본입니다. 앱 비밀번호 입력은 레거시 방식으로만 남겨 둡니다.</p>
           </div>
         </div>
 
@@ -114,8 +113,7 @@ export function AdminSettingsPage() {
               <>
                 <span className="badge badge-success">설정됨</span>
                 <span className="form-helper-text">
-                  {mailSettings.gmailUsername}
-                  {mailSettings.isAppPasswordConfigured ? " · 앱 비밀번호 등록됨" : " · 앱 비밀번호 미등록"}
+                  {mailSettings.gmailUsername} · {mailSettings.isAppPasswordConfigured ? "레거시 자격 증명 등록됨" : "OAuth 연동 권장"}
                 </span>
               </>
             ) : (
@@ -123,38 +121,58 @@ export function AdminSettingsPage() {
             )}
           </div>
 
-          <form onSubmit={handleSaveMail} className="settings-form">
-            <label className="form-field">
-              <span className="form-label-text">Gmail 계정</span>
-              <input
-                onChange={(e) => setMailForm((f) => ({ ...f, gmailUsername: e.target.value }))}
-                placeholder="your@gmail.com"
-                required
-                type="email"
-                value={mailForm.gmailUsername}
-              />
-            </label>
-            <label className="form-field">
-              <span className="form-label-text">Gmail 앱 비밀번호</span>
-              <input
-                onChange={(e) => setMailForm((f) => ({ ...f, gmailAppPassword: e.target.value }))}
-                placeholder={mailSettings?.isAppPasswordConfigured ? "변경하려면 새로 입력 (공백이면 유지)" : "xxxx xxxx xxxx xxxx"}
-                type="password"
-                value={mailForm.gmailAppPassword}
-              />
-              <small className="form-helper-text">
-                Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호에서 발급
-              </small>
-            </label>
-            {mailMessage ? (
-              <p className="notice notice-compact">{mailMessage}</p>
-            ) : null}
-            <div>
-              <Button disabled={isSavingMail || !mailForm.gmailUsername} type="submit">
-                {isSavingMail ? "저장 중…" : "저장"}
+          <div className="settings-form">
+            <div className="oauth-pending-panel">
+              <Button disabled type="button">
+                Google 계정으로 연동하기
               </Button>
+              <span className="form-helper-text">OAuth 연동은 백엔드 인증 엔드포인트 준비 후 활성화됩니다.</span>
             </div>
-          </form>
+
+            <div style={{ marginTop: "0.5rem" }}>
+              <button
+                type="button"
+                className="table-action-link"
+                onClick={() => setShowLegacyMailForm((s) => !s)}
+              >
+                {showLegacyMailForm ? "앱 비밀번호 숨기기(권장 아님)" : "앱 비밀번호 직접 입력(레거시)"}
+              </button>
+            </div>
+
+            {showLegacyMailForm ? (
+              <form onSubmit={handleSaveMail} className="settings-form" style={{ marginTop: "0.75rem" }}>
+                <label className="form-field">
+                  <span className="form-label-text">Gmail 계정 (레거시)</span>
+                  <input
+                    onChange={(e) => setMailForm((f) => ({ ...f, gmailUsername: e.target.value }))}
+                    placeholder="your@gmail.com"
+                    type="email"
+                    value={mailForm.gmailUsername}
+                  />
+                </label>
+                <label className="form-field">
+                  <span className="form-label-text">Gmail 앱 비밀번호</span>
+                  <input
+                    onChange={(e) => setMailForm((f) => ({ ...f, gmailAppPassword: e.target.value }))}
+                    placeholder={mailSettings?.isAppPasswordConfigured ? "변경하려면 새로 입력 (공백이면 유지)" : "xxxx xxxx xxxx xxxx"}
+                    type="password"
+                    value={mailForm.gmailAppPassword}
+                  />
+                  <small className="form-helper-text">
+                    Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호에서 발급
+                  </small>
+                </label>
+                {mailMessage ? (
+                  <p className="notice notice-compact">{mailMessage}</p>
+                ) : null}
+                <div>
+                  <Button disabled={isSavingMail || !mailForm.gmailUsername} type="submit">
+                    {isSavingMail ? "저장 중…" : "저장 (레거시)"}
+                  </Button>
+                </div>
+              </form>
+            ) : null}
+          </div>
         </div>
       </section>
 

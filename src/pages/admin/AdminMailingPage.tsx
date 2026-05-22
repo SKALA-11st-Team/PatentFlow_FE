@@ -130,7 +130,7 @@ export function AdminMailingPage() {
             <Link to="/admin/settings" className="text-link">
               설정
             </Link>
-            에서 Gmail 계정과 앱 비밀번호를 등록해 주세요.
+            에서 Gmail 계정과 OAuth 연결 설정을 해 주세요.
           </p>
         ) : null}
         <div className="mailing-summary-grid">
