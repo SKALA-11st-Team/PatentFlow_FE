@@ -7,6 +7,7 @@ import { Section } from "../../components/common/Section";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { getDepartments, type Department } from "../../api/departments";
 import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
+import { getClassifications, type ClassificationGroup } from "../../api/settings";
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
@@ -44,6 +45,7 @@ export function AdminPatentListPage() {
   const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [form, setForm] = useState<PatentFormState>(emptyPatentForm);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
   const [keyword, setKeyword] = useState("");
   const [reviewScope, setReviewScope] = useState<DashboardScope>("ALL");
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>("ALL");
@@ -57,7 +59,11 @@ export function AdminPatentListPage() {
 
   useEffect(() => {
     getDepartments().then(setDepartments).catch(() => {});
+    getClassifications().then(setClassifications).catch(() => setClassifications([]));
   }, []);
+
+  const businessClassifications = getClassificationValues(classifications, "BUSINESS");
+  const technologyClassifications = getClassificationValues(classifications, "TECHNOLOGY");
 
   const listedPatents = useMemo(
     () => getEditablePatentRows(patentList, keyword, reviewScope, workflowFilter, sort),
@@ -346,17 +352,23 @@ export function AdminPatentListPage() {
             </label>
             <label>
               관련사업 분야
-              <input name="businessArea" onChange={handleFormChange} value={form.businessArea} />
+              <input list="business-area-options" name="businessArea" onChange={handleFormChange} value={form.businessArea} />
             </label>
             <label>
               관련기술 분야
-              <input name="technologyArea" onChange={handleFormChange} value={form.technologyArea} />
+              <input list="technology-area-options" name="technologyArea" onChange={handleFormChange} value={form.technologyArea} />
             </label>
             <label>
               관련제품
               <input name="productName" onChange={handleFormChange} value={form.productName} />
             </label>
           </div>
+          <datalist id="business-area-options">
+            {businessClassifications.map((value) => <option key={value} value={value} />)}
+          </datalist>
+          <datalist id="technology-area-options">
+            {technologyClassifications.map((value) => <option key={value} value={value} />)}
+          </datalist>
           <div className="form-actions">
             <Button disabled={isSaving} type="submit">
               {isSaving ? "저장 중" : "특허 등록"}
@@ -406,8 +418,8 @@ export function AdminPatentListPage() {
           <label>
             <span>정렬</span>
             <select onChange={(event) => setSort(event.target.value)} value={sort}>
-              <option value="feeDueDate,asc">마감 기한 빠른순</option>
-              <option value="feeDueDate,desc">마감 기한 늦은순</option>
+              <option value="feeDueDate,asc">납부 예정일 빠른순</option>
+              <option value="feeDueDate,desc">납부 예정일 늦은순</option>
               <option value="title,asc">특허명 가나다순</option>
             </select>
           </label>
@@ -496,6 +508,10 @@ export function AdminPatentListPage() {
       </Section>
     </AppLayout>
   );
+}
+
+function getClassificationValues(classifications: ClassificationGroup[], type: ClassificationGroup["type"]) {
+  return classifications.find((group) => group.type === type)?.values ?? [];
 }
 
 /**

@@ -7,7 +7,7 @@ interface DeadlineCellProps {
 /**
  * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-01, UI-BUS-01
- * @description 특허 마감 기한을 D-n, yy-mm-dd 2줄 형식으로 표시한다.
+ * @description 특허 연차료 납부 예정일을 D-n, yy-mm-dd 2줄 형식으로 표시한다.
  */
 export function DeadlineCell({ dueDate }: DeadlineCellProps) {
   if (!dueDate) return <span className="deadline-cell"><strong>-</strong></span>;

@@ -136,6 +136,53 @@ export async function updateCountryExtension(country: string, extensionMonths: n
   return response.data!;
 }
 
+export interface AnnualFeeAdjustmentHistory {
+  adjustmentId: string;
+  previousDueDate: string | null;
+  adjustedDueDate: string;
+  reason: string | null;
+  adjustedBy: string | null;
+  adjustedAt: string;
+}
+
+export interface AnnualFeeScheduleItem {
+  patentId: string;
+  managementNumber: string;
+  title: string;
+  country: string;
+  domesticPatent: boolean;
+  applicationDate: string | null;
+  registrationDate: string | null;
+  expectedExpirationDate: string | null;
+  annualFeeBaseDate: string | null;
+  nextAnnualFeeDueDate: string | null;
+  adjustedAnnualFeeDueDate: string | null;
+  latestAdjustmentReason: string | null;
+  adjustmentHistory: AnnualFeeAdjustmentHistory[];
+}
+
+export async function getAnnualFeeSchedule(country = "ALL"): Promise<AnnualFeeScheduleItem[]> {
+  if (!isBackendApiEnabled()) return [];
+  const query = country && country !== "ALL" ? `?country=${encodeURIComponent(country)}` : "";
+  const response = await requestJson<ApiEnvelope<AnnualFeeScheduleItem[]>>(`/annual-fees/schedule${query}`);
+  return response.data ?? [];
+}
+
+export async function adjustAnnualFeeSchedule(
+  patentId: string,
+  adjustedDueDate: string,
+  reason: string,
+): Promise<AnnualFeeScheduleItem> {
+  const response = await requestJson<ApiEnvelope<AnnualFeeScheduleItem>>(
+    `/annual-fees/schedule/${encodeURIComponent(patentId)}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ adjustedDueDate, reason, adjustedBy: "관리자" }),
+    },
+  );
+  return response.data!;
+}
+
 export type ClassificationType = "BUSINESS" | "TECHNOLOGY";
 
 export interface ClassificationGroup {

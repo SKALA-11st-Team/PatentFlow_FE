@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import {
   addClassification,
+  adjustAnnualFeeSchedule,
   activateReviewQuarter,
   deleteClassification,
   endReviewQuarter,
+  getAnnualFeeSchedule,
   getClassifications,
   getCountryExtensions,
   getMailSettings,
@@ -13,6 +15,7 @@ import {
   updateMailSettings,
   updateReviewQuarter,
   updateReviewSchedule,
+  type AnnualFeeScheduleItem,
   type ClassificationGroup,
   type ClassificationType,
   type CountryExtension,
@@ -43,6 +46,9 @@ export function AdminSettingsPage() {
   const [isSavingSchedule, setIsSavingSchedule] = useState(false);
   const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
   const [classificationMessage, setClassificationMessage] = useState("");
+  const [annualFeeSchedule, setAnnualFeeSchedule] = useState<AnnualFeeScheduleItem[]>([]);
+  const [annualFeeCountry, setAnnualFeeCountry] = useState("ALL");
+  const [annualFeeMessage, setAnnualFeeMessage] = useState("");
 
   useEffect(() => {
     setIsLoading(true);
@@ -62,6 +68,12 @@ export function AdminSettingsPage() {
       .catch(() => setMessage("설정을 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    getAnnualFeeSchedule(annualFeeCountry)
+      .then(setAnnualFeeSchedule)
+      .catch(() => setAnnualFeeSchedule([]));
+  }, [annualFeeCountry]);
 
   async function handleSaveMail(e: React.FormEvent) {
     e.preventDefault();
@@ -286,7 +298,7 @@ export function AdminSettingsPage() {
                 <th>분기</th>
                 <th>납부 기간 시작</th>
                 <th>납부 기간 종료</th>
-                <th>의견 제출 마감일</th>
+                <th>회신 기한</th>
                 <th>메일 발송 예정일</th>
                 <th>대상 특허</th>
                 <th>상태</th>
@@ -371,6 +383,61 @@ export function AdminSettingsPage() {
                   }}
                 />
               ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>국가별 연차료 납부 예정일</h2>
+            <p>국내특허와 해외특허를 구분해 미래 납부 예정일을 확인하고 조정합니다.</p>
+          </div>
+          <label className="form-field" style={{ maxWidth: 220 }}>
+            <span className="form-label-text">국가</span>
+            <select onChange={(event) => setAnnualFeeCountry(event.target.value)} value={annualFeeCountry}>
+              <option value="ALL">전체</option>
+              {countryExtensions.map((ext) => (
+                <option key={ext.country} value={ext.country}>{ext.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {annualFeeMessage ? <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>{annualFeeMessage}</p> : null}
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>특허</th>
+                <th>국가 구분</th>
+                <th>기준일</th>
+                <th>현재 예정일</th>
+                <th>최근 조정</th>
+                <th>조정</th>
+              </tr>
+            </thead>
+            <tbody>
+              {annualFeeSchedule.slice(0, 20).map((item) => (
+                <AnnualFeeScheduleRow
+                  item={item}
+                  key={item.patentId}
+                  onSave={async (adjustedDueDate, reason) => {
+                    try {
+                      const updated = await adjustAnnualFeeSchedule(item.patentId, adjustedDueDate, reason);
+                      setAnnualFeeSchedule((prev) => prev.map((row) => (row.patentId === item.patentId ? updated : row)));
+                      setAnnualFeeMessage(`${item.managementNumber} 납부 예정일이 조정되었습니다.`);
+                    } catch (error) {
+                      setAnnualFeeMessage(error instanceof Error ? error.message : "납부 예정일 조정에 실패했습니다.");
+                    }
+                  }}
+                />
+              ))}
+              {annualFeeSchedule.length === 0 ? (
+                <tr>
+                  <td className="empty-table-cell" colSpan={6}>연차료 납부 예정일 데이터가 없습니다.</td>
+                </tr>
+              ) : null}
             </tbody>
           </table>
         </div>
@@ -708,6 +775,70 @@ function CountryExtensionRow({
         <Button disabled={isSaving || !isDirty} onClick={save} type="button" variant="secondary">
           {isSaving ? "저장 중…" : "저장"}
         </Button>
+      </td>
+    </tr>
+  );
+}
+
+function AnnualFeeScheduleRow({
+  item,
+  onSave,
+}: {
+  item: AnnualFeeScheduleItem;
+  onSave: (adjustedDueDate: string, reason: string) => Promise<void>;
+}) {
+  const [adjustedDueDate, setAdjustedDueDate] = useState(item.nextAnnualFeeDueDate ?? "");
+  const [reason, setReason] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const isDirty = adjustedDueDate && adjustedDueDate !== item.nextAnnualFeeDueDate;
+
+  async function save() {
+    setIsSaving(true);
+    await onSave(adjustedDueDate, reason).finally(() => setIsSaving(false));
+    setReason("");
+  }
+
+  return (
+    <tr>
+      <td>
+        <strong>{item.managementNumber}</strong>
+        <span className="table-subtext">{item.title}</span>
+      </td>
+      <td>
+        <span className={item.domesticPatent ? "badge badge-success" : "badge badge-neutral"}>
+          {item.domesticPatent ? "국내특허" : "해외특허"}
+        </span>
+        <span className="table-subtext">{item.country}</span>
+      </td>
+      <td>{item.annualFeeBaseDate ?? "-"}</td>
+      <td>
+        <strong>{item.nextAnnualFeeDueDate ?? "-"}</strong>
+        {item.adjustedAnnualFeeDueDate ? <span className="table-subtext">조정됨</span> : null}
+      </td>
+      <td>
+        {item.latestAdjustmentReason ? (
+          <>
+            <span>{item.latestAdjustmentReason}</span>
+            <span className="table-subtext">{item.adjustmentHistory[0]?.adjustedAt?.slice(0, 10)}</span>
+          </>
+        ) : "-"}
+      </td>
+      <td>
+        <div className="annual-fee-adjust-form">
+          <input
+            onChange={(event) => setAdjustedDueDate(event.target.value)}
+            type="date"
+            value={adjustedDueDate}
+          />
+          <input
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="조정 사유"
+            value={reason}
+          />
+          <Button disabled={isSaving || !isDirty || !reason.trim()} onClick={save} type="button" variant="secondary">
+            {isSaving ? "저장 중…" : "조정"}
+          </Button>
+        </div>
       </td>
     </tr>
   );

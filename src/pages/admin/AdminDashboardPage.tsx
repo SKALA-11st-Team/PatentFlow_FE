@@ -25,8 +25,8 @@ type DashboardScope = "ALL" | "QUARTER" | "NOT_IN_QUARTER";
 type QuarterFilter = "ALL" | "Q1" | "Q2" | "Q3" | "Q4";
 
 const sortLabels: Record<SortKey, string> = {
-  DUE_DATE_ASC: "마감 기한 빠른순",
-  DUE_DATE_DESC: "마감 기한 늦은순",
+  DUE_DATE_ASC: "납부 예정일 빠른순",
+  DUE_DATE_DESC: "납부 예정일 늦은순",
   TITLE_ASC: "특허명 가나다순",
 };
 
@@ -202,7 +202,7 @@ export function AdminDashboardPage() {
           <div>
             <h2>특허 조회</h2>
             <p>
-                {errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "조건별로 특허를 조회하고 마감 기한을 확인합니다.")}
+                {errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "조건별로 특허를 조회하고 연차료 납부 예정일을 확인합니다.")}
             </p>
           </div>
         </div>
@@ -285,7 +285,7 @@ export function AdminDashboardPage() {
                 <th>특허명</th>
                 <th>검토 단계</th>
                 <th>담당 사업부</th>
-                <th>마감 기한</th>
+                <th>납부 예정일</th>
               </tr>
             </thead>
             <tbody>

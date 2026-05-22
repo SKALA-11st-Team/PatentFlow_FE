@@ -36,8 +36,8 @@ interface ContextFilterConfig {
 }
 
 const sortLabels: Record<SortKey, string> = {
-  DUE_DATE_ASC: "마감 기한 빠른순",
-  DUE_DATE_DESC: "마감 기한 늦은순",
+  DUE_DATE_ASC: "납부 예정일 빠른순",
+  DUE_DATE_DESC: "납부 예정일 늦은순",
   TITLE_ASC: "특허명 가나다순",
   DEPARTMENT_ASC: "사업부명 가나다순",
 };
@@ -391,7 +391,7 @@ export function AdminReviewTargetPage() {
                 ) : null}
                 {shouldShowWorkflowColumn ? <th>검토 단계</th> : null}
                 <th>담당 사업부</th>
-                <th>마감 기한</th>
+                <th>납부 예정일</th>
               </tr>
             </thead>
             <tbody>

@@ -255,7 +255,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta label="관리번호" value={patent.managementNumber} />
           <Meta label="출원번호" value={patent.applicationNumber} />
           <Meta label="등록번호" value={patent.registrationNumber ?? "N/A"} />
-          <Meta label="마감 기한" value={formatShortDate(patent.feeDueDate)} />
+          <Meta label="연차료 납부 예정일" value={formatShortDate(patent.feeDueDate)} />
           <Meta label="관련사업 분야" value={patent.businessArea} />
           <Meta label="관련기술 분야" value={patent.technologyArea} />
           <Meta label="관련제품" value={patent.productName} />
@@ -1278,7 +1278,7 @@ function getAdminActionButtonLabel(workflowStatus: ReviewWorkflowStatus) {
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-05
  * @relatedUI UI-LEGAL-04, UI-BUS-03
- * @description 특허 상세 마감 기한을 yy-mm-dd 형식으로 표시한다.
+ * @description 특허 상세 연차료 납부 예정일을 yy-mm-dd 형식으로 표시한다.
  */
 function formatShortDate(dateText: string) {
   return dateText.slice(2);

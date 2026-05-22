@@ -35,8 +35,8 @@ type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
 
 const sortLabels: Record<SortKey, string> = {
-  DUE_DATE_ASC: "납부 기한 빠른순",
-  DUE_DATE_DESC: "납부 기한 늦은순",
+  DUE_DATE_ASC: "납부 예정일 빠른순",
+  DUE_DATE_DESC: "납부 예정일 늦은순",
   TITLE_ASC: "특허명 가나다순",
 };
 

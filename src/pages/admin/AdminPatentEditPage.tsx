@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getPatentDetail, suggestPatentContextFields, updatePatent } from "../../api/patents";
+import { getClassifications, type ClassificationGroup } from "../../api/settings";
 import { Button } from "../../components/common/Button";
 import { Section } from "../../components/common/Section";
 import { AppLayout } from "../../components/layout/AppLayout";
@@ -22,6 +23,7 @@ export function AdminPatentEditPage() {
   const [loadMessage, setLoadMessage] = useState("특허 정보를 불러오는 중입니다.");
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -55,6 +57,7 @@ export function AdminPatentEditPage() {
     }
 
     loadPatent();
+    getClassifications().then(setClassifications).catch(() => setClassifications([]));
 
     return () => {
       isMounted = false;
@@ -74,6 +77,8 @@ export function AdminPatentEditPage() {
     );
   }
   const currentPatentId = patentId;
+  const businessClassifications = getClassificationValues(classifications, "BUSINESS");
+  const technologyClassifications = getClassificationValues(classifications, "TECHNOLOGY");
 
   async function handleSavePatent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -209,17 +214,23 @@ export function AdminPatentEditPage() {
             </label>
             <label>
               관련사업 분야
-              <input name="businessArea" onChange={handleFormChange} value={form.businessArea} />
+              <input list="edit-business-area-options" name="businessArea" onChange={handleFormChange} value={form.businessArea} />
             </label>
             <label>
               관련기술 분야
-              <input name="technologyArea" onChange={handleFormChange} value={form.technologyArea} />
+              <input list="edit-technology-area-options" name="technologyArea" onChange={handleFormChange} value={form.technologyArea} />
             </label>
             <label>
               관련제품
               <input name="productName" onChange={handleFormChange} value={form.productName} />
             </label>
           </div>
+          <datalist id="edit-business-area-options">
+            {businessClassifications.map((value) => <option key={value} value={value} />)}
+          </datalist>
+          <datalist id="edit-technology-area-options">
+            {technologyClassifications.map((value) => <option key={value} value={value} />)}
+          </datalist>
           <div className="form-actions">
             <Button onClick={() => navigate("/admin/patents")} type="button" variant="secondary">
               목록으로
@@ -233,6 +244,10 @@ export function AdminPatentEditPage() {
       </Section>
     </AppLayout>
   );
+}
+
+function getClassificationValues(classifications: ClassificationGroup[], type: ClassificationGroup["type"]) {
+  return classifications.find((group) => group.type === type)?.values ?? [];
 }
 
 /**

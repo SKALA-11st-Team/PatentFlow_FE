@@ -2990,6 +2990,14 @@ tbody tr:hover {
   border-top: 1px solid var(--color-border);
 }
 
+.annual-fee-adjust-form {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) minmax(160px, 1fr) auto;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: 420px;
+}
+
 .business-review-workbench {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
