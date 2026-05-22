@@ -357,7 +357,6 @@ function getReviewReason(status: ReviewWorkflowStatus, feeDueDate: string) {
   const reasonMap: Record<ReviewWorkflowStatus, string> = {
     NOT_IN_REVIEW_QUARTER: "이번 분기 연차료 납부 대상이 아닙니다.",
     REVIEW_QUARTER_STARTED: `이번 분기 연차료 납부 대상이며 납부 기한은 ${feeDueDate}입니다.`,
-    REPORT_GENERATED: "AI 특허 평가 레포트가 생성되어 사업부 검토 요청 준비가 필요합니다.",
     MAIL_READY: "AI 특허 평가 레포트가 생성되었고 관리자 메일 발송 명령이 필요합니다.",
     WAITING_BUSINESS_RESPONSE: "메일과 레포트를 발송했고 사업부서 담당자의 응답을 기다리고 있습니다.",
     BUSINESS_RESPONSE_RECEIVED: "사업부서 담당자의 응답이 제출되어 최종 처리 결과 입력이 필요합니다.",

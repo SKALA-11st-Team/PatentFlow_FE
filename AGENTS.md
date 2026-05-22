@@ -483,7 +483,6 @@ const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "SOLD", "EXPIRED"] as 
 const REVIEW_WORKFLOW_STATUSES = [
   "NOT_IN_REVIEW_QUARTER",
   "REVIEW_QUARTER_STARTED",
-  "REPORT_GENERATED",
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
@@ -508,9 +507,8 @@ Current Korean display labels:
 | PatentLifecycleStatus | `SOLD` | 매각 완료 |
 | PatentLifecycleStatus | `EXPIRED` | 소멸 |
 | ReviewWorkflowStatus | `NOT_IN_REVIEW_QUARTER` | 검토 분기 아님 |
-| ReviewWorkflowStatus | `REVIEW_QUARTER_STARTED` | 이번 분기 납부 대상 |
-| ReviewWorkflowStatus | `REPORT_GENERATED` | 레포트 생성 완료 |
-| ReviewWorkflowStatus | `MAIL_READY` | 메일 발송 대기 |
+| ReviewWorkflowStatus | `REVIEW_QUARTER_STARTED` | 리포트 생성 대기 |
+| ReviewWorkflowStatus | `MAIL_READY` | 레포트 생성 완료 · 메일 발송 대기 |
 | ReviewWorkflowStatus | `WAITING_BUSINESS_RESPONSE` | 사업부 응답 대기 |
 | ReviewWorkflowStatus | `BUSINESS_RESPONSE_RECEIVED` | 사업부 응답 완료 |
 | ReviewWorkflowStatus | `LEGAL_ACTION_RECORDED` | 처리 완료 |
@@ -542,6 +540,10 @@ const REVIEW_WORKFLOW_PROGRESS_STATUSES = [
 ```
 
 Current filter options are `ALL` plus every `REVIEW_WORKFLOW_STATUSES` value.
+
+`REPORT_GENERATED` is intentionally not used as a current frontend/backend workflow status.
+When AI report generation succeeds, the patent moves directly from `REVIEW_QUARTER_STARTED` to `MAIL_READY`.
+Backend APIs should not return `REPORT_GENERATED`; migrate or map any legacy `REPORT_GENERATED` data to `MAIL_READY`.
 
 Current badge tone values are:
 
