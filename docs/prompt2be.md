@@ -42,6 +42,26 @@ AI 평가 레포트 생성이 완료되면 특허 workflow 상태는 `REPORT_GEN
 7. 사업부 의견 제출 성공 후 상태는 `BUSINESS_RESPONSE_RECEIVED`로 변경해 주세요.
 8. 법무 최종 처리 결과 저장 후 상태는 `LEGAL_ACTION_RECORDED`로 변경해 주세요.
 
+## 추가 BE 구현 요청
+
+1. 검토 대상 목록은 분기(`Q1`~`Q4`)와 직접 날짜 범위로 조회할 수 있게 해 주세요.
+2. 분기 범위는 Q1 `1.1~3.last`, Q2 `4.1~6.last`, Q3 `7.1~9.last`, Q4 `10.1~12.last`입니다.
+3. 사업부/메일 화면에 노출되는 기한은 `회신 기한`이며, 관리자 내부용 `실제 마감 기한`과 별도 필드로 내려 주세요.
+4. 관리자가 설정한 `메일 발송 기준 개월 수`를 저장하고, 각 분기별 예상 메일 발송일을 API 응답에 포함해 주세요. 기본값은 2개월 전입니다.
+5. 메일 미리보기, 발송 요청, 발송 이력에는 특허 원문 URL을 포함해 주세요.
+6. 국가별 특허 조회와 연차료 납부 예정일 시각화가 가능하도록 국가, 국내/해외 구분, 기준 납부일, 조정 납부일, 조정 사유/이력 필드를 내려 주세요.
+7. 사업 분류와 기술 분류는 관리자 설정에서 추가/삭제/수정 가능한 기준값 API로 제공해 주세요.
+8. `기존 사업`은 종료된 사업이라는 의미로 취급해 주세요.
+
+## 추가 API 제안
+
+| API | Method | Description | Related FR |
+|---|---|---|---|
+| `/patents/review-targets` | GET | 분기/날짜 범위/국가 기준 검토 대상 조회 | `FR-LEGAL-22`, `FR-LEGAL-24` |
+| `/settings/review-schedule` | GET/PATCH | 회신 기한, 메일 발송 기준 개월 수, 분기별 예상 발송일 설정/조회 | `FR-LEGAL-23` |
+| `/settings/classifications` | GET/POST/PATCH/DELETE | 사업 분류 및 기술 분류 기준값 관리 | `FR-LEGAL-25` |
+| `/annual-fees/schedule` | GET/PATCH | 국가별 미래 연차료 납부 예정일 조회 및 조정 | `FR-LEGAL-24` |
+
 ## API 호환성 주의
 
 - FE 필터 옵션은 `ALL` 또는 현재 6개 workflow status만 사용합니다.

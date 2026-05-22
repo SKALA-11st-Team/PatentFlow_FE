@@ -34,6 +34,33 @@ Review target identification
 → Abandoned patent sales-candidate management
 ```
 
+## Quarter, Deadline, And Mailing Domain Rules
+
+Use these rules consistently in frontend labels, filters, mock data, mailing previews, and API client contracts.
+
+- Quarter ranges are fixed by calendar month:
+  - Q1: January 1 through the last day of March
+  - Q2: April 1 through the last day of June
+  - Q3: July 1 through the last day of September
+  - Q4: October 1 through the last day of December
+- A quarter query includes every patent whose relevant annual-fee/review date falls inside that quarter.
+- UI must support both quarter filters (`Q1` through `Q4`) and explicit date-range filters where the screen exposes review-target search.
+- Business-facing copy and mailing copy must use `회신 기한`, not `마감 기한`.
+- `회신 기한` is a business-response due date configured in bulk by administrators. It is separate from the internal/legal `실제 마감 기한` seen by administrators.
+- Review-request mail is sent by default two months before the quarter start date:
+  - Q1 patents: November 1 of the previous year
+  - Q2 patents: February 1
+  - Q3 patents: May 1
+  - Q4 patents: August 1
+- The administrator settings UI must allow the lead time in months to be changed, and must show the resulting send date for each quarter after the setting is applied.
+- Review-request mail previews and sent-mail history must include the patent original-document URL.
+- FE 설정/연동 관련 화면과 문구에서는 `OAuth`라는 표현을 쓰지 말고, 반드시 `Google 계정 연동`으로만 표기한다.
+- Country-specific patent dashboards must distinguish domestic patents from overseas patents because annual-fee payment rules differ by country.
+- Future annual-fee payment dates should be visualized and adjustable in administrator UI, with enough data in mocks/API contracts to show original date, adjusted date, country, and adjustment reason.
+- 특허 연차료의 기준일은 등록일이 아니라 출원일이다. 연차료 계산, 안내 문구, 필터, mock data, API contract 모두 이 기준을 따른다.
+- In business classification, `기존 사업` means an ended business, not an existing/active business.
+- Business classification and technology classification must be administrator-editable: add, delete, rename, and reuse across patent edit forms, filters, dashboards, and AI report displays.
+
 ## Frontend Scope
 
 The frontend should support the following user groups.
@@ -194,6 +221,10 @@ Frontend work should reflect these fixed requirements.
 - FR-LEGAL-19: 실제 법무 처리 결과 저장 및 추적
 - FR-LEGAL-20: 최종 판단 수정 및 취소
 - FR-LEGAL-21: 평가 기준 조회 및 수정
+- FR-LEGAL-22: 분기 및 날짜 범위 기반 검토 대상 조회
+- FR-LEGAL-23: 회신 기한 및 분기별 검토 요청 메일 발송 기준 설정
+- FR-LEGAL-24: 국가별 특허 조회 및 미래 연차료 납부 예정일 시각화/조정
+- FR-LEGAL-25: 사업 분류 및 기술 분류 기준값 관리
 
 ### Business Requirements
 
@@ -201,6 +232,7 @@ Frontend work should reflect these fixed requirements.
 - FR-BUS-02: 내부 문서 업로드 기반 재평가 요청 및 문서 관리
 - FR-BUS-03: AI 평가 결과 피드백 저장
 - FR-BUS-04: 사업부 평가 체크리스트 조회
+- FR-BUS-05: 기존 의사결정 기록과 AI 레포트를 병렬 참고하며 사업부 의견 입력
 
 ### Common Requirements
 
@@ -725,6 +757,11 @@ Use this mapping as the default traceability guide.
 | FR-LEGAL-20 | 최종 판단 수정 및 취소 | `UI-LEGAL-04` |
 | FR-LEGAL-21 | 평가 기준 조회 및 수정 | `UI-LEGAL-07` |
 | FR-BUS-04 | 사업부 평가 체크리스트 조회 | `UI-BUS-03` |
+| FR-LEGAL-22 | 분기 및 날짜 범위 기반 검토 대상 조회 | `UI-LEGAL-01`, `UI-COM-02`, `UI-BUS-01` |
+| FR-LEGAL-23 | 회신 기한 및 분기별 검토 요청 메일 발송 기준 설정 | `UI-LEGAL-05`, `UI-LEGAL-07` |
+| FR-LEGAL-24 | 국가별 특허 조회 및 미래 연차료 납부 예정일 시각화/조정 | `UI-LEGAL-01`, `UI-LEGAL-02`, `UI-LEGAL-07` |
+| FR-LEGAL-25 | 사업 분류 및 기술 분류 기준값 관리 | `UI-LEGAL-03`, `UI-LEGAL-07` |
+| FR-BUS-05 | 기존 의사결정 기록과 AI 레포트를 병렬 참고하며 사업부 의견 입력 | `UI-BUS-02`, `UI-BUS-03`, `UI-BUS-05` |
 
 ### Important
 

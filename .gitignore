@@ -38,5 +38,6 @@ coverage/
 # Project docs
 docs/*
 !docs/UI.md
+!docs/add_db_cleanup_handoff.md
 !docs/prompt2be.md
 private/
