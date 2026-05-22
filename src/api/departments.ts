@@ -38,6 +38,23 @@ export async function createDepartment(departmentId: string, departmentName: str
   return res.data!;
 }
 
+/**
+ * @relatedFR FR-003, FR-004
+ * @relatedUI UI-LEGAL-08
+ * @description 관리자 설정 화면에서 사업부 이름을 수정한다.
+ */
+export async function updateDepartment(departmentId: string, departmentName: string): Promise<Department> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("백엔드 API가 비활성화되어 있습니다.");
+  }
+  const res = await requestJson<ApiEnvelope<Department>>(`/admin/departments/${departmentId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ departmentName }),
+  });
+  return res.data!;
+}
+
 export async function deleteDepartment(departmentId: string): Promise<void> {
   if (!isBackendApiEnabled()) {
     throw new Error("백엔드 API가 비활성화되어 있습니다.");

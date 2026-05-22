@@ -18,6 +18,8 @@ export interface CreateUserRequest {
   displayName: string;
 }
 
+export type UpdateUserRequest = CreateUserRequest;
+
 export interface ResetPasswordResult {
   userId: string;
   username: string;
@@ -40,6 +42,20 @@ export async function createUser(request: CreateUserRequest): Promise<UserItem> 
 
 export async function deleteUser(userId: string): Promise<void> {
   await requestJson<ApiEnvelope<null>>(`/admin/users/${userId}`, { method: "DELETE" });
+}
+
+/**
+ * @relatedFR FR-003, FR-004
+ * @relatedUI UI-LEGAL-08
+ * @description 관리자 설정 화면에서 사용자 계정 정보를 수정한다.
+ */
+export async function updateUser(userId: string, request: UpdateUserRequest): Promise<UserItem> {
+  const res = await requestJson<ApiEnvelope<UserItem>>(`/admin/users/${userId}`, {
+    method: "PUT",
+    body: JSON.stringify(request),
+  });
+  if (!res.data) throw new Error("계정 수정 응답이 비어 있습니다.");
+  return res.data;
 }
 
 export async function resetUserPassword(userId: string): Promise<ResetPasswordResult> {
