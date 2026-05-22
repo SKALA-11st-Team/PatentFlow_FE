@@ -47,6 +47,7 @@ export interface PatentListItem {
   currentRecommendation: Recommendation;
   businessOpinionDecision: BusinessOpinionDecision | null;
   legalActionResult: LegalActionResult | null;
+  originalPatentUrl?: string | null;
 }
 
 export interface PatentSummary {

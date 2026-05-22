@@ -15,6 +15,7 @@ export interface DepartmentRecipientMapping {
 export interface BusinessReviewMailPatentSummary {
   patentId: string;
   managementNumber: string;
+  originalPatentUrl?: string | null;
   title: string;
 }
 

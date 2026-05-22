@@ -29,10 +29,7 @@ export function createBusinessChecklistDraft(patent: PatentDetail): BusinessChec
     qualitativeMemo: "",
     finalOpinion:
       patent.businessOpinion.opinion ??
-      (patent.aiEvaluationReport.recommendation === "ABANDON" ||
-      patent.aiEvaluationReport.recommendation === "SALES_CANDIDATE"
-        ? "ABANDON"
-        : "MAINTAIN"),
+      (patent.aiEvaluationReport.recommendation === "ABANDON" ? "ABANDON" : "MAINTAIN"),
     finalReason: patent.businessOpinion.comment ?? "",
     additionalNeeds: patent.aiEvaluationReport.missingInformation.join(", "),
   };

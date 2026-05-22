@@ -6,7 +6,7 @@
 
 export type StatusTone = "neutral" | "primary" | "warning" | "success" | "danger";
 
-export const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "SOLD", "EXPIRED"] as const;
+export const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "EXPIRED"] as const;
 
 export type PatentLifecycleStatus = (typeof PATENT_LIFECYCLE_STATUSES)[number];
 
@@ -21,7 +21,7 @@ export const REVIEW_WORKFLOW_STATUSES = [
 
 export type ReviewWorkflowStatus = (typeof REVIEW_WORKFLOW_STATUSES)[number];
 
-export const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "SALES_CANDIDATE", "HOLD"] as const;
+export const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "HOLD"] as const;
 
 export type Recommendation = (typeof RECOMMENDATIONS)[number];
 
@@ -31,7 +31,7 @@ export type BusinessOpinionDecision = (typeof BUSINESS_OPINION_DECISIONS)[number
 
 export const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED"] as const;
 
-export type LegalActionResult = (typeof LEGAL_ACTION_RESULTS)[number] | "SOLD";
+export type LegalActionResult = (typeof LEGAL_ACTION_RESULTS)[number];
 
 export const EVALUATION_CATEGORIES = [
   "RIGHTS",
@@ -114,7 +114,6 @@ export const PATENT_TECHNOLOGY_AREA_CATEGORIES = Array.from(
 export const lifecycleStatusLabels: Record<PatentLifecycleStatus, string> = {
   ACTIVE: "유지",
   ABANDONED: "포기",
-  SOLD: "매각",
   EXPIRED: "소멸",
 };
 
@@ -140,7 +139,6 @@ export const recommendationLabels: Record<Recommendation, string> = {
   MAINTAIN: "유지 권고",
   REVIEW_AGAIN: "추가 정보 필요",
   ABANDON: "포기 검토",
-  SALES_CANDIDATE: "포기 검토",
   HOLD: "추가 정보 필요",
 };
 
@@ -148,7 +146,6 @@ export const recommendationTone: Record<Recommendation, StatusTone> = {
   MAINTAIN: "success",
   REVIEW_AGAIN: "warning",
   ABANDON: "danger",
-  SALES_CANDIDATE: "danger",
   HOLD: "warning",
 };
 
@@ -179,8 +176,8 @@ export const RECOMMENDATION_FILTER_OPTIONS = [
   },
   {
     label: recommendationLabels.ABANDON,
-    recommendations: ["ABANDON", "SALES_CANDIDATE"],
-    value: "ABANDON_OR_SALES_CANDIDATE",
+    recommendations: ["ABANDON"],
+    value: "ABANDON",
   },
 ] as const satisfies readonly {
   label: string;
@@ -223,7 +220,6 @@ export function getBusinessOpinionTone(opinion: BusinessOpinionDecision) {
 export const legalActionResultLabels: Record<LegalActionResult, string> = {
   MAINTAINED: "유지",
   ABANDONED: "포기",
-  SOLD: "포기",
 };
 
 export const evaluationCategoryLabels: Record<EvaluationCategory, string> = {
@@ -262,7 +258,7 @@ export const workflowBottleneckDescriptions: Record<ReviewWorkflowStatus, string
   REVIEW_QUARTER_STARTED: "사업부를 배정하고 AI 레포트를 생성해야 합니다.",
   MAIL_READY: "관리자가 사업부 검토 요청 메일을 발송해야 합니다.",
   WAITING_BUSINESS_RESPONSE: "사업부 회신 독려와 제출 여부 확인이 필요합니다.",
-  BUSINESS_RESPONSE_RECEIVED: "제출된 사업부 의견을 확인하고 유지/포기/매각 처리 결과 입력이 필요합니다.",
+  BUSINESS_RESPONSE_RECEIVED: "제출된 사업부 의견을 확인하고 유지/포기 처리 결과 입력이 필요합니다.",
   LEGAL_ACTION_RECORDED: "이번 분기 처리 workflow가 완료되었습니다.",
 };
 

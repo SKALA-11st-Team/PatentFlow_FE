@@ -30,9 +30,8 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
         { label: "대시보드", to: "/admin/dashboard" },
         { label: "특허관리", to: "/admin/patents" },
         { label: "AI 레포트 메일 발송", to: "/admin/mailing" },
-        { label: "매각 후보", to: "/admin/sales-candidates" },
-        { label: "설정", to: "/admin/settings" },
         { label: "사업부/계정 관리", to: "/admin/users" },
+        { label: "설정", to: "/admin/settings" },
       ]
     : [
         { label: "대시보드", to: "/business/dashboard" },

@@ -346,8 +346,13 @@ export function AdminUsersPage() {
                 <h2>{editingDepartmentId ? "사업부 수정" : "사업부 추가"}</h2>
                 <p className="form-helper-text">사업부명은 목록과 메일 수신자 매핑에 공통으로 사용됩니다.</p>
               </div>
-              <button className="modal-close-button" onClick={closeDepartmentModal} type="button">
-                닫기
+              <button
+                aria-label={editingDepartmentId ? "사업부 수정 닫기" : "사업부 추가 닫기"}
+                className="modal-close-button"
+                onClick={closeDepartmentModal}
+                type="button"
+              >
+                ×
               </button>
             </div>
             <div className="settings-modal-grid">
@@ -393,8 +398,13 @@ export function AdminUsersPage() {
                 <h2>{editingUserId ? "계정 수정" : "계정 추가"}</h2>
                 <p className="form-helper-text">계정 정보 수정은 모달에서 한 번에 처리합니다.</p>
               </div>
-              <button className="modal-close-button" onClick={closeUserModal} type="button">
-                닫기
+              <button
+                aria-label={editingUserId ? "계정 수정 닫기" : "계정 추가 닫기"}
+                className="modal-close-button"
+                onClick={closeUserModal}
+                type="button"
+              >
+                ×
               </button>
             </div>
             <div className="settings-modal-grid settings-modal-grid-two-column">

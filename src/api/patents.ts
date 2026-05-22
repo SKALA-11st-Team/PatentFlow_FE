@@ -85,6 +85,7 @@ type BackendPatentListItem = Omit<
   | "registrationDate"
   | "expectedExpirationDate"
   | "feeDueDate"
+  | "originalPatentUrl"
 > & {
   applicationNumber: string | null;
   draftTitle: string | null;
@@ -97,6 +98,7 @@ type BackendPatentListItem = Omit<
   registrationDate: string | null;
   expectedExpirationDate: string | null;
   feeDueDate: string | null;
+  originalPatentUrl?: string | null;
 };
 
 interface BackendPatentDetail extends BackendPatentListItem {
@@ -468,7 +470,17 @@ function mapBackendPatentListItem(patent: BackendPatentListItem): PatentListItem
     registrationDate: patent.registrationDate ?? "",
     expectedExpirationDate: patent.expectedExpirationDate ?? "",
     feeDueDate: patent.feeDueDate ?? "",
+    originalPatentUrl: patent.originalPatentUrl ?? getOriginalPatentUrl(patent),
   };
+}
+
+function getOriginalPatentUrl(patent: Pick<BackendPatentListItem, "applicationNumber" | "country" | "registrationNumber">) {
+  const number = (patent.registrationNumber || patent.applicationNumber || "").replace(/[^0-9A-Za-z]/g, "");
+  if (!number) {
+    return null;
+  }
+
+  return `https://patents.google.com/patent/${(patent.country || "KR").toUpperCase()}${number}/ko`;
 }
 
 /**
@@ -710,7 +722,6 @@ function getGeneratedMockRecommendationText(recommendation: Recommendation) {
     HOLD: "AI 평가 결과 일부 근거가 부족해 추가 확인 후 판단하는 것이 적절합니다.",
     MAINTAIN: "AI 평가 결과 권리성, 기술성, 사업 연계성 근거가 확인되어 유지 검토가 가능합니다.",
     REVIEW_AGAIN: "AI 평가 결과 일부 평가 근거 보완 후 다시 검토하는 것이 적절합니다.",
-    SALES_CANDIDATE: "AI 평가 결과 내부 활용도는 낮지만 외부 활용 가능성이 있어 매각 후보 검토가 필요합니다.",
   };
 
   return textMap[recommendation];
@@ -924,10 +935,6 @@ function createFallbackFinalDecisionResult(patentId: string, payload: FinalDecis
 function getLifecycleStatusByLegalAction(legalActionResult: LegalActionResult): PatentLifecycleStatus {
   if (legalActionResult === "ABANDONED") {
     return "ABANDONED";
-  }
-
-  if (legalActionResult === "SOLD") {
-    return "SOLD";
   }
 
   return "ACTIVE";

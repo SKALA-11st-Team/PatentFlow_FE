@@ -346,7 +346,7 @@ function getSubmissionLogs(
     title: patent.legalActionResult ? "법적 액션 반영" : "법적 액션 대기",
     description: patent.legalActionResult
       ? `${legalActionResultLabels[patent.legalActionResult]} 결과가 기록되었습니다.`
-      : "유지, 포기, 매각 등 법적 액션 결과가 입력됩니다.",
+      : "유지 또는 포기 법적 액션 결과가 입력됩니다.",
     actorName: "관리자",
     createdAt: "2026-05-01T17:30:00+09:00",
     status: patent.legalActionResult ? "completed" : "pending",

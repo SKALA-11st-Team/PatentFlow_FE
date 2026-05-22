@@ -27,6 +27,7 @@ import type { DepartmentRecipientMapping } from "../../types/mailing";
 import { matchesReviewTargetScope, type ReviewTargetScope } from "../../utils/reviewWorkflow";
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
 type ContextFilterKey = "businessArea" | "technologyArea" | "productName";
+type QuarterFilter = "ALL" | "Q1" | "Q2" | "Q3" | "Q4";
 
 interface ContextFilterConfig {
   key: ContextFilterKey;
@@ -76,6 +77,9 @@ export function AdminReviewTargetPage() {
   const [contextFilterKey, setContextFilterKey] = useState<ContextFilterKey>(initialContextFilter.key);
   const [contextFilterValue, setContextFilterValue] = useState(initialContextFilter.value);
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
+  const [quarterFilter, setQuarterFilter] = useState<QuarterFilter>("ALL");
+  const [countryFilter, setCountryFilter] = useState("ALL");
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [selectedPatentIds, setSelectedPatentIds] = useState<string[]>([]);
   const [actionMessage, setActionMessage] = useState("");
@@ -100,8 +104,12 @@ export function AdminReviewTargetPage() {
         contextFilterValue,
         scope,
         sortKey,
+        quarterFilter,
+        countryFilter,
+        dateRange.from,
+        dateRange.to,
       ),
-    [contextFilterKey, contextFilterValue, patentList, scope, searchKeyword, sortKey, workflowFilter],
+    [contextFilterKey, contextFilterValue, countryFilter, dateRange.from, dateRange.to, patentList, quarterFilter, scope, searchKeyword, sortKey, workflowFilter],
   );
   const {
     currentPage,
@@ -124,6 +132,7 @@ export function AdminReviewTargetPage() {
   const canSelectRows = isActionableMailList;
   const shouldShowWorkflowColumn = workflowFilter === "ALL";
   const workflowFilterOptions = getReviewTargetWorkflowFilterOptions(scope);
+  const countryOptions = useMemo(() => getCountryOptions(patentList), [patentList]);
   const selectablePatentIds = useMemo(() => displayedPatents.map((patent) => patent.patentId), [displayedPatents]);
   const areAllRowsSelected =
     selectablePatentIds.length > 0 && selectablePatentIds.every((patentId) => selectedPatentIds.includes(patentId));
@@ -319,6 +328,33 @@ export function AdminReviewTargetPage() {
               />
             </label>
             <label>
+              <span>분기</span>
+              <select onChange={(event) => setQuarterFilter(event.target.value as QuarterFilter)} value={quarterFilter}>
+                <option value="ALL">전체</option>
+                <option value="Q1">1분기</option>
+                <option value="Q2">2분기</option>
+                <option value="Q3">3분기</option>
+                <option value="Q4">4분기</option>
+              </select>
+            </label>
+            <label>
+              <span>국가</span>
+              <select onChange={(event) => setCountryFilter(event.target.value)} value={countryFilter}>
+                <option value="ALL">전체</option>
+                {countryOptions.map((country) => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>조회 시작일</span>
+              <input onChange={(event) => setDateRange((range) => ({ ...range, from: event.target.value }))} type="date" value={dateRange.from} />
+            </label>
+            <label>
+              <span>조회 종료일</span>
+              <input onChange={(event) => setDateRange((range) => ({ ...range, to: event.target.value }))} type="date" value={dateRange.to} />
+            </label>
+            <label>
               <span>정렬</span>
               <select onChange={(event) => setSortKey(event.target.value as SortKey)} value={sortKey}>
                 {Object.entries(sortLabels).map(([value, label]) => (
@@ -507,6 +543,10 @@ function getFilteredAndSortedReviewTargets(
   contextFilterValue: string,
   scope: ReviewTargetScope,
   sortKey: SortKey,
+  quarterFilter: QuarterFilter,
+  countryFilter: string,
+  dateFrom: string,
+  dateTo: string,
 ) {
   const normalizedKeyword = searchKeyword.trim().toLowerCase();
   const contextConfig = getContextFilterConfig(contextFilterKey);
@@ -528,10 +568,24 @@ function getFilteredAndSortedReviewTargets(
       const matchesContext =
         contextFilterValue === "ALL" || getDisplayValue(contextConfig.getValue(patent)) === contextFilterValue;
       const matchesScope = matchesReviewTargetScope(patent.reviewWorkflowStatus, scope);
+      const matchesQuarter = quarterFilter === "ALL" || getQuarterFromDate(patent.feeDueDate) === quarterFilter;
+      const matchesCountry = countryFilter === "ALL" || patent.country === countryFilter;
+      const matchesDateFrom = !dateFrom || patent.feeDueDate >= dateFrom;
+      const matchesDateTo = !dateTo || patent.feeDueDate <= dateTo;
 
-      return matchesKeyword && matchesWorkflow && matchesContext && matchesScope;
+      return matchesKeyword && matchesWorkflow && matchesContext && matchesScope && matchesQuarter && matchesCountry && matchesDateFrom && matchesDateTo;
     })
     .sort((firstPatent, secondPatent) => comparePatents(firstPatent, secondPatent, sortKey));
+}
+
+function getQuarterFromDate(dateValue: string): QuarterFilter | null {
+  const month = Number(dateValue.split("-")[1]);
+  if (!month) return null;
+  return `Q${Math.ceil(month / 3)}` as QuarterFilter;
+}
+
+function getCountryOptions(patents: PatentListItem[]) {
+  return Array.from(new Set(patents.map((patent) => patent.country).filter(Boolean))).sort();
 }
 
 /**

@@ -42,7 +42,8 @@ export function createBusinessReviewMailDraftFromPatents(
     `${index + 1}. ${patent.managementNumber} · ${patent.title}`,
     `   - 관련 사업: ${getDisplayValue(patent.businessArea)}`,
     `   - 관련 기술: ${getDisplayValue(patent.technologyArea)}`,
-    `   - 납부 기한: ${patent.feeDueDate}`,
+    `   - 연차료 납부 예정일: ${patent.feeDueDate}`,
+    `   - 특허 원문: ${getOriginalPatentUrl(patent)}`,
   ]);
 
   return {
@@ -53,6 +54,7 @@ export function createBusinessReviewMailDraftFromPatents(
       "",
       ...patentLines,
       "",
+      "회신 기한까지 사업부 의견을 제출해 주세요.",
       "각 특허의 AI 특허 평가 레포트와 평가 근거를 확인한 뒤 유지 또는 포기 의견을 제출해 주세요.",
       "접속 URL: https://patentflow.example.com (실제 URL로 변경 필요)",
     ].join("\n"),
@@ -127,6 +129,7 @@ export function toBusinessReviewMailSendDraft(draft: BusinessReviewMailDraft): B
     ccEmails: draft.ccEmails.map((email) => email.trim()).filter(Boolean),
     patents: draft.patents.map((patent) => ({
       managementNumber: patent.managementNumber,
+      originalPatentUrl: getOriginalPatentUrl(patent),
       patentId: patent.patentId,
       title: patent.title,
     })),
@@ -145,4 +148,18 @@ function getDisplayValue(value: string) {
   const normalizedValue = value.trim();
 
   return normalizedValue && normalizedValue !== "N/A" ? normalizedValue : "미분류";
+}
+
+function getOriginalPatentUrl(patent: PatentListItem) {
+  if (patent.originalPatentUrl?.trim()) {
+    return patent.originalPatentUrl.trim();
+  }
+
+  const number = (patent.registrationNumber || patent.applicationNumber || "").replace(/[^0-9A-Za-z]/g, "");
+  if (!number) {
+    return "원문 URL 미등록";
+  }
+
+  const country = (patent.country || "KR").trim().toUpperCase();
+  return `https://patents.google.com/patent/${country}${number}/ko`;
 }

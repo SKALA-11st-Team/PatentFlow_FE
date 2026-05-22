@@ -9,7 +9,6 @@ import { AdminPatentDetailPage } from "./pages/admin/AdminPatentDetailPage";
 import { AdminPatentEditPage } from "./pages/admin/AdminPatentEditPage";
 import { AdminPatentListPage } from "./pages/admin/AdminPatentListPage";
 import { AdminReviewTargetPage } from "./pages/admin/AdminReviewTargetPage";
-import { AdminSalesCandidatePage } from "./pages/admin/AdminSalesCandidatePage";
 import { AdminSettingsPage } from "./pages/admin/AdminSettingsPage";
 import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { BusinessDashboardPage } from "./pages/business/BusinessDashboardPage";
@@ -86,7 +85,6 @@ const router = createBrowserRouter([
   { path: "/admin/patents", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentListPage /></ProtectedRoute> },
   { path: "/admin/patents/:patentId/edit", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentEditPage /></ProtectedRoute> },
   { path: "/admin/mailing", element: <ProtectedRoute allowedRole="ADMIN"><AdminMailingPage /></ProtectedRoute> },
-  { path: "/admin/sales-candidates", element: <ProtectedRoute allowedRole="ADMIN"><AdminSalesCandidatePage /></ProtectedRoute> },
   { path: "/admin/settings", element: <ProtectedRoute allowedRole="ADMIN"><AdminSettingsPage /></ProtectedRoute> },
   { path: "/admin/users", element: <ProtectedRoute allowedRole="ADMIN"><AdminUsersPage /></ProtectedRoute> },
   { path: "/admin/patents/:patentId", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentDetailPage /></ProtectedRoute> },

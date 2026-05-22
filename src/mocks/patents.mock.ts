@@ -218,6 +218,7 @@ export const patents: PatentListItem[] = patentDetails.map(
     currentRecommendation,
     businessOpinionDecision,
     legalActionResult,
+    originalPatentUrl,
   }) => ({
     patentId,
     managementNumber,
@@ -242,6 +243,7 @@ export const patents: PatentListItem[] = patentDetails.map(
     currentRecommendation,
     businessOpinionDecision,
     legalActionResult,
+    originalPatentUrl,
   }),
 );
 
@@ -277,13 +279,14 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
     expectedExpirationDate: row.expectedExpirationDate,
     departmentId: "",
     departmentName: "",
-    lifecycleStatus: legalActionResult === "SOLD" ? "SOLD" : legalActionResult === "ABANDONED" ? "ABANDONED" : "ACTIVE",
+    lifecycleStatus: legalActionResult === "ABANDONED" ? "ABANDONED" : "ACTIVE",
     reviewWorkflowStatus,
     feeDueDate,
     reviewReason: getReviewReason(reviewWorkflowStatus, feeDueDate),
     currentRecommendation: recommendation,
     businessOpinionDecision,
     legalActionResult,
+    originalPatentUrl: getOriginalPatentUrl(row),
     summary: generatedSummary ?? {
       summaryText: `${title}은(는) ${businessArea} 분야의 ${technologyArea} 특허입니다. ${productName ? `관련 제품은 ${productName}입니다.` : "관련 제품 정보는 비어 있습니다."}`,
       problemSolved: `${technologyArea} 영역에서 ${productName || "관련 제품"}의 운영, 성능, 관리 효율을 높이기 위한 문제를 다룹니다.`,
@@ -309,6 +312,14 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
       submittedAt: businessOpinionDecision ? "2026-05-01T14:20:00+09:00" : null,
     },
   };
+}
+
+function getOriginalPatentUrl(row: SkaxPatentRow) {
+  const number = (row.registrationNumber || row.applicationNumber || "").replace(/[^0-9A-Za-z]/g, "");
+  if (!number) {
+    return null;
+  }
+  return `https://patents.google.com/patent/${(row.country || "KR").toUpperCase()}${number}/ko`;
 }
 
 
@@ -367,7 +378,7 @@ function getReviewReason(status: ReviewWorkflowStatus, feeDueDate: string) {
 
 function getRecommendation(row: SkaxPatentRow, status: ReviewWorkflowStatus, index: number): Recommendation {
   if (status === "LEGAL_ACTION_RECORDED" && index % 3 === 0) {
-    return "SALES_CANDIDATE";
+    return "ABANDON";
   }
 
   if (!row.productName || row.productName === "해당사항없음") {
@@ -398,7 +409,7 @@ function getBusinessOpinion(
     return null;
   }
 
-  return recommendation === "ABANDON" || recommendation === "SALES_CANDIDATE" ? "ABANDON" : "MAINTAIN";
+  return recommendation === "ABANDON" ? "ABANDON" : "MAINTAIN";
 }
 
 function getLegalActionResult(
@@ -407,10 +418,6 @@ function getLegalActionResult(
 ): LegalActionResult | null {
   if (status !== "LEGAL_ACTION_RECORDED") {
     return null;
-  }
-
-  if (recommendation === "SALES_CANDIDATE") {
-    return "SOLD";
   }
 
   if (recommendation === "ABANDON") {
@@ -440,7 +447,6 @@ function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRo
     MAINTAIN: `${productText} 관련 기술성, 권리성, 유지 비용 대비 가치가 확인되어 유지 권고가 타당한 AI 특허 평가 레포트입니다.`,
     REVIEW_AGAIN: "권리성, 기술성, 시장성, 사업 연계성 중 일부 근거 보완이 필요한 AI 특허 평가 레포트입니다.",
     ABANDON: "권리성 또는 사업 연계성 보완 근거가 부족해 포기 검토가 가능한 AI 특허 평가 레포트입니다.",
-    SALES_CANDIDATE: "현재 내부 활용도는 낮고 유지 필요성이 부족해 포기 검토가 필요한 AI 특허 평가 레포트입니다.",
     HOLD: "권리성, 시장성, 사업 연계성 일부 정보가 부족해 추가 정보 확인이 필요한 AI 특허 평가 레포트입니다.",
   };
 
@@ -487,7 +493,6 @@ function getTotalScore(recommendation: Recommendation, index: number) {
     MAINTAIN: 82,
     REVIEW_AGAIN: 68,
     ABANDON: 45,
-    SALES_CANDIDATE: 52,
     HOLD: 60,
   };
 
@@ -497,7 +502,7 @@ function getTotalScore(recommendation: Recommendation, index: number) {
 function getScores(row: SkaxPatentRow, recommendation: Recommendation, index: number) {
   const rightsScore = row.isJointApplication ? 58 : recommendation === "ABANDON" ? 52 : 76 + (index % 8);
   const technologyScore = recommendation === "MAINTAIN" ? 82 : recommendation === "ABANDON" ? 48 : 68;
-  const marketScore = recommendation === "SALES_CANDIDATE" ? 74 : 62 + (index % 14);
+  const marketScore = 62 + (index % 14);
   const businessAlignmentScore =
     !row.productName || row.productName === "해당사항없음"
       ? 55
@@ -544,7 +549,6 @@ function getLegalActionText(result: LegalActionResult) {
   const textMap: Record<LegalActionResult, string> = {
     MAINTAINED: "유지 처리",
     ABANDONED: "포기 처리",
-    SOLD: "매각 처리",
   };
 
   return textMap[result];

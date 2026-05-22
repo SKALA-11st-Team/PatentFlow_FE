@@ -270,7 +270,26 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
             <AdminDecisionSection patentDetail={patent} />
           </>
         ) : (
-          <BusinessOpinionSection isAdmin={isAdmin} />
+          <div className="business-review-workbench">
+            <Section title="검토 참고 자료" description="기존 의사결정 기록과 AI 레포트 요약을 함께 확인합니다.">
+              <div className="business-reference-stack">
+                <div className="report-callout">
+                  <strong>{recommendationLabels[patent.aiEvaluationReport.recommendation]}</strong>
+                  <p>{patent.aiEvaluationReport.recommendationText}</p>
+                </div>
+                <div className="history-mini-list">
+                  {patentHistoryItems.slice(0, 4).map((item) => (
+                    <div key={item.historyId}>
+                      <strong>{item.title}</strong>
+                      <span>{item.description}</span>
+                    </div>
+                  ))}
+                  {patentHistoryItems.length === 0 ? <p className="empty-state">{patentHistoryMessage || "기존 의사결정 기록이 없습니다."}</p> : null}
+                </div>
+              </div>
+            </Section>
+            <BusinessOpinionSection isAdmin={isAdmin} />
+          </div>
         )}
       </div>
 
@@ -690,7 +709,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                       onClick={() => openFinalDecisionModal(patentDetail)}
                       type="button"
                     >
-                      {isApplyingDecision ? "처리 중..." : "매각 완료"}
+                      {isApplyingDecision ? "처리 중..." : "포기 처리"}
                     </Button>
                   ) : (
                     <Button
@@ -727,7 +746,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
   }
 
   function openFinalDecisionModal(patentDetail: PatentDetail) {
-    const derived = patentDetail.businessOpinion.opinion === "ABANDON" ? "SOLD" : "MAINTAINED";
+    const derived = patentDetail.businessOpinion.opinion === "ABANDON" ? "ABANDONED" : "MAINTAINED";
     setLegalActionDraft(patentDetail.legalActionResult ?? derived);
     setDecisionReasonDraft(patentDetail.finalDecisionRecord.reason ?? "");
     setDecisionMessage("");
@@ -829,8 +848,8 @@ function FinalDecisionModal({
     <Modal ariaLabel="최종 처리 결과 입력" className="business-checklist-modal" onClose={onClose}>
       <div className="modal-header">
         <div>
-          <p className="eyebrow">{legalActionResult === "SOLD" ? "매각 처리" : "납부 완료"}</p>
-          <h2>{legalActionResult === "SOLD" ? "매각 완료 확인" : "납부 완료 확인"}</h2>
+          <p className="eyebrow">{legalActionResult === "ABANDONED" ? "포기 처리" : "납부 완료"}</p>
+          <h2>{legalActionResult === "ABANDONED" ? "포기 처리 확인" : "납부 완료 확인"}</h2>
           <p>{patentTitle}</p>
         </div>
         <button aria-label="최종 처리 결과 닫기" className="modal-close-button" onClick={onClose} type="button">
@@ -851,7 +870,7 @@ function FinalDecisionModal({
           취소
         </Button>
         <Button disabled={isSubmitting} onClick={onSubmit} type="button">
-          {isSubmitting ? "처리 중..." : legalActionResult === "SOLD" ? "매각 완료" : "납부 완료"}
+          {isSubmitting ? "처리 중..." : legalActionResult === "ABANDONED" ? "포기 처리" : "납부 완료"}
         </Button>
       </div>
     </Modal>
@@ -1231,7 +1250,7 @@ function getAdminActionDescription(workflowStatus: ReviewWorkflowStatus) {
   if (workflowStatus === "REVIEW_QUARTER_STARTED") return "FastAPI AI 에이전트를 호출해 특허 평가 레포트를 생성합니다.";
   if (workflowStatus === "MAIL_READY") return "AI 특허 평가 레포트가 생성되었습니다. 사업부서 담당자에게 메일을 발송하세요.";
   if (workflowStatus === "WAITING_BUSINESS_RESPONSE") return "사업부서 담당자의 유지/포기 의견 제출을 기다리는 중입니다.";
-  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") return "사업부 의견을 확인한 뒤 유지, 포기, 매각 중 실제 처리 결과를 입력해야 합니다.";
+  if (workflowStatus === "BUSINESS_RESPONSE_RECEIVED") return "사업부 의견을 확인한 뒤 유지 또는 포기 처리 결과를 입력해야 합니다.";
   return "아직 입력된 최종 처리 결과가 없습니다.";
 }
 
