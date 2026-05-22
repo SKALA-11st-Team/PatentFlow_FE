@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { logout } from "../../api/auth";
+import { getStoredAuthUser } from "../../api/authStorage";
 import { getNotifications, updateNotificationReadState } from "../../api/notifications";
 import { BellIcon, NotificationPanel } from "../notification/NotificationPanel";
 import type { AppNotification } from "../../types/notification";
@@ -20,6 +21,8 @@ interface AppLayoutProps {
  */
 export function AppLayout({ children, role, title, description }: AppLayoutProps) {
   const isAdmin = role === "ADMIN";
+  const currentUser = getStoredAuthUser();
+  const businessDepartmentLabel = !isAdmin ? currentUser?.departmentName?.trim() || "사업부" : null;
   const [notificationItems, setNotificationItems] = useState<AppNotification[]>([]);
 
   useEffect(() => {
@@ -81,7 +84,7 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
       <main className="main-content">
         <header className="page-header">
           <div>
-            <p className="eyebrow">{isAdmin ? "Legal팀 워크스페이스" : "사업부서 워크스페이스"}</p>
+            <p className="eyebrow">{isAdmin ? "Legal팀 워크스페이스" : `${businessDepartmentLabel} 워크스페이스`}</p>
             <h1>{title}</h1>
             {description ? <p>{description}</p> : null}
           </div>
@@ -108,6 +111,7 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
             <Link className="logout-link" onClick={logout} to="/login">
               로그아웃
             </Link>
+            {businessDepartmentLabel ? <span className="user-department-label">{businessDepartmentLabel}</span> : null}
           </div>
         </header>
         {children}

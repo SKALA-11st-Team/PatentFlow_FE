@@ -95,7 +95,7 @@ export function BusinessDashboardPage() {
   return (
     <AppLayout
       role="BUSINESS"
-      title="사업부서 대시보드"
+      title="대시보드"
       description="내 사업부에 요청된 특허 검토와 의견 제출 상태를 확인합니다."
     >
       <section className="dashboard-kpi-overview">

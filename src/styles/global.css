@@ -302,6 +302,13 @@ textarea {
   font-weight: 700;
 }
 
+.user-department-label {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .table-action-link {
   background: transparent;
   border: 0;
