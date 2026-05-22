@@ -84,7 +84,7 @@ export function AdminPatentListPage() {
 
   async function handleLookupPatent() {
     if (!form.registrationNumber?.trim()) {
-      setLookupMessage("등록번호를 입력한 뒤 KIPRIS 검색을 실행해 주세요.");
+      setLookupMessage("조회용 등록번호를 입력해 주세요.");
       return;
     }
 
@@ -96,7 +96,7 @@ export function AdminPatentListPage() {
       const result = await lookupPatentBibliographicInfo(form.registrationNumber);
 
       if (!result) {
-        setLookupMessage("KIPRIS와 Google Patents 검색 결과가 없습니다. 등록번호를 확인하거나 확인되는 값만 직접 입력해 주세요.");
+        setLookupMessage("조회 결과가 없습니다. 등록번호를 다시 확인해 주세요.");
         return;
       }
 
@@ -110,8 +110,8 @@ export function AdminPatentListPage() {
       }));
       setLookupMessage(
         result.source === "KIPRIS"
-          ? "KIPRIS 검색 결과를 불러왔습니다."
-          : "KIPRIS 결과가 없어 Google Patents 검색 결과를 불러왔습니다.",
+          ? "KIPRIS 결과를 불러왔습니다."
+          : "외부 검색 결과를 불러왔습니다.",
       );
     } finally {
       setIsLookingUp(false);
@@ -133,7 +133,7 @@ export function AdminPatentListPage() {
     }
 
     if (!form.businessArea.trim() || !form.technologyArea.trim()) {
-      setSaveMessage("관련사업 분야와 관련기술 분야는 사용자가 직접 입력해야 합니다.");
+      setSaveMessage("관련 사업과 기술 분야를 입력해 주세요.");
       return;
     }
 
@@ -170,7 +170,7 @@ export function AdminPatentListPage() {
     setSaveMessage("");
 
     if (!form.title.trim() && !form.productName.trim() && !form.technologyArea.trim()) {
-      setSaveMessage("특허명 또는 관련제품 정보가 있어야 AI 추천을 사용할 수 있습니다.");
+      setSaveMessage("특허명이나 제품 정보가 필요합니다.");
       return;
     }
 
@@ -180,7 +180,7 @@ export function AdminPatentListPage() {
       const suggestion = await suggestPatentContextFields(form);
 
       if (!suggestion) {
-        setSaveMessage("가까운 기존 관련사업/관련기술 분야를 찾지 못했습니다. 직접 입력해 주세요.");
+        setSaveMessage("추천 결과가 없습니다. 직접 입력해 주세요.");
         return;
       }
 
@@ -190,7 +190,7 @@ export function AdminPatentListPage() {
         technologyArea: suggestion.technologyArea,
       }));
       setSaveMessage(
-        `AI 추천: ${suggestion.businessArea} / ${suggestion.technologyArea} (신뢰도 ${suggestion.confidenceText})`,
+        `AI 추천: ${suggestion.businessArea} / ${suggestion.technologyArea} (${suggestion.confidenceText})`,
       );
     } finally {
       setIsSuggestingContext(false);
@@ -217,7 +217,7 @@ export function AdminPatentListPage() {
         description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "")}
         actions={
           <label className="metadata-switch">
-            <span>특허 기본정보 수동 입력</span>
+            <span>수동 입력</span>
             <input
               checked={isManualMetadataEditEnabled}
               onChange={(event) => setIsManualMetadataEditEnabled(event.target.checked)}
@@ -230,7 +230,7 @@ export function AdminPatentListPage() {
         <form className="patent-edit-form" onSubmit={handleSavePatent}>
           <div className="external-lookup-row">
             <label>
-              등록번호
+              조회용 등록번호
               <input
                 name="registrationNumber"
                 onChange={handleFormChange}
@@ -239,14 +239,14 @@ export function AdminPatentListPage() {
               />
             </label>
             <Button disabled={isLookingUp} onClick={handleLookupPatent} type="button">
-              {isLookingUp ? "검색 중" : "KIPRIS 검색"}
+              {isLookingUp ? "조회 중" : "조회"}
             </Button>
           </div>
           {lookupMessage ? <p className="notice patent-form-notice">{lookupMessage}</p> : null}
           <div className="patent-inline-action-row">
             <div>
-              <strong>관련 분야 AI 추천</strong>
-              <span>기존 특허의 관련사업/관련기술 분야 중 가장 가까운 값을 추천합니다.</span>
+              <strong>AI 추천</strong>
+              <span>관련 사업과 기술 분류를 추천합니다.</span>
             </div>
             <Button
               className="btn-small btn-sk-orange"
@@ -316,7 +316,7 @@ export function AdminPatentListPage() {
               />
             </label>
             <label>
-              등록번호
+              저장용 등록번호
               <input
                 name="registrationNumber"
                 onChange={handleFormChange}

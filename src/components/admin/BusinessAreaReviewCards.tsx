@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { PaginationControls } from "../common/PaginationControls";
 import type { PatentListItem } from "../../types/patent";
 
@@ -39,7 +39,7 @@ const contextCardPageSize = 8;
 
 const patentContextDimensions: PatentContextDimension[] = [
   {
-    description: "관련사업 분야 기준으로 보유 특허 수를 확인하고, 선택한 사업의 특허 목록을 조회합니다.",
+    description: "사업 기준으로 특허를 봅니다.",
     getPrimaryValue: (patent) => patent.businessArea,
     getSecondaryValue: (patent) => patent.departmentName,
     key: "BUSINESS_AREA",
@@ -47,7 +47,7 @@ const patentContextDimensions: PatentContextDimension[] = [
     queryParam: "businessArea",
   },
   {
-    description: "관련기술 분야 기준으로 기술 포트폴리오 분포를 확인하고, 선택한 기술의 특허 목록을 조회합니다.",
+    description: "기술 기준으로 특허를 봅니다.",
     getPrimaryValue: (patent) => patent.technologyArea,
     getSecondaryValue: (patent) => patent.businessArea,
     key: "TECHNOLOGY_AREA",
@@ -56,7 +56,7 @@ const patentContextDimensions: PatentContextDimension[] = [
 
   },
   {
-    description: "관련제품 기준으로 제품별 보유 특허 수를 확인하고, 선택한 제품의 특허 목록을 조회합니다.",
+    description: "제품 기준으로 특허를 봅니다.",
     getPrimaryValue: (patent) => patent.productName,
     getSecondaryValue: (patent) => patent.technologyArea,
     key: "PRODUCT",
@@ -79,8 +79,7 @@ export function BusinessAreaReviewCards({
   const activeDimension =
     patentContextDimensions.find((dimension) => dimension.key === activeDimensionKey) ?? patentContextDimensions[0];
   const summaries = getPatentContextSummaries(patents, activeDimension);
-  const shouldShowDistributionChart = activeDimension.key === "BUSINESS_AREA";
-  const shouldPaginateCards = activeDimension.key !== "BUSINESS_AREA";
+  const shouldPaginateCards = summaries.length > contextCardPageSize;
   const totalPages = Math.max(1, Math.ceil(summaries.length / contextCardPageSize));
   const pagedSummaries = shouldPaginateCards
     ? summaries.slice((currentPage - 1) * contextCardPageSize, currentPage * contextCardPageSize)
@@ -113,32 +112,17 @@ export function BusinessAreaReviewCards({
         </div>
       </div>
       <div className="business-area-overview">
-        {shouldShowDistributionChart ? (
-          <div className="business-area-chart-panel">
-            <div aria-label={`${activeDimension.label}별 특허 수 비중`} className="business-area-distribution-chart">
-              {summaries.map((summary, index) => (
-                <button
-                  aria-label={`${summary.value} ${summary.totalCount}건, ${summary.share}%`}
-                  className="business-area-chart-segment"
-                  key={summary.value}
-                  onClick={() => onSelectContext(toPatentContextSelection(activeDimension, summary.value))}
-                  style={getSegmentStyle(summary, summaries.slice(0, index))}
-                  title={`${summary.value} ${summary.totalCount}건`}
-                  type="button"
-                />
-              ))}
-            </div>
-            <div className="business-area-chart-total">
-              <strong>{patents.length}</strong>
-              <span>전체 특허</span>
-            </div>
-          </div>
-        ) : (
-          <div className="context-summary-panel">
+        <div className="context-summary-panel business-area-summary-panel">
+          <div>
             <strong>{patents.length}</strong>
-            <span>{`${summaries.length}개 ${activeDimension.label} 분류`}</span>
+            <span>전체 특허</span>
           </div>
-        )}
+          <div>
+            <strong>{summaries.length}</strong>
+            <span>{activeDimension.label} 분류</span>
+          </div>
+          <p>항목을 누르면 해당 특허 목록으로 이동합니다.</p>
+        </div>
         <div className="business-area-list-panel">
           <div className="business-area-list">
             {pagedSummaries.map((summary) => (
@@ -151,6 +135,7 @@ export function BusinessAreaReviewCards({
                 <span className="business-area-dot" style={{ background: summary.color }} />
                 <div>
                   <strong>{summary.value}</strong>
+                  {summary.relatedLabels.length > 0 ? <span>{summary.relatedLabels[0]}</span> : null}
                 </div>
                 <b>{summary.totalCount}</b>
               </button>
@@ -208,21 +193,6 @@ function getPatentContextSummaries(patentList: PatentListItem[], dimension: Pate
       share: Number(((summary.totalCount / totalPatentCount) * 100).toFixed(2)),
     }))
     .sort(compareBusinessAreaSummaries);
-}
-
-/**
- * @relatedFR FR-001, FR-002
- * @relatedUI UI-LEGAL-01
- * @description 단일 사업별 분포 그래프의 각 조각 위치와 색상을 계산한다.
- */
-function getSegmentStyle(summary: PatentContextSummary, previousSummaries: PatentContextSummary[]) {
-  const start = previousSummaries.reduce((total, item) => total + item.share, 0);
-
-  return {
-    "--business-area-color": summary.color,
-    "--business-area-start": `${start}%`,
-    "--business-area-end": `${start + summary.share}%`,
-  } as CSSProperties;
 }
 
 /**

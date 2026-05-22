@@ -86,7 +86,7 @@ export function AdminDashboardPage() {
     <AppLayout
       role="ADMIN"
       title="Legal팀 대시보드"
-      description="이번 분기 연차료 검토 진행 상태와 담당 액션을 한눈에 확인합니다."
+      description="이번 분기 검토 상태를 빠르게 확인합니다."
     >
       <section className="dashboard-kpi-overview">
         <QuarterCompletionDonut
@@ -161,11 +161,11 @@ export function AdminDashboardPage() {
           <div>
             <h2>특허 조회</h2>
             <p>
-              {errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "특허명, 출원번호, 사업부명과 검토 단계 기준으로 조회하고 마감 기한 순서를 확인합니다.")}
+                {errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "조건별로 특허를 조회하고 마감 기한을 확인합니다.")}
             </p>
           </div>
         </div>
-        <div className="filter-bar">
+        <div className="filter-bar dashboard-filter-bar">
           <label>
             <span>조회 범위</span>
             <select
@@ -216,6 +216,7 @@ export function AdminDashboardPage() {
               <tr>
                 <th>특허명</th>
                 <th>검토 단계</th>
+                <th>담당 사업부</th>
                 <th>마감 기한</th>
               </tr>
             </thead>
@@ -238,11 +239,13 @@ export function AdminDashboardPage() {
                     <strong title={patent.title}>{truncatePatentTitle(patent.title)}</strong>
                     <span className="table-subtext">{patent.applicationNumber}</span>
                   </td>
+                  <td>
+                    <WorkflowStatusBadge status={patent.reviewWorkflowStatus} />
+                  </td>
                   <td
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
                   >
-                    <WorkflowStatusBadge status={patent.reviewWorkflowStatus} />
                     {(patent.reviewWorkflowStatus === "REVIEW_QUARTER_STARTED" || patent.reviewWorkflowStatus === "MAIL_READY") ? (
                       <DepartmentAssigner
                         currentDepartmentId={patent.departmentId}
@@ -252,9 +255,7 @@ export function AdminDashboardPage() {
                         patentId={patent.patentId}
                       />
                     ) : (
-                      isQuarterlyReviewTarget(patent) && patent.departmentName
-                        ? <span className="table-subtext">🏢 {patent.departmentName}</span>
-                        : null
+                      <span className="table-subtext">{patent.departmentName || "—"}</span>
                     )}
                   </td>
                   <td>
@@ -264,7 +265,7 @@ export function AdminDashboardPage() {
               ))}
               {filteredPatents.length === 0 ? (
                 <tr>
-                  <td className="empty-table-cell" colSpan={3}>
+                  <td className="empty-table-cell" colSpan={4}>
                     조회 조건에 맞는 특허가 없습니다.
                   </td>
                 </tr>

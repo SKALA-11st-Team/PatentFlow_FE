@@ -94,7 +94,7 @@ export function DepartmentAssigner({
       }}
       type="button"
     >
-      🏢 {currentDepartmentName || "미지정"}
+      <span className="table-subtext">{currentDepartmentName || "미지정"}</span>
     </button>
   );
 }

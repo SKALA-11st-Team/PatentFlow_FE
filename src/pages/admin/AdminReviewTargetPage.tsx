@@ -268,60 +268,67 @@ export function AdminReviewTargetPage() {
             </div>
           ) : null}
         </div>
-        <div className="filter-bar review-target-filter-bar">
-          <label>
-            <span>검색</span>
-            <input
-              onChange={(event) => setSearchKeyword(event.target.value)}
-              placeholder="특허명, 출원번호, 관리번호, 사업부명"
-              type="search"
-              value={searchKeyword}
-            />
-          </label>
-          <label>
-            <span>분류 기준</span>
-            <select onChange={(event) => handleContextFilterKeyChange(event.target.value as ContextFilterKey)} value={contextFilterKey}>
-              {contextFilterConfigs.map((config) => (
-                <option key={config.key} value={config.key}>
-                  {config.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>{activeContextConfig.label}</span>
-            <select onChange={(event) => setContextFilterValue(event.target.value)} value={contextFilterValue}>
-              <option value="ALL">전체</option>
-              {contextFilterOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>검토 단계</span>
-            <select
-              onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowFilter)}
-              value={workflowFilter}
-            >
-              {workflowFilterOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option === "ALL" ? "전체" : reviewWorkflowStatusLabels[option]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span>정렬</span>
-            <select onChange={(event) => setSortKey(event.target.value as SortKey)} value={sortKey}>
-              {Object.entries(sortLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="review-target-filter-stack">
+          <div className="filter-bar review-target-filter-bar">
+            <label>
+              <span>조회 범위</span>
+              <select
+                onChange={(event) => handleContextFilterKeyChange(event.target.value as ContextFilterKey)}
+                value={contextFilterKey}
+              >
+                {contextFilterConfigs.map((config) => (
+                  <option key={config.key} value={config.key}>
+                    {config.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>{activeContextConfig.label}</span>
+              <select onChange={(event) => setContextFilterValue(event.target.value)} value={contextFilterValue}>
+                <option value="ALL">전체</option>
+                {contextFilterOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>검토 단계</span>
+              <select
+                onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowFilter)}
+                value={workflowFilter}
+              >
+                {workflowFilterOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option === "ALL" ? "전체" : reviewWorkflowStatusLabels[option]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="filter-bar review-target-filter-bar review-target-filter-bar-secondary">
+            <label>
+              <span>검색</span>
+              <input
+                onChange={(event) => setSearchKeyword(event.target.value)}
+                placeholder="특허명, 출원번호, 관리번호, 사업부명"
+                type="search"
+                value={searchKeyword}
+              />
+            </label>
+            <label>
+              <span>정렬</span>
+              <select onChange={(event) => setSortKey(event.target.value as SortKey)} value={sortKey}>
+                {Object.entries(sortLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
         {actionMessage ? <p className="notice bulk-action-notice">{actionMessage}</p> : null}
         <div className="table-wrap">
