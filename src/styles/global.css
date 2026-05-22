@@ -2320,7 +2320,7 @@ tbody tr:hover {
 }
 
 .business-checklist-modal {
-  max-width: 920px;
+  max-width: 1180px;
 }
 
 .mail-preview-modal {
@@ -3000,7 +3000,7 @@ tbody tr:hover {
 
 .business-review-workbench {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  grid-template-columns: minmax(320px, 0.95fr) minmax(420px, 1.05fr);
   gap: 1rem;
   align-items: start;
   grid-column: 1 / -1;
@@ -3010,6 +3010,68 @@ tbody tr:hover {
 .history-mini-list {
   display: grid;
   gap: 0.75rem;
+}
+
+.business-opinion-form-panel,
+.business-decision-history-panel {
+  display: grid;
+  gap: var(--spacing-md);
+  min-width: 0;
+}
+
+.business-decision-history-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+}
+
+.reference-panel-header {
+  align-items: center;
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: space-between;
+}
+
+.reference-panel-header span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.business-decision-history-list {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.business-decision-history-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+}
+
+.business-decision-history-item > div {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: space-between;
+}
+
+.business-decision-history-item span,
+.business-decision-history-item small {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.business-decision-history-item strong {
+  display: block;
+  margin-top: 2px;
+}
+
+.business-decision-history-item p {
+  color: var(--color-text-muted);
+  line-height: 1.45;
+  margin: 0;
 }
 
 .history-mini-list > div {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getStoredAuthUser } from "../../api/authStorage";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
+import { getBusinessSubmissionVersions } from "../../api/businessSubmissions";
 import { getBusinessPatentDetail } from "../../api/patents";
 import { getActiveQuarter } from "../../api/settings";
 import { Badge } from "../../components/common/Badge";
@@ -29,6 +30,7 @@ import {
   type RecommendationFilter,
 } from "../../constants/status";
 import type { BusinessChecklistSubmission } from "../../types/businessChecklist";
+import type { BusinessSubmissionVersion } from "../../types/businessSubmission";
 import type { PatentDetail, PatentListItem } from "../../types/patent";
 
 type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
@@ -336,8 +338,38 @@ function BusinessOpinionModal({
   const [draft, setDraft] = useState(initialSubmission);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [submissionVersions, setSubmissionVersions] = useState<BusinessSubmissionVersion[]>([]);
+  const [historyMessage, setHistoryMessage] = useState("기존 의사결정 기록을 불러오는 중입니다.");
   const { errorMessage: checklistErrorMessage, items: businessChecklistItems } = useBusinessChecklistItems();
   const total = getBusinessChecklistTotal(draft);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSubmissionHistory() {
+      setHistoryMessage("기존 의사결정 기록을 불러오는 중입니다.");
+
+      try {
+        const versions = await getBusinessSubmissionVersions(patent);
+
+        if (isMounted) {
+          setSubmissionVersions(versions);
+          setHistoryMessage(versions.length > 0 ? "" : "기존 의사결정 기록이 없습니다.");
+        }
+      } catch {
+        if (isMounted) {
+          setSubmissionVersions([]);
+          setHistoryMessage("기존 의사결정 기록을 불러오지 못했습니다.");
+        }
+      }
+    }
+
+    loadSubmissionHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [patent]);
 
   async function handleSubmit() {
     if (!hasCompleteBusinessChecklistSubmission(draft)) {
@@ -370,128 +402,162 @@ function BusinessOpinionModal({
         </button>
       </div>
 
-      <div className="modal-report-summary">
-        <div className="evaluation-header">
-          <div>
-            <span>AI 특허 평가 레포트</span>
-            <strong>{formatReportDisplayScore(patent.aiEvaluationReport)}</strong>
-            {patent.aiEvaluationReport.totalScoreText ? (
-              <small>원문 점수 {patent.aiEvaluationReport.totalScoreText}</small>
+      <div className="business-review-workbench">
+        <div className="business-reference-stack">
+          <div className="modal-report-summary">
+            <div className="evaluation-header">
+              <div>
+                <span>AI 특허 평가 레포트</span>
+                <strong>{formatReportDisplayScore(patent.aiEvaluationReport)}</strong>
+                {patent.aiEvaluationReport.totalScoreText ? (
+                  <small>원문 점수 {patent.aiEvaluationReport.totalScoreText}</small>
+                ) : null}
+              </div>
+              <Badge tone={getRecommendationTone(patent.aiEvaluationReport.recommendation)}>
+                {recommendationLabels[patent.aiEvaluationReport.recommendation]}
+              </Badge>
+            </div>
+            <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
+            {patent.aiEvaluationReport.keyEvidence ? <p>{patent.aiEvaluationReport.keyEvidence}</p> : null}
+            <div className="modal-score-grid">
+              {patent.aiEvaluationReport.scores.map((score) => (
+                  <span key={score.category}>
+                    {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
+                  </span>
+                ))}
+            </div>
+            {patent.aiEvaluationReport.businessCheckRequests?.length ? (
+              <div className="report-block">
+                <h3>사업부 확인 요청 사항</h3>
+                <ul className="clean-list">
+                  {patent.aiEvaluationReport.businessCheckRequests.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
             ) : null}
           </div>
-          <Badge tone={getRecommendationTone(patent.aiEvaluationReport.recommendation)}>
-            {recommendationLabels[patent.aiEvaluationReport.recommendation]}
-          </Badge>
-        </div>
-        <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
-        {patent.aiEvaluationReport.keyEvidence ? <p>{patent.aiEvaluationReport.keyEvidence}</p> : null}
-        <div className="modal-score-grid">
-          {patent.aiEvaluationReport.scores.map((score) => (
-              <span key={score.category}>
-                {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
-              </span>
-            ))}
-        </div>
-        {patent.aiEvaluationReport.businessCheckRequests?.length ? (
-          <div className="report-block">
-            <h3>사업부 확인 요청 사항</h3>
-            <ul className="clean-list">
-              {patent.aiEvaluationReport.businessCheckRequests.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </div>
 
-      <div className="checklist-total-row">
-        <span>총점</span>
-        <strong>{total}점</strong>
-        <small>체크리스트 점수와 정성 평가 점수를 함께 제출합니다.</small>
-      </div>
-
-      <div className="checklist-form">
-        {checklistErrorMessage ? <p className="notice">{checklistErrorMessage}</p> : null}
-        {businessChecklistItems.map((item) => {
-          const response = getChecklistResponse(draft, item.id);
-
-          return (
-            <fieldset className="checklist-item" key={item.id}>
-              <legend>
-                <span>{item.category}</span>
-                <strong>{item.title}</strong>
-                <small>{item.description}</small>
-              </legend>
-              <div className="score-option-grid">
-                {item.options.map((option) => (
-                  <label
-                    className={getScoreOptionClassName(response.score, response.aiSuggestedScore, option.score)}
-                    key={option.score}
-                  >
-                    <input
-                      checked={response.score === option.score}
-                      name={item.id}
-                      onChange={() => setDraft(updateChecklistScore(draft, item.id, option.score))}
-                      type="radio"
-                    />
-                    <b>{option.score}</b>
-                    <span>{option.label}</span>
-                    {response.aiSuggestedScore === option.score ? <em>AI 판단 점수</em> : null}
-                  </label>
+          <div className="business-decision-history-panel">
+            <div className="reference-panel-header">
+              <span>기존 의사결정자 기록</span>
+              <strong>{submissionVersions.length}건</strong>
+            </div>
+            {historyMessage ? <p className="empty-state">{historyMessage}</p> : null}
+            {submissionVersions.length > 0 ? (
+              <div className="business-decision-history-list">
+                {submissionVersions.map((submission) => (
+                  <article className="business-decision-history-item" key={submission.submissionId}>
+                    <div>
+                      <span>{submission.version}차 제출 · {formatDate(submission.submittedAt)}</span>
+                      <strong>{businessOpinionLabels[submission.opinion]} 의견</strong>
+                    </div>
+                    <Badge tone={getBusinessOpinionTone(submission.opinion)}>
+                      {businessOpinionLabels[submission.opinion]}
+                    </Badge>
+                    <p>{submission.reason}</p>
+                    <small>
+                      {submission.submittedBy} · AI {recommendationLabels[submission.aiRecommendation]} · 체크리스트{" "}
+                      {submission.checklistTotal}점
+                    </small>
+                  </article>
                 ))}
               </div>
-              <label className="checklist-memo-label">
-                <span>평가 입력</span>
-                <textarea
-                  onChange={(event) => setDraft(updateChecklistMemo(draft, item.id, event.target.value))}
-                  placeholder="사업부 관점의 근거를 입력하세요."
-                  value={response.memo}
-                />
-              </label>
-            </fieldset>
-          );
-        })}
-
-        <div className="checklist-final-grid">
-          <label>
-            <span>정성적 요소 (-5~5)</span>
-            <input
-              max={5}
-              min={-5}
-              onChange={(event) => setDraft({ ...draft, qualitativeScore: Number(event.target.value) })}
-              type="number"
-              value={draft.qualitativeScore}
-            />
-          </label>
-          <label>
-            <span>사업부 의견</span>
-            <select
-              onChange={(event) =>
-                setDraft({ ...draft, finalOpinion: event.target.value as BusinessChecklistSubmission["finalOpinion"] })
-              }
-              value={draft.finalOpinion}
-            >
-              <option value="MAINTAIN">유지</option>
-              <option value="ABANDON">포기</option>
-            </select>
-          </label>
+            ) : null}
+          </div>
         </div>
 
-        <label className="checklist-memo-label">
-          <span>판단 근거</span>
-          <textarea
-            onChange={(event) => setDraft({ ...draft, finalReason: event.target.value })}
-            value={draft.finalReason}
-          />
-        </label>
-        <label className="checklist-memo-label">
-          <span>추가 확인 필요 사항</span>
-          <textarea
-            onChange={(event) => setDraft({ ...draft, additionalNeeds: event.target.value })}
-            value={draft.additionalNeeds}
-          />
-        </label>
-        {submitMessage ? <p className="notice">{submitMessage}</p> : null}
+        <div className="business-opinion-form-panel">
+          <div className="checklist-total-row">
+            <span>총점</span>
+            <strong>{total}점</strong>
+            <small>체크리스트 점수와 정성 평가 점수를 함께 제출합니다.</small>
+          </div>
+
+          <div className="checklist-form">
+            {checklistErrorMessage ? <p className="notice">{checklistErrorMessage}</p> : null}
+            {businessChecklistItems.map((item) => {
+              const response = getChecklistResponse(draft, item.id);
+
+              return (
+                <fieldset className="checklist-item" key={item.id}>
+                  <legend>
+                    <span>{item.category}</span>
+                    <strong>{item.title}</strong>
+                    <small>{item.description}</small>
+                  </legend>
+                  <div className="score-option-grid">
+                    {item.options.map((option) => (
+                      <label
+                        className={getScoreOptionClassName(response.score, response.aiSuggestedScore, option.score)}
+                        key={option.score}
+                      >
+                        <input
+                          checked={response.score === option.score}
+                          name={item.id}
+                          onChange={() => setDraft(updateChecklistScore(draft, item.id, option.score))}
+                          type="radio"
+                        />
+                        <b>{option.score}</b>
+                        <span>{option.label}</span>
+                        {response.aiSuggestedScore === option.score ? <em>AI 판단 점수</em> : null}
+                      </label>
+                    ))}
+                  </div>
+                  <label className="checklist-memo-label">
+                    <span>평가 입력</span>
+                    <textarea
+                      onChange={(event) => setDraft(updateChecklistMemo(draft, item.id, event.target.value))}
+                      placeholder="사업부 관점의 근거를 입력하세요."
+                      value={response.memo}
+                    />
+                  </label>
+                </fieldset>
+              );
+            })}
+
+            <div className="checklist-final-grid">
+              <label>
+                <span>정성적 요소 (-5~5)</span>
+                <input
+                  max={5}
+                  min={-5}
+                  onChange={(event) => setDraft({ ...draft, qualitativeScore: Number(event.target.value) })}
+                  type="number"
+                  value={draft.qualitativeScore}
+                />
+              </label>
+              <label>
+                <span>사업부 의견</span>
+                <select
+                  onChange={(event) =>
+                    setDraft({ ...draft, finalOpinion: event.target.value as BusinessChecklistSubmission["finalOpinion"] })
+                  }
+                  value={draft.finalOpinion}
+                >
+                  <option value="MAINTAIN">유지</option>
+                  <option value="ABANDON">포기</option>
+                </select>
+              </label>
+            </div>
+
+            <label className="checklist-memo-label">
+              <span>판단 근거</span>
+              <textarea
+                onChange={(event) => setDraft({ ...draft, finalReason: event.target.value })}
+                value={draft.finalReason}
+              />
+            </label>
+            <label className="checklist-memo-label">
+              <span>추가 확인 필요 사항</span>
+              <textarea
+                onChange={(event) => setDraft({ ...draft, additionalNeeds: event.target.value })}
+                value={draft.additionalNeeds}
+              />
+            </label>
+            {submitMessage ? <p className="notice">{submitMessage}</p> : null}
+          </div>
+        </div>
       </div>
 
       <div className="modal-actions">
@@ -576,6 +642,16 @@ function getPageTitle(opinionFilter: OpinionFilter) {
   }
 
   return "제출 대상 특허";
+}
+
+function formatDate(dateText: string | null) {
+  if (!dateText) return "-";
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(dateText));
 }
 
 /**
