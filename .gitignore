@@ -35,6 +35,8 @@ coverage/
 *.tsbuildinfo
 .vite/
 
-# Private project reference documents
-docs/
+# Project docs
+docs/*
+!docs/UI.md
+!docs/prompt2be.md
 private/
