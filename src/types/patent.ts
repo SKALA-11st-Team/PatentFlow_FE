@@ -113,6 +113,15 @@ export interface PatentDetail extends PatentListItem {
   businessOpinion: BusinessOpinion;
 }
 
+export interface PatentHistoryItem {
+  historyId: string;
+  type: string;
+  title: string;
+  description: string;
+  actorName: string;
+  createdAt: string;
+}
+
 export interface PatentBibliographicInfo {
   managementNumber: string;
   title: string;

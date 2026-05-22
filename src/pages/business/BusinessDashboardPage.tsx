@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getStoredAuthUser } from "../../api/authStorage";
+import { getBusinessDashboardSummary, type BusinessDashboardSummary } from "../../api/dashboard";
 import { getActiveQuarter } from "../../api/settings";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
@@ -41,11 +42,33 @@ export function BusinessDashboardPage() {
   const [recommendationFilter, setRecommendationFilter] = useState<RecommendationFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
+  const [dashboardSummary, setDashboardSummary] = useState<BusinessDashboardSummary | null>(null);
   const user = getStoredAuthUser();
 
   useEffect(() => {
     getActiveQuarter().then((q) => setSubmissionDeadline(q?.submissionDeadline ?? null)).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getBusinessDashboardSummary()
+      .then((summary) => {
+        if (isMounted) {
+          setDashboardSummary(summary);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setDashboardSummary(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const { errorMessage, isLoading, patents } = usePatentList({ departmentId: user?.departmentId ?? undefined });
   const assigned = useMemo(
     () => patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE"),
@@ -53,6 +76,9 @@ export function BusinessDashboardPage() {
   );
   const pending = assigned.filter((patent) => !patent.businessOpinionDecision);
   const submitted = assigned.filter((patent) => patent.businessOpinionDecision);
+  const assignedCount = dashboardSummary?.totalAssigned ?? assigned.length;
+  const pendingCount = dashboardSummary?.pendingReview ?? pending.length;
+  const submittedCount = dashboardSummary?.reviewed ?? submitted.length;
   const filteredPatents = useMemo(
     () => getFilteredAndSortedPatents(assigned, searchKeyword, opinionFilter, recommendationFilter, sortKey),
     [assigned, opinionFilter, recommendationFilter, searchKeyword, sortKey],
@@ -74,29 +100,29 @@ export function BusinessDashboardPage() {
     >
       <section className="dashboard-kpi-overview">
         <QuarterCompletionDonut
-          completed={submitted.length}
+          completed={submittedCount}
           helper=""
           label="의견 제출 완료"
-          total={assigned.length}
+          total={assignedCount}
         />
         <div className="kpi-grid business-kpi-grid">
           <KpiCard
             label="제출 대상 특허"
-            value={assigned.length}
+            value={assignedCount}
             helper="연차료 검토 요청"
             tone="primary"
             to="/business/review-requests?opinion=ALL"
           />
           <KpiCard
             label="의견 대기"
-            value={pending.length}
+            value={pendingCount}
             helper="사업부 작성 필요"
             tone="warning"
             to="/business/review-requests?opinion=PENDING"
           />
           <KpiCard
             label="제출 완료"
-            value={submitted.length}
+            value={submittedCount}
             helper="유지/포기 의견 제출"
             tone="success"
             to="/business/review-requests?opinion=SUBMITTED"

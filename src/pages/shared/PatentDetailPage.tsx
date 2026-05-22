@@ -6,6 +6,7 @@ import { getDepartmentRecipientMappings, getMailingHistory } from "../../api/mai
 import {
   getPatentDetail,
   getBusinessPatentDetail,
+  getPatentHistory,
   getPatents,
 
   recordPatentFinalDecision,
@@ -30,6 +31,7 @@ import type { DepartmentRecipientMapping, MailingDeliveryStatus, MailingHistoryI
 import type {
   LegalActionResult,
   PatentDetail,
+  PatentHistoryItem,
   PatentLifecycleStatus,
   ReviewWorkflowStatus,
   UserRole,
@@ -79,6 +81,8 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
   const [mailingHistoryItems, setMailingHistoryItems] = useState<MailingHistoryItem[]>([]);
   const [isMailHistoryOpen, setIsMailHistoryOpen] = useState(false);
   const [mailHistoryMessage, setMailHistoryMessage] = useState("");
+  const [patentHistoryItems, setPatentHistoryItems] = useState<PatentHistoryItem[]>([]);
+  const [patentHistoryMessage, setPatentHistoryMessage] = useState("");
   const [isWorkflowActionProcessing, setIsWorkflowActionProcessing] = useState(false);
   const [workflowActionMessage, setWorkflowActionMessage] = useState("");
   const checklistTotal = getBusinessChecklistTotal(businessChecklistSubmission);
@@ -121,6 +125,21 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         }
 
         setPatent(nextPatent);
+        setPatentHistoryMessage("평가 및 판단 이력을 불러오는 중입니다.");
+
+        try {
+          const nextHistoryItems = await getPatentHistory(nextPatent.patentId);
+
+          if (isMounted) {
+            setPatentHistoryItems(nextHistoryItems);
+            setPatentHistoryMessage(nextHistoryItems.length === 0 ? "아직 저장된 평가 및 판단 이력이 없습니다." : "");
+          }
+        } catch {
+          if (isMounted) {
+            setPatentHistoryItems([]);
+            setPatentHistoryMessage("평가 및 판단 이력을 불러오지 못했습니다.");
+          }
+        }
 
         if (hasPersistedBusinessOpinion(nextPatent)) {
           setHasSubmittedBusinessChecklist(true);
@@ -348,6 +367,11 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
         <BusinessSubmissionHistoryDetail patent={patent} />
 
+        <PatentReviewHistorySection
+          historyItems={patentHistoryItems}
+          message={patentHistoryMessage}
+        />
+
         <Link className="back-link detail-back-link" to={role === "ADMIN" ? "/admin/dashboard" : "/business/dashboard"}>
           대시보드로 돌아가기
         </Link>
@@ -480,6 +504,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
       if (nextPatent) {
         setPatent(nextPatent);
+        refreshPatentHistory(nextPatent.patentId);
       }
 
       setMailDrafts([]);
@@ -521,6 +546,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
       if (nextPatent) {
         setPatent(nextPatent);
+        refreshPatentHistory(nextPatent.patentId);
       }
 
       setDecisionMessage(`${legalActionResultLabels[result.legalActionResult]} 결과를 저장했습니다.`);
@@ -539,11 +565,24 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     try {
       const updated = await requestPatentAiReport(patent.patentId);
       if (updated) setPatent(updated);
+      if (updated) refreshPatentHistory(updated.patentId);
       setWorkflowActionMessage("AI 레포트 생성이 완료되었습니다.");
     } catch (error) {
       setWorkflowActionMessage(error instanceof Error ? error.message : "AI 레포트 생성에 실패했습니다.");
     } finally {
       setIsWorkflowActionProcessing(false);
+    }
+  }
+
+  async function refreshPatentHistory(nextPatentId: string) {
+    setPatentHistoryMessage("평가 및 판단 이력을 불러오는 중입니다.");
+    try {
+      const nextHistoryItems = await getPatentHistory(nextPatentId);
+      setPatentHistoryItems(nextHistoryItems);
+      setPatentHistoryMessage(nextHistoryItems.length === 0 ? "아직 저장된 평가 및 판단 이력이 없습니다." : "");
+    } catch {
+      setPatentHistoryItems([]);
+      setPatentHistoryMessage("평가 및 판단 이력을 불러오지 못했습니다.");
     }
   }
 
@@ -735,6 +774,37 @@ function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSub
       submission.responses.every((response) => response.score !== null && response.score > 0) &&
       Number.isFinite(submission.qualitativeScore) &&
       submission.finalOpinion,
+  );
+}
+
+/**
+ * @relatedFR FR-LEGAL-11
+ * @relatedUI UI-LEGAL-04, UI-BUS-05
+ * @description 특허별 평가, 사업부 의견, 최종 판단 이력을 시간순 목록으로 보여준다.
+ */
+function PatentReviewHistorySection({
+  historyItems,
+  message,
+}: {
+  historyItems: PatentHistoryItem[];
+  message: string;
+}) {
+  return (
+    <Section title="평가 및 판단 이력" description="분기별 평가, 사업부 의견, 최종 판단 기록을 확인합니다.">
+      {message ? <p className="notice">{message}</p> : null}
+      {historyItems.length > 0 ? (
+        <div className="evaluation-history-list">
+          {historyItems.map((history) => (
+            <article className="evaluation-history-item" key={history.historyId}>
+              <span>{formatDateTime(history.createdAt)}</span>
+              <strong>{history.title}</strong>
+              <p>{history.description}</p>
+              <b>{history.actorName}</b>
+            </article>
+          ))}
+        </div>
+      ) : null}
+    </Section>
   );
 }
 

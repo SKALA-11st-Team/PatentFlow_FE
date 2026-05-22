@@ -20,6 +20,7 @@ import type {
   LegalActionResult,
   PatentLifecycleStatus,
   PatentListItem,
+  PatentHistoryItem,
   Recommendation,
   PatentSummary,
   PatentUpsertPayload,
@@ -261,6 +262,20 @@ export async function getBusinessPatentDetail(patentId: string): Promise<PatentD
   }
 
   return patentDetails.find((patent) => patent.patentId === patentId);
+}
+
+/**
+ * @relatedFR FR-LEGAL-11
+ * @relatedUI UI-LEGAL-04, UI-BUS-05
+ * @description 특허별 평가와 판단 이력을 조회한다.
+ */
+export async function getPatentHistory(patentId: string): Promise<PatentHistoryItem[]> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<PatentHistoryItem[]>>(`/patents/${patentId}/history`);
+    return response.data ?? [];
+  }
+
+  return [];
 }
 
 /**

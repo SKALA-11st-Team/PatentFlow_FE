@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getLegalDashboardSummary, type LegalDashboardSummary } from "../../api/dashboard";
 import { getDepartments, type Department } from "../../api/departments";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { BusinessAreaReviewCards } from "../../components/admin/BusinessAreaReviewCards";
@@ -41,10 +42,32 @@ export function AdminDashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const { errorMessage, isLoading, patents, setPatents } = usePatentList();
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [dashboardSummary, setDashboardSummary] = useState<LegalDashboardSummary | null>(null);
 
   useEffect(() => {
     getDepartments().then(setDepartments).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getLegalDashboardSummary()
+      .then((summary) => {
+        if (isMounted) {
+          setDashboardSummary(summary);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setDashboardSummary(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const quarterlyTargets = patents.filter(isQuarterlyReviewTarget);
   const mailReady = patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
   const waitingBusiness = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE");
@@ -52,6 +75,10 @@ export function AdminDashboardPage() {
   const sellCandidates = businessResponseReceived.filter((patent) => patent.businessOpinionDecision === "ABANDON");
   const actionRecorded = patents.filter((patent) => patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED");
   const quarterlyTargetCount = quarterlyTargets.length;
+  const totalPatentCount = dashboardSummary?.totalPatents ?? patents.length;
+  const mailReadyCount = dashboardSummary?.pendingReview ?? mailReady.length;
+  const waitingBusinessCount = dashboardSummary?.waitingBusinessResponse ?? waitingBusiness.length;
+  const actionRecordedCount = dashboardSummary?.pendingLegalAction ?? actionRecorded.length;
   const filteredPatents = useMemo(
     () => getFilteredAndSortedPatents(patents, searchKeyword, reviewScope, workflowFilter, sortKey),
     [patents, reviewScope, searchKeyword, sortKey, workflowFilter],
@@ -98,7 +125,7 @@ export function AdminDashboardPage() {
         <div className="kpi-grid">
           <KpiCard
             label="전체 특허"
-            value={patents.length}
+            value={totalPatentCount}
             helper="등록 특허 기준"
             to="/admin/review-targets?scope=all"
           />
@@ -113,7 +140,7 @@ export function AdminDashboardPage() {
             denominator={quarterlyTargetCount}
             helper="관리자 발송 필요"
             label="메일 발송 대기"
-            value={mailReady.length}
+            value={mailReadyCount}
             to="/admin/review-targets?workflow=MAIL_READY"
             tone="primary"
           />
@@ -121,7 +148,7 @@ export function AdminDashboardPage() {
             denominator={quarterlyTargetCount}
             helper="사업부 회신 필요"
             label="사업부 응답 대기"
-            value={waitingBusiness.length}
+            value={waitingBusinessCount}
             to="/admin/review-targets?workflow=WAITING_BUSINESS_RESPONSE"
           />
           <KpiCard
@@ -134,9 +161,9 @@ export function AdminDashboardPage() {
           />
           <KpiCard
             denominator={quarterlyTargetCount}
-            helper={`완료율 ${formatPercent(actionRecorded.length, quarterlyTargetCount)}`}
+            helper={`완료율 ${formatPercent(actionRecordedCount, quarterlyTargetCount)}`}
             label="처리 완료"
-            value={actionRecorded.length}
+            value={actionRecordedCount}
             to="/admin/review-targets?workflow=LEGAL_ACTION_RECORDED"
             tone="success"
           />
