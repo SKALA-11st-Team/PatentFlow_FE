@@ -18,7 +18,7 @@ export async function login(request: LoginRequest): Promise<LoginResult> {
   if (isMockApiEnabled()) {
     const mockLoginResult = createMockLoginResult(request.username);
 
-    storeAuthSession(mockLoginResult.user);
+    storeAuthSession(mockLoginResult.user, mockLoginResult.accessToken);
 
     return mockLoginResult;
   }
@@ -36,7 +36,7 @@ export async function login(request: LoginRequest): Promise<LoginResult> {
     throw new Error("로그인 응답이 비어 있습니다.");
   }
 
-  storeAuthSession(response.data.user);
+  storeAuthSession(response.data.user, response.data.accessToken);
 
   return response.data;
 }

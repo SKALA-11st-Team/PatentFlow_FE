@@ -1,3 +1,5 @@
+import { getStoredAccessToken } from "./authStorage";
+
 const importMetaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
 const API_BASE_URL = normalizeApiBaseUrl(importMetaEnv?.VITE_API_BASE_URL ?? "");
 const USE_MOCK_API = importMetaEnv?.VITE_USE_MOCK_API === "true";
@@ -72,6 +74,11 @@ async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefr
 
   if (!headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
+  }
+
+  const accessToken = getStoredAccessToken();
+  if (accessToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
   // CSRF protection: add X-XSRF-TOKEN header for state-changing requests
