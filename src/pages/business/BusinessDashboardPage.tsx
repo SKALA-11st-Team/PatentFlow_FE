@@ -187,7 +187,7 @@ export function BusinessDashboardPage() {
                 <th>관련제품</th>
                 <th>AI 레포트 권고</th>
                 <th>사업부 의견</th>
-                <th>의견 제출 마감</th>
+                <th>회신 기한</th>
               </tr>
             </thead>
             <tbody>

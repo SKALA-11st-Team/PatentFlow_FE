@@ -165,7 +165,7 @@ export function AdminSettingsPage() {
         <div className="section-header">
           <div>
             <h2>메일 발송 설정</h2>
-            <p>Gmail 발송은 Google OAuth 연동이 기본입니다. 앱 비밀번호 입력은 레거시 방식으로만 남겨 둡니다.</p>
+            <p>Gmail 발송은 Google 계정 연동이 기본입니다. 앱 비밀번호 입력은 레거시 방식으로만 남겨 둡니다.</p>
           </div>
         </div>
 
@@ -176,7 +176,7 @@ export function AdminSettingsPage() {
               <>
                 <span className="badge badge-success">설정됨</span>
                 <span className="form-helper-text">
-                  {mailSettings.gmailUsername} · {mailSettings.isAppPasswordConfigured ? "레거시 자격 증명 등록됨" : "OAuth 연동 권장"}
+                  {mailSettings.gmailUsername} · {mailSettings.isAppPasswordConfigured ? "레거시 자격 증명 등록됨" : "Google 계정 연동 권장"}
                 </span>
               </>
             ) : (
@@ -189,7 +189,7 @@ export function AdminSettingsPage() {
               <Button disabled type="button">
                 Google 계정으로 연동하기
               </Button>
-              <span className="form-helper-text">OAuth 연동은 백엔드 인증 엔드포인트 준비 후 활성화됩니다.</span>
+              <span className="form-helper-text">Google 계정 연동은 백엔드 인증 엔드포인트 준비 후 활성화됩니다.</span>
             </div>
 
             <div style={{ marginTop: "0.5rem" }}>
@@ -243,7 +243,7 @@ export function AdminSettingsPage() {
         <div className="section-header">
           <div>
             <h2>회신 기한 및 발송 기준</h2>
-            <p>사업부에는 회신 기한을 표시하고, 실제 법무 마감 기한과 분리해서 관리합니다.</p>
+            <p>사업부에는 회신 기한을 표시하고, 실제 법무 처리 기한과 분리해서 관리합니다.</p>
           </div>
         </div>
         <form className="settings-card settings-form" onSubmit={handleSaveReviewSchedule}>
@@ -481,9 +481,9 @@ export function AdminSettingsPage() {
               </tr>
               <tr>
                 <td>🇺🇸 미국 (US)</td>
-                <td>3회 (고정)</td>
-                <td>등록일 기준 3.5년 / 7.5년 / 11.5년</td>
-                <td>유지보수 요금(Maintenance Fee)</td>
+                <td>매년</td>
+                <td>출원일 기준 매년</td>
+                <td>국가별 조정 이력으로 별도 관리</td>
               </tr>
               <tr>
                 <td>기타 (TW / UAE 등)</td>
