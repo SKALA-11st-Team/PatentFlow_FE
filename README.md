@@ -94,7 +94,6 @@ Docker 이미지로 빌드할 때는 Vite 특성상 `VITE_API_BASE_URL`이 빌�
 - `/admin/patents/:patentId`: 관리자 특허 상세
 - `/admin/patents/:patentId/edit`: 특허 등록/수정
 - `/admin/mailing`: 메일링
-- `/admin/sales-candidates`: 매각 후보 관리
 - `/admin/settings`: 설정
 
 ### 사업부
