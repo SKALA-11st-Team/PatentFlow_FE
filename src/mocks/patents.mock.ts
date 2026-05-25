@@ -254,7 +254,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
   const recommendation = generatedReport?.recommendation ?? getRecommendation(row, reviewWorkflowStatus, index);
   const businessOpinionDecision = getBusinessOpinion(reviewWorkflowStatus, recommendation);
   const legalActionResult = getLegalActionResult(reviewWorkflowStatus, recommendation);
-  const feeDueDate = getMockDeadlineDate(row.registrationDate);
+  const feeDueDate = getMockDeadlineDate(row.applicationDate);
   const title = normalizeDisplayText(row.title || row.draftTitle || row.managementNumber);
   const draftTitle = normalizeDisplayText(row.draftTitle || row.title || row.managementNumber);
   const businessArea = normalizeDisplayText(row.businessArea || "N/A");
@@ -357,10 +357,10 @@ function getMockReviewWorkflowStatus(index: number, hasGeneratedReport = false):
 /**
  * @relatedFR FR-LEGAL-01, FR-BUS-01
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-BUS-01, UI-BUS-02
- * @description mock 특허의 마감 기한을 등록일 기준 다음 연차료 납부일로 계산한다.
+ * @description mock 특허의 회신 기준 납부일을 출원일 기준 다음 연차료 납부일로 계산한다.
  */
-function getMockDeadlineDate(registrationDate: string) {
-  return getNextAnnualFeeDueDate(registrationDate);
+function getMockDeadlineDate(applicationDate: string) {
+  return getNextAnnualFeeDueDate(applicationDate);
 }
 
 
@@ -447,6 +447,7 @@ function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRo
     MAINTAIN: `${productText} 관련 기술성, 권리성, 유지 비용 대비 가치가 확인되어 유지 권고가 타당한 AI 특허 평가 레포트입니다.`,
     REVIEW_AGAIN: "권리성, 기술성, 시장성, 사업 연계성 중 일부 근거 보완이 필요한 AI 특허 평가 레포트입니다.",
     ABANDON: "권리성 또는 사업 연계성 보완 근거가 부족해 포기 검토가 가능한 AI 특허 평가 레포트입니다.",
+    SALES_CANDIDATE: "권리성 또는 사업 연계성 보완 근거가 부족해 포기 검토 및 매각 후보 분류가 가능한 AI 특허 평가 레포트입니다.",
     HOLD: "권리성, 시장성, 사업 연계성 일부 정보가 부족해 추가 정보 확인이 필요한 AI 특허 평가 레포트입니다.",
   };
 
@@ -493,6 +494,7 @@ function getTotalScore(recommendation: Recommendation, index: number) {
     MAINTAIN: 82,
     REVIEW_AGAIN: 68,
     ABANDON: 45,
+    SALES_CANDIDATE: 45,
     HOLD: 60,
   };
 
@@ -549,6 +551,7 @@ function getLegalActionText(result: LegalActionResult) {
   const textMap: Record<LegalActionResult, string> = {
     MAINTAINED: "유지 처리",
     ABANDONED: "포기 처리",
+    SOLD: "매각 처리",
   };
 
   return textMap[result];

@@ -6,7 +6,7 @@
 
 export type StatusTone = "neutral" | "primary" | "warning" | "success" | "danger";
 
-export const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "EXPIRED"] as const;
+export const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "SOLD", "EXPIRED"] as const;
 
 export type PatentLifecycleStatus = (typeof PATENT_LIFECYCLE_STATUSES)[number];
 
@@ -21,7 +21,7 @@ export const REVIEW_WORKFLOW_STATUSES = [
 
 export type ReviewWorkflowStatus = (typeof REVIEW_WORKFLOW_STATUSES)[number];
 
-export const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "HOLD"] as const;
+export const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "SALES_CANDIDATE", "HOLD"] as const;
 
 export type Recommendation = (typeof RECOMMENDATIONS)[number];
 
@@ -29,7 +29,7 @@ export const BUSINESS_OPINION_DECISIONS = ["MAINTAIN", "ABANDON"] as const;
 
 export type BusinessOpinionDecision = (typeof BUSINESS_OPINION_DECISIONS)[number];
 
-export const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED"] as const;
+export const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const;
 
 export type LegalActionResult = (typeof LEGAL_ACTION_RESULTS)[number];
 
@@ -112,8 +112,9 @@ export const PATENT_TECHNOLOGY_AREA_CATEGORIES = Array.from(
 );
 
 export const lifecycleStatusLabels: Record<PatentLifecycleStatus, string> = {
-  ACTIVE: "유지",
-  ABANDONED: "포기",
+  ACTIVE: "보유 중",
+  ABANDONED: "포기 완료",
+  SOLD: "매각 완료",
   EXPIRED: "소멸",
 };
 
@@ -139,6 +140,7 @@ export const recommendationLabels: Record<Recommendation, string> = {
   MAINTAIN: "유지 권고",
   REVIEW_AGAIN: "추가 정보 필요",
   ABANDON: "포기 검토",
+  SALES_CANDIDATE: "포기 검토",
   HOLD: "추가 정보 필요",
 };
 
@@ -146,6 +148,7 @@ export const recommendationTone: Record<Recommendation, StatusTone> = {
   MAINTAIN: "success",
   REVIEW_AGAIN: "warning",
   ABANDON: "danger",
+  SALES_CANDIDATE: "danger",
   HOLD: "warning",
 };
 
@@ -176,7 +179,7 @@ export const RECOMMENDATION_FILTER_OPTIONS = [
   },
   {
     label: recommendationLabels.ABANDON,
-    recommendations: ["ABANDON"],
+    recommendations: ["ABANDON", "SALES_CANDIDATE"],
     value: "ABANDON",
   },
 ] as const satisfies readonly {
@@ -218,8 +221,9 @@ export function getBusinessOpinionTone(opinion: BusinessOpinionDecision) {
 }
 
 export const legalActionResultLabels: Record<LegalActionResult, string> = {
-  MAINTAINED: "유지",
-  ABANDONED: "포기",
+  MAINTAINED: "유지 처리",
+  ABANDONED: "포기 처리",
+  SOLD: "매각 처리",
 };
 
 export const evaluationCategoryLabels: Record<EvaluationCategory, string> = {

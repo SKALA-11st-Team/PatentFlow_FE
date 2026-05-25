@@ -3,22 +3,19 @@ import { getNextAnnualFeeDueDate, getRemainingDaysUntilDate } from "./annualFee"
 
 describe("annualFee Utils", () => {
   describe("getNextAnnualFeeDueDate", () => {
-    it("등록일로부터 3년 후의 날짜를 기본 납부 기한으로 반환한다", () => {
-      // 2024-05-19 등록 -> 3년 후인 2027-05-19가 납부 기한
+    it("출원일의 월일을 기준으로 올해 납부 기한을 반환한다", () => {
       const baseDate = new Date("2024-05-19");
-      expect(getNextAnnualFeeDueDate("2024-05-19", baseDate)).toBe("2027-05-19");
+      expect(getNextAnnualFeeDueDate("2021-05-20", baseDate)).toBe("2024-05-20");
     });
 
-    it("이미 3년이 지난 경우, 매년 도래하는 다음 납부 기한을 반환한다", () => {
-      // 2020-05-19 등록 -> 1차(2023), 2차(2024), 3차(2025) ... 
-      // 현재가 2024-06-01이면 다음 기한은 2025-05-19
+    it("올해 출원일 월일이 지난 경우 다음 해 납부 기한을 반환한다", () => {
       const baseDate = new Date("2024-06-01");
       expect(getNextAnnualFeeDueDate("2020-05-19", baseDate)).toBe("2025-05-19");
     });
 
     it("오늘이 납부 기한인 경우 오늘 날짜를 반환한다", () => {
       const baseDate = new Date("2024-05-19");
-      expect(getNextAnnualFeeDueDate("2021-05-19", baseDate)).toBe("2024-05-19");
+      expect(getNextAnnualFeeDueDate("2020-05-19", baseDate)).toBe("2024-05-19");
     });
 
     it("잘못된 날짜 형식이 입력되면 빈 문자열을 반환한다", () => {

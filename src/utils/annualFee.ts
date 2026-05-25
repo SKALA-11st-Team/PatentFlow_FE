@@ -1,18 +1,18 @@
 /**
  * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-01, UI-LEGAL-04, UI-BUS-03
- * @description 등록일 기준 첫 3년 후, 이후 매년 도래하는 다음 연차료 납부 기한을 계산한다.
+ * @description 출원일 기준으로 매년 도래하는 다음 연차료 납부 기한을 계산한다.
  */
-export function getNextAnnualFeeDueDate(registrationDateText: string, baseDate = new Date()) {
-  const registrationDate = parseDate(registrationDateText);
+export function getNextAnnualFeeDueDate(applicationDateText: string, baseDate = new Date()) {
+  const applicationDate = parseDate(applicationDateText);
   
-  if (!registrationDate) {
+  if (!applicationDate) {
     // 유효하지 않은 날짜인 경우 계산이 불가능하므로 빈 문자열 반환
     return "";
   }
 
   const todayStart = getDateStart(baseDate);
-  const dueDate = new Date(registrationDate.getFullYear() + 3, registrationDate.getMonth(), registrationDate.getDate());
+  const dueDate = new Date(todayStart.getFullYear(), applicationDate.getMonth(), applicationDate.getDate());
 
   while (dueDate.getTime() < todayStart.getTime()) {
     dueDate.setFullYear(dueDate.getFullYear() + 1);

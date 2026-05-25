@@ -722,6 +722,7 @@ function getGeneratedMockRecommendationText(recommendation: Recommendation) {
     HOLD: "AI 평가 결과 일부 근거가 부족해 추가 확인 후 판단하는 것이 적절합니다.",
     MAINTAIN: "AI 평가 결과 권리성, 기술성, 사업 연계성 근거가 확인되어 유지 검토가 가능합니다.",
     REVIEW_AGAIN: "AI 평가 결과 일부 평가 근거 보완 후 다시 검토하는 것이 적절합니다.",
+    SALES_CANDIDATE: "AI 평가 결과 유지 필요성이 낮아 포기 검토 및 매각 후보 분류가 필요합니다.",
   };
 
   return textMap[recommendation];
@@ -935,6 +936,9 @@ function createFallbackFinalDecisionResult(patentId: string, payload: FinalDecis
 function getLifecycleStatusByLegalAction(legalActionResult: LegalActionResult): PatentLifecycleStatus {
   if (legalActionResult === "ABANDONED") {
     return "ABANDONED";
+  }
+  if (legalActionResult === "SOLD") {
+    return "SOLD";
   }
 
   return "ACTIVE";

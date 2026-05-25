@@ -93,6 +93,7 @@ function getSubmissionScore(recommendation: Recommendation, version: number) {
     MAINTAIN: 80,
     REVIEW_AGAIN: 64,
     ABANDON: 48,
+    SALES_CANDIDATE: 48,
     HOLD: 60,
   };
 
