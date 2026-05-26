@@ -9,7 +9,7 @@ export const businessChecklistItems: BusinessChecklistItem[] = [
   {
     id: "TECH_COMPLETENESS",
     category: "기술적 가치",
-    title: "기술완성도",
+    title: "기술 완성도",
     description: "회사가 특허 관련 기술을 얼마나 구현해 놓은 상태인지 평가",
     options: [
       { score: 4, label: "판매 가능한 수준으로 개발 완료" },

@@ -275,10 +275,10 @@ function EvaluationHistoryModal({
           return (
             <article className="evaluation-history-item" key={score.itemId}>
               <div>
-                <span>{checklistItem?.category ?? "체크리스트"}</span>
+                <span>{normalizeChecklistTitle(checklistItem?.title ?? score.itemId)}</span>
                 <strong>{getEvaluationJudgement(score.score)}</strong>
                 <p>
-                  {checklistItem?.title ?? score.itemId} · {score.memo}
+                  {normalizeChecklistTitle(checklistItem?.title ?? score.itemId)} · {score.memo}
                 </p>
               </div>
               <b>{score.score}</b>
@@ -362,6 +362,10 @@ function getNextDecisionQuarter(feeDueDate: string) {
 
 function formatDate(dateText: string | null) {
   return dateText ? dateText.slice(0, 10) : "N/A";
+}
+
+function normalizeChecklistTitle(title: string) {
+  return title === "기술완성도" ? "기술 완성도" : title;
 }
 
 function getSubmissionQuarter(submittedAt: string) {

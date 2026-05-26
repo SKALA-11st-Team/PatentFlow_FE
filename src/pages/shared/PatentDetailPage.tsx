@@ -255,7 +255,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta label="관리번호" value={patent.managementNumber} />
           <Meta label="출원번호" value={patent.applicationNumber} />
           <Meta label="등록번호" value={patent.registrationNumber ?? "N/A"} />
-          <Meta label="연차료 납부 예정일" value={formatShortDate(patent.feeDueDate)} />
+          <Meta label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} />
           <Meta label="관련사업 분야" value={patent.businessArea} />
           <Meta label="관련기술 분야" value={patent.technologyArea} />
           <Meta label="관련제품" value={patent.productName} />
@@ -277,6 +277,11 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                   <strong>{recommendationLabels[patent.aiEvaluationReport.recommendation]}</strong>
                   <p>{patent.aiEvaluationReport.recommendationText}</p>
                 </div>
+                {patent.aiEvaluationReport.rawMarkdown ? (
+                  <RawMarkdownBlock content={patent.aiEvaluationReport.rawMarkdown} title="AI 특허 평가 레포트 전문" />
+                ) : (
+                  <AiReportStructuredContent report={patent.aiEvaluationReport} />
+                )}
                 <div className="history-mini-list">
                   {patentHistoryItems.slice(0, 4).map((item) => (
                     <div key={item.historyId}>
@@ -328,34 +333,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                 </ul>
               </div>
             ) : null}
-            <div className="score-list">
-              {patent.aiEvaluationReport.scores.map((score) => (
-                <div className="score-row" key={score.category}>
-                  <div>
-                    <strong>{evaluationCategoryLabels[score.category]}</strong>
-                    <span>{score.evidenceSummary}</span>
-                    {score.evidenceDetails?.length ? (
-                      <ul className="score-detail-list">
-                        {score.evidenceDetails.map((detail) => (
-                          <li key={detail.text}>
-                            {detail.text}
-                            {detail.source ? (
-                              <>
-                                {" "}
-                                <a className="inline-source-link" href={detail.source.url} rel="noreferrer" target="_blank">
-                                  🔗 {detail.source.title}
-                                </a>
-                              </>
-                            ) : null}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                  <b>{score.score ?? "N/A"}</b>
-                </div>
-              ))}
-            </div>
+            <AiReportStructuredContent report={patent.aiEvaluationReport} />
             {patent.aiEvaluationReport.businessCheckRequests?.length ? (
               <div className="report-block">
                 <h3>사업부 확인 요청 사항</h3>
@@ -1278,19 +1256,52 @@ function getAdminActionButtonLabel(workflowStatus: ReviewWorkflowStatus) {
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-05
  * @relatedUI UI-LEGAL-04, UI-BUS-03
- * @description 특허 상세 연차료 납부 예정일을 yy-mm-dd 형식으로 표시한다.
- */
-function formatShortDate(dateText: string) {
-  return dateText.slice(2);
-}
-
-/**
- * @relatedFR FR-LEGAL-06, FR-LEGAL-09
- * @relatedUI UI-LEGAL-04, UI-BUS-03
- * @description AI 특허 평가 레포트 작성일을 yyyy-mm-dd 형식으로 표시한다.
+ * @description 특허 상세 날짜를 yyyy-mm-dd 형식으로 표시한다.
  */
 function formatDate(dateText: string) {
   return dateText.slice(0, 10);
+}
+
+function AiReportStructuredContent({ report }: { report: PatentDetail["aiEvaluationReport"] }) {
+  return (
+    <div className="score-list">
+      {report.scores.map((score) => (
+        <div className="score-row" key={score.category}>
+          <div>
+            <strong>{evaluationCategoryLabels[score.category]}</strong>
+            <span>{score.evidenceSummary}</span>
+            {score.evidenceDetails?.length ? (
+              <ul className="score-detail-list">
+                {score.evidenceDetails.map((detail) => (
+                  <li key={detail.text}>
+                    {detail.text}
+                    {detail.source ? (
+                      <>
+                        {" "}
+                        <a className="inline-source-link" href={detail.source.url} rel="noreferrer" target="_blank">
+                          🔗 {detail.source.title}
+                        </a>
+                      </>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+          <b>{score.score ?? "N/A"}</b>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RawMarkdownBlock({ content, title }: { content: string; title: string }) {
+  return (
+    <details className="raw-markdown-block" open>
+      <summary>{title}</summary>
+      <pre>{content}</pre>
+    </details>
+  );
 }
 
 /**
