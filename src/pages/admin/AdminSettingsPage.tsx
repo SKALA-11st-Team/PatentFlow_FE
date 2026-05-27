@@ -4,23 +4,25 @@ import {
   adjustAnnualFeeSchedule,
   activateReviewQuarter,
   deleteClassification,
-  endReviewQuarter,
   getAnnualFeeSchedule,
   getClassifications,
   getCountryExtensions,
+  getMailLeadMonths, 
   getMailSettings,
+  getResponseDeadline, 
   getReviewQuarters,
   renameClassification,
   updateCountryExtension,
+  updateMailLeadMonths,
   updateMailSettings,
-  updateReviewQuarter,
-  updateReviewSchedule,
+  updateResponseDeadline,
   type AnnualFeeScheduleItem,
   type ClassificationGroup,
   type ClassificationType,
   type CountryExtension,
   type MailSettings,
   type QuarterSetting,
+  type ResponseDeadline,
 } from "../../api/settings";
 import { Button } from "../../components/common/Button";
 import { AppLayout } from "../../components/layout/AppLayout";
@@ -41,9 +43,19 @@ export function AdminSettingsPage() {
   const [mailMessage, setMailMessage] = useState("");
   const [countryExtensions, setCountryExtensions] = useState<CountryExtension[]>([]);
   const [extMessage, setExtMessage] = useState("");
-  const [scheduleForm, setScheduleForm] = useState({ businessResponseDueDate: "", mailLeadMonths: 2 });
-  const [scheduleMessage, setScheduleMessage] = useState("");
-  const [isSavingSchedule, setIsSavingSchedule] = useState(false);
+  // *Months = 서버에 저장된 확정값, *MonthsInput = 사용자가 수정 중인 임시값
+  // 저장 버튼은 두 값이 다를 때만 활성화해 불필요한 API 호출을 막는다.
+  const [mailLeadMonths, setMailLeadMonths] = useState(2);
+  const [mailLeadMonthsInput, setMailLeadMonthsInput] = useState(2);
+  const [isSavingMailLead, setIsSavingMailLead] = useState(false);
+  const [mailLeadMessage, setMailLeadMessage] = useState("");
+  const [responseDeadline, setResponseDeadline] = useState<ResponseDeadline>({ months: 1, days: 0 });
+  const [responseDeadlineInput, setResponseDeadlineInput] = useState<ResponseDeadline>({ months: 1, days: 0 });
+  const [isSavingDeadline, setIsSavingDeadline] = useState(false);
+  const [deadlineMessage, setDeadlineMessage] = useState("");
+  // 당해 연도 + 내년 분기를 합쳐 이력/예정 테이블에 표시한다.
+  // quarters(당해)는 다른 섹션에서 현재 활성 분기 판단 등에도 사용.
+  const [allQuarters, setAllQuarters] = useState<QuarterSetting[]>([]);
   const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
   const [classificationMessage, setClassificationMessage] = useState("");
   const [annualFeeSchedule, setAnnualFeeSchedule] = useState<AnnualFeeScheduleItem[]>([]);
@@ -52,18 +64,30 @@ export function AdminSettingsPage() {
 
   useEffect(() => {
     setIsLoading(true);
-    Promise.all([getReviewQuarters(), getMailSettings(), getCountryExtensions(), getClassifications()])
-      .then(([nextQuarters, nextMailSettings, nextExtensions, nextClassifications]) => {
-        setQuarters(nextQuarters);
+    const currentYear = new Date().getFullYear();
+    // 당해·내년 분기를 한 번에 로드해 이력 테이블에 2개 연도를 함께 표시한다.
+    // mailLeadMonths·responseDeadline은 기존 review-schedule 단일 엔드포인트에서
+    // 분리된 독립 엔드포인트로 각각 조회한다.
+    Promise.all([
+      getReviewQuarters(currentYear),
+      getReviewQuarters(currentYear + 1),
+      getMailSettings(),
+      getCountryExtensions(),
+      getClassifications(),
+      getMailLeadMonths(),
+      getResponseDeadline(),
+    ])
+      .then(([thisYearQ, nextYearQ, nextMailSettings, nextExtensions, nextClassifications, nextMailLead, nextDeadline]) => {
+        setQuarters(thisYearQ);
+        setAllQuarters([...thisYearQ, ...nextYearQ]);
         setMailSettings(nextMailSettings);
         setMailForm({ gmailUsername: nextMailSettings.gmailUsername ?? "", gmailAppPassword: "" });
         setCountryExtensions(nextExtensions);
         setClassifications(nextClassifications);
-        const firstQuarter = nextQuarters[0];
-        setScheduleForm({
-          businessResponseDueDate: firstQuarter?.businessResponseDueDate ?? firstQuarter?.submissionDeadline ?? "",
-          mailLeadMonths: firstQuarter?.mailLeadMonths ?? 2,
-        });
+        setMailLeadMonths(nextMailLead);
+        setMailLeadMonthsInput(nextMailLead);
+        setResponseDeadline(nextDeadline);
+        setResponseDeadlineInput(nextDeadline);
       })
       .catch(() => setMessage("설정을 불러오지 못했습니다."))
       .finally(() => setIsLoading(false));
@@ -91,33 +115,35 @@ export function AdminSettingsPage() {
     }
   }
 
-  async function handleSave(quarterKey: string, startDate: string | null, endDate: string | null, submissionDeadline: string | null) {
+  async function handleSaveMailLeadMonths(event: React.FormEvent) {
+    event.preventDefault();
+    setIsSavingMailLead(true);
+    setMailLeadMessage("");
     try {
-      const updated = await updateReviewQuarter(quarterKey, startDate, endDate, submissionDeadline);
-      setQuarters((prev) => prev.map((q) => (q.quarterKey === quarterKey ? updated : q)));
-      setMessage(`${quarterKey} 설정이 저장되었습니다.`);
+      const updated = await updateMailLeadMonths(mailLeadMonthsInput);
+      setMailLeadMonths(updated);
+      setMailLeadMonthsInput(updated);
+      setMailLeadMessage("메일 발송 기준이 저장되었습니다.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
+      setMailLeadMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
+    } finally {
+      setIsSavingMailLead(false);
     }
   }
 
-  async function handleSaveReviewSchedule(event: React.FormEvent) {
+  async function handleSaveResponseDeadline(event: React.FormEvent) {
     event.preventDefault();
-    setIsSavingSchedule(true);
-    setScheduleMessage("");
+    setIsSavingDeadline(true);
+    setDeadlineMessage("");
     try {
-      const year = quarters[0]?.year ?? new Date().getFullYear();
-      const updated = await updateReviewSchedule(
-        year,
-        scheduleForm.mailLeadMonths,
-        scheduleForm.businessResponseDueDate || null,
-      );
-      setQuarters(updated);
-      setScheduleMessage("회신 기한과 메일 발송 기준이 저장되었습니다.");
+      const updated = await updateResponseDeadline(responseDeadlineInput.months, responseDeadlineInput.days);
+      setResponseDeadline(updated);
+      setResponseDeadlineInput(updated);
+      setDeadlineMessage("회신 기한이 저장되었습니다.");
     } catch (error) {
-      setScheduleMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
+      setDeadlineMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
     } finally {
-      setIsSavingSchedule(false);
+      setIsSavingDeadline(false);
     }
   }
 
@@ -141,21 +167,16 @@ export function AdminSettingsPage() {
     try {
       const result = await activateReviewQuarter(quarterKey);
       setMessage(`${quarterKey} 분기 시작 완료: 검토 시작 ${result.reviewStartedCount}건`);
-      const updated = await getReviewQuarters();
-      setQuarters(updated);
+      // 활성화 후 activated/submissionDeadline 등이 변경되므로 양쪽 연도를 다시 불러온다.
+      const currentYear = new Date().getFullYear();
+      const [thisYearQ, nextYearQ] = await Promise.all([
+        getReviewQuarters(currentYear),
+        getReviewQuarters(currentYear + 1),
+      ]);
+      setQuarters(thisYearQ);
+      setAllQuarters([...thisYearQ, ...nextYearQ]);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "분기 시작에 실패했습니다.");
-    }
-  }
-
-  async function handleEnd(quarterKey: string) {
-    if (!confirm(`${quarterKey} 분기를 종료하시겠습니까?`)) return;
-    try {
-      const updated = await endReviewQuarter(quarterKey);
-      setQuarters((prev) => prev.map((q) => (q.quarterKey === quarterKey ? updated : q)));
-      setMessage(`${quarterKey} 분기가 종료되었습니다.`);
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "분기 종료에 실패했습니다.");
     }
   }
 
@@ -242,34 +263,29 @@ export function AdminSettingsPage() {
       <section className="section">
         <div className="section-header">
           <div>
-            <h2>회신 기한 및 발송 기준</h2>
-            <p>사업부에는 회신 기한을 표시하고, 실제 법무 처리 기한과 분리해서 관리합니다.</p>
+            <h2>검토 요청 메일 발송 기준</h2>
+            <p>분기 시작일 N개월 전에 스케줄러가 자동으로 분기를 활성화하고 검토 요청 메일을 발송합니다.</p>
           </div>
         </div>
-        <form className="settings-card settings-form" onSubmit={handleSaveReviewSchedule}>
+        <form className="settings-card settings-form" onSubmit={handleSaveMailLeadMonths}>
           <label className="form-field">
-            <span className="form-label-text">일괄 회신 기한</span>
-            <input
-              onChange={(event) => setScheduleForm((form) => ({ ...form, businessResponseDueDate: event.target.value }))}
-              type="date"
-              value={scheduleForm.businessResponseDueDate}
-            />
-          </label>
-          <label className="form-field">
-            <span className="form-label-text">검토 요청 메일 발송 기준</span>
+            <span className="form-label-text">발송 기준 (개월)</span>
             <input
               max={24}
               min={0}
-              onChange={(event) => setScheduleForm((form) => ({ ...form, mailLeadMonths: Number(event.target.value) }))}
+              onChange={(e) => setMailLeadMonthsInput(Number(e.target.value))}
               type="number"
-              value={scheduleForm.mailLeadMonths}
+              value={mailLeadMonthsInput}
             />
-            <small className="form-helper-text">분기 시작일 몇 개월 전에 보낼지 설정합니다. 기본값은 2개월 전입니다.</small>
+            <small className="form-helper-text">
+              분기 시작일 몇 개월 전에 검토를 시작할지 설정합니다. 기본값은 2개월입니다.
+              현재 저장값: {mailLeadMonths}개월
+            </small>
           </label>
-          {scheduleMessage ? <p className="notice notice-compact">{scheduleMessage}</p> : null}
+          {mailLeadMessage ? <p className="notice notice-compact">{mailLeadMessage}</p> : null}
           <div>
-            <Button disabled={isSavingSchedule} type="submit">
-              {isSavingSchedule ? "저장 중…" : "일괄 저장"}
+            <Button disabled={isSavingMailLead || mailLeadMonthsInput === mailLeadMonths} type="submit">
+              {isSavingMailLead ? "저장 중…" : "저장"}
             </Button>
           </div>
         </form>
@@ -278,11 +294,95 @@ export function AdminSettingsPage() {
       <section className="section">
         <div className="section-header">
           <div>
-            <h2>검토 분기 설정</h2>
+            <h2>사업부 회신 기한</h2>
             <p>
-              {isLoading
-                ? "분기 설정을 불러오는 중입니다."
-                : "각 분기의 연차료 납부 기간을 설정하고, 해당 분기 검토를 시작하세요."}
+              분기 활성화(검토 시작) 후 사업부가 회신해야 하는 기한입니다.
+              활성화일 기준 「+ N개월 + M일」로 자동 계산됩니다.
+            </p>
+          </div>
+        </div>
+        <form className="settings-card settings-form" onSubmit={handleSaveResponseDeadline}>
+          <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", flexWrap: "wrap" }}>
+            <label className="form-field" style={{ flex: "1 1 120px" }}>
+              <span className="form-label-text">개월</span>
+              <input
+                max={12}
+                min={0}
+                onChange={(e) => setResponseDeadlineInput((prev) => ({ ...prev, months: Number(e.target.value) }))}
+                type="number"
+                value={responseDeadlineInput.months}
+              />
+            </label>
+            <label className="form-field" style={{ flex: "1 1 120px" }}>
+              <span className="form-label-text">일</span>
+              <input
+                max={30}
+                min={0}
+                onChange={(e) => setResponseDeadlineInput((prev) => ({ ...prev, days: Number(e.target.value) }))}
+                type="number"
+                value={responseDeadlineInput.days}
+              />
+            </label>
+          </div>
+          <small className="form-helper-text">
+            기본값: 검토 시작 후 1개월 0일.
+            현재 저장값: 검토 시작 후 {responseDeadline.months}개월 {responseDeadline.days}일
+          </small>
+          {deadlineMessage ? <p className="notice notice-compact">{deadlineMessage}</p> : null}
+          <div>
+            <Button
+              disabled={
+                isSavingDeadline ||
+                (responseDeadlineInput.months === responseDeadline.months &&
+                  responseDeadlineInput.days === responseDeadline.days)
+              }
+              type="submit"
+            >
+              {isSavingDeadline ? "저장 중…" : "저장"}
+            </Button>
+          </div>
+        </form>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>분기 기준</h2>
+            <p>연차료 납부 기간 기준으로 구분되는 분기 범위입니다.</p>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>분기</th>
+                <th>납부 기간</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { q: "Q1", range: "1월 1일 ~ 3월 31일" },
+                { q: "Q2", range: "4월 1일 ~ 6월 30일" },
+                { q: "Q3", range: "7월 1일 ~ 9월 30일" },
+                { q: "Q4", range: "10월 1일 ~ 12월 31일" },
+              ].map(({ q, range }) => (
+                <tr key={q}>
+                  <td><strong>{q}</strong></td>
+                  <td>{range}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section-header">
+          <div>
+            <h2>분기 이력 및 예정 일정</h2>
+            <p>
+              과거 분기 진행 이력과 향후 예정 일정을 확인합니다.
+              분기 시작·종료는 스케줄러가 자동 처리하며, 수동으로 시작할 수도 있습니다.
             </p>
           </div>
         </div>
@@ -296,35 +396,38 @@ export function AdminSettingsPage() {
             <thead>
               <tr>
                 <th>분기</th>
-                <th>납부 기간 시작</th>
-                <th>납부 기간 종료</th>
+                <th>납부 기간</th>
+                <th>검토 시작일</th>
                 <th>회신 기한</th>
-                <th>메일 발송 예정일</th>
                 <th>대상 특허</th>
                 <th>상태</th>
                 <th>작업</th>
               </tr>
             </thead>
             <tbody>
-              {quarters.map((quarter) => (
-                <QuarterRow
-                  key={quarter.quarterKey}
-                  quarter={quarter}
-                  onSave={handleSave}
-                  onActivate={handleActivate}
-                  onEnd={handleEnd}
-                />
-              ))}
-              {!isLoading && quarters.length === 0 ? (
-                <tr>
-                  <td className="empty-table-cell" colSpan={8}>
-                    분기 설정이 없습니다. BE 실행 상태를 확인하세요.
-                  </td>
-                </tr>
-              ) : null}
+              {isLoading ? (
+                <tr><td className="empty-table-cell" colSpan={7}>불러오는 중…</td></tr>
+              ) : allQuarters.length === 0 ? (
+                <tr><td className="empty-table-cell" colSpan={7}>분기 데이터가 없습니다.</td></tr>
+              ) : (
+                // .slice()로 원본 배열을 복사한 뒤 정렬 — allQuarters state를 직접 변경하지 않기 위해
+                allQuarters
+                  .slice()
+                  .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""))
+                  .map((quarter) => (
+                    <QuarterHistoryRow
+                      key={quarter.quarterKey}
+                      quarter={quarter}
+                      onActivate={handleActivate}
+                    />
+                  ))
+              )}
             </tbody>
           </table>
         </div>
+        <p className="form-helper-text" style={{ marginTop: "0.5rem" }}>
+          분기 종료는 납부 기간 종료일 경과 후 스케줄러가 자동 처리합니다.
+        </p>
       </section>
 
       <section className="section">
@@ -500,130 +603,89 @@ export function AdminSettingsPage() {
   );
 }
 
-function QuarterRow({
+// 분기 이력·예정 행 — 분기 편집·종료 버튼을 제거하고 읽기 전용으로 단순화.
+// 종료는 스케줄러 자동 처리, 수동 시작만 isUpcoming 상태에서 허용.
+function QuarterHistoryRow({
   quarter,
-  onSave,
   onActivate,
-  onEnd,
 }: {
   quarter: QuarterSetting;
-  onSave: (key: string, start: string | null, end: string | null, deadline: string | null) => Promise<void>;
   onActivate: (key: string) => Promise<void>;
-  onEnd: (key: string) => Promise<void>;
 }) {
-  const [startDate, setStartDate] = useState(quarter.startDate ?? "");
-  const [endDate, setEndDate] = useState(quarter.endDate ?? "");
-  const [submissionDeadline, setSubmissionDeadline] = useState(quarter.submissionDeadline ?? "");
-  const [isSaving, setIsSaving] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
-  const [isEnding, setIsEnding] = useState(false);
 
-  const isDateRangeDirty = !quarter.activated && (
-    startDate !== (quarter.startDate ?? "") || endDate !== (quarter.endDate ?? "")
-  );
-  const isDeadlineDirty = submissionDeadline !== (quarter.submissionDeadline ?? "");
-  const isDirty = isDateRangeDirty || isDeadlineDirty;
+  const fmt = (d: string | null) =>
+    d ? new Date(d).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" }) : "-";
+  const fmtFull = (d: string | null) =>
+    d ? new Date(d).toLocaleDateString("ko-KR") : "-";
 
-  async function save() {
-    setIsSaving(true);
-    const start = quarter.activated ? null : (startDate || null);
-    const end = quarter.activated ? null : (endDate || null);
-    await onSave(quarter.quarterKey, start, end, submissionDeadline || null).finally(() => setIsSaving(false));
-  }
+  // isUpcoming: 아직 활성화되지 않은 예정 분기 — 수동 시작 버튼 표시 조건
+  // isActive: 현재 진행 중인 분기 — 종료는 스케줄러가 처리하므로 UI에서 별도 버튼 없음
+  const isUpcoming = !quarter.activated && !quarter.ended;
+  const isActive = quarter.activated && !quarter.ended;
 
   async function activate() {
     setIsActivating(true);
     await onActivate(quarter.quarterKey).finally(() => setIsActivating(false));
   }
 
-  async function end() {
-    setIsEnding(true);
-    await onEnd(quarter.quarterKey).finally(() => setIsEnding(false));
-  }
-
   return (
-    <tr>
+    // 종료된 분기는 opacity를 낮춰 과거 이력임을 시각적으로 구분
+    <tr style={{ opacity: quarter.ended ? 0.6 : 1 }}>
       <td>
         <strong>{quarter.quarterLabel}</strong>
+        {quarter.ended && quarter.endedAt ? (
+          <span className="table-subtext">{fmtFull(quarter.endedAt)} 종료</span>
+        ) : null}
       </td>
       <td>
-        <input
-          disabled={quarter.activated}
-          onChange={(e) => setStartDate(e.target.value)}
-          type="date"
-          value={startDate}
-        />
+        {fmt(quarter.startDate)} ~ {fmt(quarter.endDate)}
       </td>
       <td>
-        <input
-          disabled={quarter.activated}
-          onChange={(e) => setEndDate(e.target.value)}
-          type="date"
-          value={endDate}
-        />
+        {quarter.activated ? (
+          <>
+            <strong>{fmtFull(quarter.activatedAt)}</strong>
+            <span className="table-subtext">실제 시작</span>
+          </>
+        ) : quarter.scheduledMailSendDate ? (
+          <>
+            <strong>{fmtFull(quarter.scheduledMailSendDate)}</strong>
+            <span className="table-subtext">예정 ({quarter.mailLeadMonths}개월 전)</span>
+          </>
+        ) : "-"}
       </td>
       <td>
-        <input
-          disabled={quarter.ended}
-          onChange={(e) => setSubmissionDeadline(e.target.value)}
-          placeholder="회신 기한 설정"
-          type="date"
-          value={submissionDeadline}
-        />
+        {quarter.submissionDeadline ? (
+          <strong>{fmtFull(quarter.submissionDeadline)}</strong>
+        ) : (
+          <span className="table-subtext">활성화 시 자동 계산</span>
+        )}
       </td>
       <td>
-        <strong>{quarter.scheduledMailSendDate ?? "-"}</strong>
-        <span className="table-subtext">{quarter.mailLeadMonths}개월 전 발송</span>
+        {quarter.activated
+          ? `${quarter.targetPatentCount}건`
+          : "-"}
       </td>
-      <td>{quarter.activated ? `${quarter.targetPatentCount}건` : quarter.targetPatentCount > 0 ? `${quarter.targetPatentCount}건 (예정)` : "-"}</td>
       <td>
         {quarter.ended ? (
           <span className="badge badge-neutral">종료</span>
-        ) : quarter.activated ? (
-          <span className="badge badge-success">활성</span>
+        ) : isActive ? (
+          <span className="badge badge-success">진행 중</span>
         ) : (
-          <span className="badge badge-neutral">미시작</span>
+          <span className="badge badge-neutral">예정</span>
         )}
       </td>
       <td className="table-cell-actions">
-        {!quarter.ended && (
+        {isUpcoming && (
           <Button
-            disabled={isSaving || !isDirty}
-            onClick={save}
-            type="button"
-            variant="secondary"
-          >
-            {isSaving ? "저장 중…" : "저장"}
-          </Button>
-        )}
-        {!quarter.activated && !quarter.ended && (
-          <Button
-            disabled={isActivating || !quarter.startDate || !quarter.endDate || isDateRangeDirty}
+            disabled={isActivating}
             onClick={activate}
             type="button"
-          >
-            {isActivating ? "처리 중…" : "분기 시작"}
-          </Button>
-        )}
-        {quarter.activated && !quarter.ended && (
-          <Button
-            disabled={isEnding}
-            onClick={end}
-            type="button"
             variant="secondary"
           >
-            {isEnding ? "처리 중…" : "분기 종료"}
+            {isActivating ? "처리 중…" : "수동 시작"}
           </Button>
         )}
-        {quarter.ended && quarter.endedAt ? (
-          <span className="table-subtext">
-            {new Date(quarter.endedAt).toLocaleDateString("ko-KR")} 종료됨
-          </span>
-        ) : quarter.activated && quarter.activatedAt ? (
-          <span className="table-subtext">
-            {new Date(quarter.activatedAt).toLocaleDateString("ko-KR")} 시작됨
-          </span>
-        ) : null}
       </td>
     </tr>
   );
