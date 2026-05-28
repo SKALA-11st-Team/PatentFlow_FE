@@ -4,13 +4,16 @@ import {
   adjustAnnualFeeSchedule,
   activateReviewQuarter,
   deleteClassification,
+  disconnectMailOAuth2,
   getAnnualFeeSchedule,
   getClassifications,
   getCountryExtensions,
-  getMailLeadMonths, 
+  getMailLeadMonths,
+  getMailOAuth2Status,
   getMailSettings,
-  getResponseDeadline, 
+  getResponseDeadline,
   getReviewQuarters,
+  redirectToGoogleOAuth2,
   renameClassification,
   updateCountryExtension,
   updateMailLeadMonths,
@@ -20,6 +23,7 @@ import {
   type ClassificationGroup,
   type ClassificationType,
   type CountryExtension,
+  type MailOAuth2Status,
   type MailSettings,
   type QuarterSetting,
   type ResponseDeadline,
@@ -58,9 +62,23 @@ export function AdminSettingsPage() {
   const [allQuarters, setAllQuarters] = useState<QuarterSetting[]>([]);
   const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
   const [classificationMessage, setClassificationMessage] = useState("");
+  const [oauth2Status, setOAuth2Status] = useState<MailOAuth2Status>({ connected: false, connectedEmail: null });
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [annualFeeSchedule, setAnnualFeeSchedule] = useState<AnnualFeeScheduleItem[]>([]);
   const [annualFeeCountry, setAnnualFeeCountry] = useState("ALL");
   const [annualFeeMessage, setAnnualFeeMessage] = useState("");
+
+  // OAuth2 콜백에서 돌아왔을 때 URL 파라미터로 결과를 전달받아 메시지를 표시한다.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("oauth2_success")) {
+      setMailMessage("Google 계정 연동이 완료되었습니다.");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (params.get("oauth2_error")) {
+      setMailMessage(`Google 연동에 실패했습니다: ${params.get("oauth2_error")}`);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     setIsLoading(true);
@@ -76,14 +94,17 @@ export function AdminSettingsPage() {
       getClassifications(),
       getMailLeadMonths(),
       getResponseDeadline(),
+      // OAuth2 상태 조회 실패 시 fallback을 반환해 나머지 설정 로드가 중단되지 않도록 한다
+      getMailOAuth2Status().catch(() => ({ connected: false, connectedEmail: null } as MailOAuth2Status)),
     ])
-      .then(([thisYearQ, nextYearQ, nextMailSettings, nextExtensions, nextClassifications, nextMailLead, nextDeadline]) => {
+      .then(([thisYearQ, nextYearQ, nextMailSettings, nextExtensions, nextClassifications, nextMailLead, nextDeadline, nextOAuth2]) => {
         setQuarters(thisYearQ);
         setAllQuarters([...thisYearQ, ...nextYearQ]);
         setMailSettings(nextMailSettings);
         setMailForm({ gmailUsername: nextMailSettings.gmailUsername ?? "", gmailAppPassword: "" });
         setCountryExtensions(nextExtensions);
         setClassifications(nextClassifications);
+        setOAuth2Status(nextOAuth2);
         setMailLeadMonths(nextMailLead);
         setMailLeadMonthsInput(nextMailLead);
         setResponseDeadline(nextDeadline);
@@ -191,72 +212,91 @@ export function AdminSettingsPage() {
         </div>
 
         <div className="settings-card" style={{ marginBottom: "1rem" }}>
-          <div style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span>현재 상태:</span>
-            {mailSettings?.gmailUsername ? (
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+            {oauth2Status.connected ? (
               <>
-                <span className="badge badge-success">설정됨</span>
-                <span className="form-helper-text">
-                  {mailSettings.gmailUsername} · {mailSettings.isAppPasswordConfigured ? "레거시 자격 증명 등록됨" : "Google 계정 연동 권장"}
-                </span>
+                <span className="badge badge-success">Google 연동됨</span>
+                <span className="form-helper-text">{oauth2Status.connectedEmail}</span>
+                <Button
+                  disabled={isDisconnecting}
+                  onClick={async () => {
+                    setIsDisconnecting(true);
+                    try {
+                      await disconnectMailOAuth2();
+                      setOAuth2Status({ connected: false, connectedEmail: null });
+                      setMailMessage("Google 계정 연동이 해제되었습니다.");
+                    } catch {
+                      setMailMessage("연동 해제에 실패했습니다.");
+                    } finally {
+                      setIsDisconnecting(false);
+                    }
+                  }}
+                  type="button"
+                  variant="secondary"
+                >
+                  {isDisconnecting ? "해제 중…" : "연동 해제"}
+                </Button>
               </>
             ) : (
-              <span className="badge badge-neutral">미설정</span>
+              <>
+                <span className="badge badge-neutral">미연동</span>
+                <Button
+                  onClick={() => redirectToGoogleOAuth2().catch(() => setMailMessage("Google 연동 URL을 불러오지 못했습니다."))}
+                  type="button"
+                >
+                  Google 계정으로 연동하기
+                </Button>
+              </>
             )}
           </div>
+          <small className="form-helper-text" style={{ marginTop: "0.5rem", display: "block" }}>
+            연동된 Google 계정으로 메일을 발송합니다. 앱 비밀번호보다 안전하며 재입력이 필요 없습니다.
+          </small>
+        </div>
 
-          <div className="settings-form">
-            <div className="oauth-pending-panel">
-              <Button disabled type="button">
-                Google 계정으로 연동하기
-              </Button>
-              <span className="form-helper-text">Google 계정 연동은 백엔드 인증 엔드포인트 준비 후 활성화됩니다.</span>
-            </div>
+        {mailMessage ? <p className="notice notice-compact" style={{ margin: "0.5rem 0" }}>{mailMessage}</p> : null}
 
-            <div style={{ marginTop: "0.5rem" }}>
-              <button
-                type="button"
-                className="table-action-link"
-                onClick={() => setShowLegacyMailForm((s) => !s)}
-              >
-                {showLegacyMailForm ? "앱 비밀번호 숨기기(권장 아님)" : "앱 비밀번호 직접 입력(레거시)"}
-              </button>
-            </div>
-
-            {showLegacyMailForm ? (
-              <form onSubmit={handleSaveMail} className="settings-form" style={{ marginTop: "0.75rem" }}>
-                <label className="form-field">
-                  <span className="form-label-text">Gmail 계정 (레거시)</span>
-                  <input
-                    onChange={(e) => setMailForm((f) => ({ ...f, gmailUsername: e.target.value }))}
-                    placeholder="your@gmail.com"
-                    type="email"
-                    value={mailForm.gmailUsername}
-                  />
-                </label>
-                <label className="form-field">
-                  <span className="form-label-text">Gmail 앱 비밀번호</span>
-                  <input
-                    onChange={(e) => setMailForm((f) => ({ ...f, gmailAppPassword: e.target.value }))}
-                    placeholder={mailSettings?.isAppPasswordConfigured ? "변경하려면 새로 입력 (공백이면 유지)" : "xxxx xxxx xxxx xxxx"}
-                    type="password"
-                    value={mailForm.gmailAppPassword}
-                  />
-                  <small className="form-helper-text">
-                    Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호에서 발급
-                  </small>
-                </label>
-                {mailMessage ? (
-                  <p className="notice notice-compact">{mailMessage}</p>
-                ) : null}
-                <div>
-                  <Button disabled={isSavingMail || !mailForm.gmailUsername} type="submit">
-                    {isSavingMail ? "저장 중…" : "저장 (레거시)"}
-                  </Button>
-                </div>
-              </form>
-            ) : null}
+        {/* 레거시: 앱 비밀번호 (OAuth2 미연동 시 폴백) */}
+        <div className="settings-card">
+          <div style={{ marginBottom: "0.5rem" }}>
+            <button
+              type="button"
+              className="table-action-link"
+              onClick={() => setShowLegacyMailForm((s) => !s)}
+            >
+              {showLegacyMailForm ? "앱 비밀번호 숨기기 (레거시)" : "앱 비밀번호 직접 입력 (레거시, OAuth2 미연동 시 폴백)"}
+            </button>
           </div>
+          {showLegacyMailForm ? (
+            <form onSubmit={handleSaveMail} className="settings-form">
+              <label className="form-field">
+                <span className="form-label-text">Gmail 계정</span>
+                <input
+                  onChange={(e) => setMailForm((f) => ({ ...f, gmailUsername: e.target.value }))}
+                  placeholder="your@gmail.com"
+                  type="email"
+                  value={mailForm.gmailUsername}
+                />
+              </label>
+              <label className="form-field">
+                <span className="form-label-text">Gmail 앱 비밀번호</span>
+                <input
+                  onChange={(e) => setMailForm((f) => ({ ...f, gmailAppPassword: e.target.value }))}
+                  placeholder={mailSettings?.isAppPasswordConfigured ? "변경하려면 새로 입력 (공백이면 유지)" : "xxxx xxxx xxxx xxxx"}
+                  type="password"
+                  value={mailForm.gmailAppPassword}
+                />
+                <small className="form-helper-text">
+                  Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호에서 발급
+                </small>
+              </label>
+              <div>
+                <Button disabled={isSavingMail || !mailForm.gmailUsername} type="submit">
+                  {isSavingMail ? "저장 중…" : "저장 (레거시)"}
+                </Button>
+              </div>
+            </form>
+          ) : null}
         </div>
       </section>
 

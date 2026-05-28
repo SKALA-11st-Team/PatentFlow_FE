@@ -142,6 +142,55 @@ export async function updateResponseDeadline(months: number, days: number): Prom
   return response.data ?? { months, days };
 }
 
+// ── Gmail OAuth2 ──────────────────────────────────────────────────────────────
+
+export interface MailOAuth2Credentials {
+  configured: boolean;
+  clientIdHint: string | null;
+}
+
+export interface MailOAuth2Status {
+  connected: boolean;
+  connectedEmail: string | null;
+}
+
+export async function getMailOAuth2Credentials(): Promise<MailOAuth2Credentials> {
+  if (!isBackendApiEnabled()) return { configured: false, clientIdHint: null };
+  const response = await requestJson<ApiEnvelope<MailOAuth2Credentials>>("/settings/mail/oauth2/google/credentials");
+  return response.data ?? { configured: false, clientIdHint: null };
+}
+
+export async function saveMailOAuth2Credentials(clientId: string, clientSecret: string): Promise<MailOAuth2Credentials> {
+  const response = await requestJson<ApiEnvelope<MailOAuth2Credentials>>(
+    "/settings/mail/oauth2/google/credentials",
+    { method: "PUT", body: JSON.stringify({ clientId, clientSecret }) },
+  );
+  return response.data ?? { configured: false, clientIdHint: null };
+}
+
+// OAuth2 상태 조회 실패 시 나머지 설정 로드를 막지 않도록 호출부에서 .catch()로 감싸야 한다.
+// (AdminSettingsPage의 Promise.all에서 .catch(() => fallback) 처리됨)
+export async function getMailOAuth2Status(): Promise<MailOAuth2Status> {
+  if (!isBackendApiEnabled()) return { connected: false, connectedEmail: null };
+  const response = await requestJson<ApiEnvelope<MailOAuth2Status>>("/settings/mail/oauth2/google/status");
+  return response.data ?? { connected: false, connectedEmail: null };
+}
+
+export async function disconnectMailOAuth2(): Promise<void> {
+  await requestJson<ApiEnvelope<MailOAuth2Status>>(
+    "/settings/mail/oauth2/google",
+    { method: "DELETE" },
+  );
+}
+
+// JWT 인증으로 Google OAuth URL을 받아 브라우저를 이동시킨다.
+// window.location.href 직접 이동 시 JWT 헤더가 없어 401이 발생하므로 API 경유 방식 사용.
+export async function redirectToGoogleOAuth2(): Promise<void> {
+  const response = await requestJson<ApiEnvelope<string>>("/settings/mail/oauth2/google/authorize-url");
+  const url = response.data;
+  if (url) window.location.href = url;
+}
+
 export async function getActiveQuarter(): Promise<QuarterSetting | null> {
   if (!isBackendApiEnabled()) return null;
   try {
