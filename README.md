@@ -76,9 +76,7 @@ VITE_API_BASE_URL=http://localhost:8080
 VITE_USE_MOCK_API=true
 ```
 
-Docker 이미지로 빌드할 때는 Vite 특성상 `VITE_API_BASE_URL`이 빌드 시점에 고정됩니다. 프로젝트 루트의 `docker-compose.yml`은 기본값으로 `http://localhost:8080`을 build arg로 전달합니다.
-
-프로덕션 이미지는 Nginx로 정적 파일을 서빙하며, `/admin/...`, `/business/...` 같은 React Router 경로 새로고침을 위해 `nginx.conf`의 SPA fallback을 사용합니다.
+프로덕션 배포는 Vercel 정적 배포를 기준으로 합니다. `vercel.json`의 rewrite 설정이 `/admin/...`, `/business/...` 같은 React Router 하위 라우트 새로고침을 `index.html`로 연결합니다.
 
 ## 주요 라우트
 
@@ -190,13 +188,6 @@ VITE_API_BASE_URL=http://localhost:8080
 npm run dev
 ```
 
-Docker/Nginx 배포 형태는 workspace 루트에서 확인합니다.
-
-```bash
-docker compose config
-docker compose up --build patentflow-fe patentflow-api
-```
-
-컨테이너 실행 후 `http://localhost:5173/admin/dashboard` 같은 하위 라우트를 새로고침해 SPA fallback이 정상 동작하는지 확인합니다.
+Vercel 배포 전에는 로컬에서 `npm run build`를 실행해 정적 번들이 정상 생성되는지 확인합니다.
 
 문서만 변경한 경우에는 별도 빌드가 필요하지 않을 수 있지만, 코드 변경이 포함되면 실제 실행 결과를 확인한 뒤 보고합니다.
