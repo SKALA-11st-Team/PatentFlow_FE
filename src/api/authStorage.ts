@@ -6,13 +6,11 @@ const USER_STORAGE_KEY = "patentflow.user";
 export interface AuthUser {
   departmentId: string | null;
   departmentName: string | null;
-  displayName?: string;
-  email: string;
-  name: string;
+  email: string;       // 로그인 ID
+  username: string;    // 실제 이름 (예: 이소율)
   role: UserRole;
   roles?: string[];
   userId: string;
-  username?: string;
 }
 
 export function getStoredAccessToken() {
@@ -39,11 +37,13 @@ export function getStoredAuthUser(): AuthUser | null {
 }
 
 export function storeAuthSession(user: AuthUser, accessToken?: string | null) {
+  // accessToken을 생략(undefined)하면 user 정보만 갱신 — 토큰은 건드리지 않는다
   if (accessToken === undefined) {
     window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
     return;
   }
 
+  // null이면 토큰 삭제(로그아웃 후 user만 남기는 시나리오 대비), 값이 있으면 교체
   if (accessToken) {
     window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
   } else {

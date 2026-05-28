@@ -2,8 +2,9 @@ import { isBackendApiEnabled, isMockApiEnabled, requestJson, type ApiEnvelope } 
 import { clearAuthSession, storeAuthSession, type AuthUser } from "./authStorage";
 
 export interface LoginRequest {
+  // BE /auth/login 은 "username" 필드를 로그인 ID(이메일)로 받는다 — AuthUser.email과 같은 값
   password: string;
-  username: string;
+  username: string; // 로그인 ID = email
 }
 
 export interface LoginResult {
@@ -17,9 +18,7 @@ export interface LoginResult {
 export async function login(request: LoginRequest): Promise<LoginResult> {
   if (isMockApiEnabled()) {
     const mockLoginResult = createMockLoginResult(request.username);
-
     storeAuthSession(mockLoginResult.user, mockLoginResult.accessToken);
-
     return mockLoginResult;
   }
 
@@ -32,39 +31,39 @@ export async function login(request: LoginRequest): Promise<LoginResult> {
     method: "POST",
   });
 
-  if (!response.data) {
-    throw new Error("로그인 응답이 비어 있습니다.");
-  }
-
+  if (!response.data) throw new Error("로그인 응답이 비어 있습니다.");
   storeAuthSession(response.data.user, response.data.accessToken);
-
   return response.data;
 }
 
-export async function updateProfile(displayName: string): Promise<void> {
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await requestJson<ApiEnvelope<unknown>>("/auth/password", {
+    method: "PATCH",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+}
+
+export async function updateProfile(username: string): Promise<void> {
   if (!isBackendApiEnabled()) return;
   await requestJson<ApiEnvelope<unknown>>("/auth/me", {
-    body: JSON.stringify({ displayName }),
+    body: JSON.stringify({ username }),
     method: "PATCH",
   });
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  if (isMockApiEnabled()) {
-    return null;
-  }
+  if (isMockApiEnabled()) return null;
   if (!isBackendApiEnabled()) {
+    // 백엔드 미설정 상태에서 세션을 유지하면 잘못된 캐시 데이터가 남으므로 즉시 제거
     clearAuthSession();
     return null;
   }
-
   const response = await requestJson<ApiEnvelope<AuthUser>>("/auth/me");
-
   if (!response.data) {
     clearAuthSession();
     return null;
   }
-
+  // accessToken 없이 user만 갱신 — 토큰은 로그인 시에만 교체, 여기서는 프로필 동기화만 수행
   storeAuthSession(response.data);
   return response.data;
 }
@@ -76,20 +75,18 @@ export function logout() {
   clearAuthSession();
 }
 
-function createMockLoginResult(username: string): LoginResult {
-  const role = username === "business" ? "BUSINESS" : "ADMIN";
+function createMockLoginResult(loginId: string): LoginResult {
+  // "business@…" 이외의 모든 ID는 ADMIN으로 처리 — 목업이므로 패턴 매칭으로 역할 결정
+  const role = loginId === "business@syuuk.test" ? "BUSINESS" : "ADMIN";
   const user: AuthUser = {
     departmentId: role === "BUSINESS" ? "DEPT-RND" : null,
     departmentName: role === "BUSINESS" ? "R&D본부" : null,
-    displayName: role === "BUSINESS" ? "사업부사용자" : "특허관리자",
-    email: role === "BUSINESS" ? "business@syuuk.test" : "admin@syuuk.test",
-    name: role === "BUSINESS" ? "사업부사용자" : "특허관리자",
+    email: loginId,
+    username: role === "BUSINESS" ? "사업부사용자" : "특허관리자",
     role,
     roles: [role === "BUSINESS" ? "ROLE_BUSINESS" : "ROLE_ADMIN"],
-    userId: username,
-    username,
+    userId: loginId,
   };
-
   return {
     accessToken: "mock-access-token",
     expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
