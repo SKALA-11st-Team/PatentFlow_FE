@@ -5,6 +5,7 @@ import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { getDepartments, type Department } from "../../api/departments";
 import { Button } from "../../components/common/Button";
 import { PaginationControls } from "../../components/common/PaginationControls";
+import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { BusinessReviewMailPreviewModal } from "../../components/mailing/BusinessReviewMailPreviewModal";
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
@@ -395,7 +396,9 @@ export function AdminReviewTargetPage() {
               </tr>
             </thead>
             <tbody>
-              {displayedPatents.map((patent) => {
+              {isLoading ? (
+                <TableLoadingRows columns={tableColumnCount} />
+              ) : displayedPatents.map((patent) => {
                 const mapping = recipientMappings.find((m) => m.departmentId === patent.departmentId);
 
                 return (
@@ -461,7 +464,7 @@ export function AdminReviewTargetPage() {
                   </tr>
                 );
               })}
-              {filteredPatents.length === 0 ? (
+              {!isLoading && filteredPatents.length === 0 ? (
                 <tr>
                   <td className="empty-table-cell" colSpan={tableColumnCount}>
                     조회 조건에 맞는 특허가 없습니다.

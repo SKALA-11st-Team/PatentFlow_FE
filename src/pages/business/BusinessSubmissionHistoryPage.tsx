@@ -4,6 +4,7 @@ import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
+import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { getBusinessSubmissionVersions, getLatestBusinessSubmission } from "../../api/businessSubmissions";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
@@ -70,7 +71,9 @@ export function BusinessSubmissionHistoryPage() {
               </tr>
             </thead>
             <tbody>
-              {displayedPatents.map((patent) => {
+              {isLoading ? (
+                <TableLoadingRows columns={6} />
+              ) : displayedPatents.map((patent) => {
                 const data = submissionData[patent.patentId];
                 const latestSubmission = data?.latest;
                 const submissionCount = data?.versions.length ?? 0;
@@ -111,7 +114,7 @@ export function BusinessSubmissionHistoryPage() {
                   </tr>
                 );
               })}
-              {submittedPatents.length === 0 ? (
+              {!isLoading && submittedPatents.length === 0 ? (
                 <tr>
                   <td className="empty-table-cell" colSpan={6}>
                     제출된 사업부 의견이 없습니다.

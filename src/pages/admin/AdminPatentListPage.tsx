@@ -4,6 +4,7 @@ import { AppLayout } from "../../components/layout/AppLayout";
 import { Button } from "../../components/common/Button";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
+import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { getDepartments, type Department } from "../../api/departments";
 import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
@@ -438,7 +439,9 @@ export function AdminPatentListPage() {
               </tr>
             </thead>
             <tbody>
-              {displayedPatents.map((patent) => (
+              {isLoading ? (
+                <TableLoadingRows columns={7} />
+              ) : displayedPatents.map((patent) => (
                 <tr
                   className="clickable-row"
                   key={patent.patentId}
@@ -488,7 +491,7 @@ export function AdminPatentListPage() {
                   </td>
                 </tr>
               ))}
-              {listedPatents.length === 0 ? (
+              {!isLoading && listedPatents.length === 0 ? (
                 <tr>
                   <td className="empty-table-cell" colSpan={7}>
                     조건에 해당하는 수정 대상 특허가 없습니다.
