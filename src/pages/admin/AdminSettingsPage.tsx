@@ -22,6 +22,7 @@ import {
   type MailSettings,
   type QuarterSetting,
 } from "../../api/settings";
+import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/common/Button";
 import { AppLayout } from "../../components/layout/AppLayout";
 
@@ -65,14 +66,20 @@ export function AdminSettingsPage() {
           mailLeadMonths: firstQuarter?.mailLeadMonths ?? 2,
         });
       })
-      .catch(() => setMessage("설정을 불러오지 못했습니다."))
+      .catch((error) => setMessage(getApiErrorMessage(error, "설정을 불러오지 못했습니다.")))
       .finally(() => setIsLoading(false));
   }, []);
 
   useEffect(() => {
     getAnnualFeeSchedule(annualFeeCountry)
-      .then(setAnnualFeeSchedule)
-      .catch(() => setAnnualFeeSchedule([]));
+      .then((nextSchedule) => {
+        setAnnualFeeSchedule(nextSchedule);
+        setAnnualFeeMessage("");
+      })
+      .catch((error) => {
+        setAnnualFeeSchedule([]);
+        setAnnualFeeMessage(getApiErrorMessage(error, "연차료 예정표를 불러오지 못했습니다."));
+      });
   }, [annualFeeCountry]);
 
   async function handleSaveMail(e: React.FormEvent) {

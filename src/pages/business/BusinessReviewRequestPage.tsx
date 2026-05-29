@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getStoredAuthUser } from "../../api/authStorage";
+import { getApiErrorMessage } from "../../api/client";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
 import { getBusinessSubmissionVersions } from "../../api/businessSubmissions";
 import { getBusinessPatentDetail } from "../../api/patents";
@@ -61,7 +62,9 @@ export function BusinessReviewRequestPage() {
   const user = getStoredAuthUser();
 
   useEffect(() => {
-    getActiveQuarter().then((q) => setSubmissionDeadline(q?.submissionDeadline ?? null)).catch(() => {});
+    getActiveQuarter()
+      .then((q) => setSubmissionDeadline(q?.submissionDeadline ?? null))
+      .catch((error) => setDetailMessage(getApiErrorMessage(error, "활성 분기 정보를 불러오지 못했습니다.")));
   }, []);
   const { errorMessage, isLoading, patents } = usePatentList({ departmentId: user?.departmentId ?? undefined });
   const assigned = useMemo(

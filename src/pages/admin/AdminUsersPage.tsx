@@ -42,7 +42,7 @@ export function AdminUsersPage() {
         setUsers(nextUsers);
         setDepartments(nextDepts);
       })
-      .catch(() => showMessage("데이터를 불러오지 못했습니다.", true))
+      .catch((error) => showMessage(getApiErrorMessage(error, "데이터를 불러오지 못했습니다."), true))
       .finally(() => setIsLoading(false));
   }, []);
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
@@ -6,6 +6,7 @@ import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { getBusinessSubmissionVersions, getLatestBusinessSubmission } from "../../api/businessSubmissions";
+import { getApiErrorMessage } from "../../api/client";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
 import { businessOpinionLabels, getBusinessOpinionTone, reviewWorkflowStatusLabels } from "../../constants/status";
@@ -20,7 +21,11 @@ export function BusinessSubmissionHistoryPage() {
   const navigate = useNavigate();
   const { errorMessage, isLoading, patents } = usePatentList();
   const [submissionData, setSubmissionData] = useState<Record<string, { versions: BusinessSubmissionVersion[], latest: BusinessSubmissionVersion | null }>>({});
-  const submittedPatents = patents.filter((patent) => patent.businessOpinionDecision);
+  const [submissionErrorMessage, setSubmissionErrorMessage] = useState("");
+  const submittedPatents = useMemo(
+    () => patents.filter((patent) => patent.businessOpinionDecision),
+    [patents],
+  );
   const {
     currentPage,
     pageSize,
@@ -31,6 +36,8 @@ export function BusinessSubmissionHistoryPage() {
   } = useClientPagination(submittedPatents, [submittedPatents.length]);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadSubmissions() {
       const data: Record<string, { versions: BusinessSubmissionVersion[], latest: BusinessSubmissionVersion | null }> = {};
 
@@ -40,12 +47,23 @@ export function BusinessSubmissionHistoryPage() {
         data[patent.patentId] = { versions, latest };
       }
 
-      setSubmissionData(data);
+      if (isMounted) {
+        setSubmissionData(data);
+        setSubmissionErrorMessage("");
+      }
     }
 
     if (submittedPatents.length > 0) {
-      loadSubmissions();
+      loadSubmissions().catch((error) => {
+        if (isMounted) {
+          setSubmissionErrorMessage(getApiErrorMessage(error, "제출 이력을 불러오지 못했습니다."));
+        }
+      });
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [submittedPatents]);
 
   return (
@@ -56,7 +74,7 @@ export function BusinessSubmissionHistoryPage() {
     >
       <Section
         title="특허별 의견 제출 이력"
-        description={errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "행을 선택하면 특허 상세에서 제출 의견, 당시 AI 레포트, 평가 이력을 확인합니다.")}
+        description={errorMessage || submissionErrorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "행을 선택하면 특허 상세에서 제출 의견, 당시 AI 레포트, 평가 이력을 확인합니다.")}
       >
         <div className="table-wrap">
           <table>

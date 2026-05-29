@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getDepartmentRecipientMappings, getMailingHistory } from "../../api/mailing";
 import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { getMailSettings, type MailSettings } from "../../api/settings";
+import { getApiErrorMessage } from "../../api/client";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Section } from "../../components/common/Section";
@@ -56,9 +57,9 @@ export function AdminMailingPage() {
         setMailingHistoryItems(nextHistoryItems);
         setMailSettings(nextMailSettings);
         setMessage("");
-      } catch {
+      } catch (error) {
         if (isMounted) {
-          setMessage("메일링 설정을 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
+          setMessage(getApiErrorMessage(error, "메일링 설정을 불러오지 못했습니다. BE 실행 상태를 확인해 주세요."));
         }
       } finally {
         if (isMounted) setIsLoading(false);
@@ -111,7 +112,7 @@ export function AdminMailingPage() {
           : "메일 발송 처리할 선택 건이 없습니다.",
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "메일 발송 처리에 실패했습니다.");
+      setMessage(getApiErrorMessage(error, "메일 발송 처리에 실패했습니다."));
     } finally {
       setIsProcessing(false);
     }

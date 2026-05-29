@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getStoredAuthUser } from "../../api/authStorage";
+import { getApiErrorMessage } from "../../api/client";
 import { getBusinessDashboardSummary, type BusinessDashboardSummary } from "../../api/dashboard";
 import { getActiveQuarter } from "../../api/settings";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
+import { ErrorNotice } from "../../components/common/ErrorNotice";
 import { KpiCard } from "../../components/common/KpiCard";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
@@ -46,10 +48,19 @@ export function BusinessDashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
   const [dashboardSummary, setDashboardSummary] = useState<BusinessDashboardSummary | null>(null);
+  const [dashboardErrorMessage, setDashboardErrorMessage] = useState("");
+  const [deadlineErrorMessage, setDeadlineErrorMessage] = useState("");
   const user = getStoredAuthUser();
 
   useEffect(() => {
-    getActiveQuarter().then((q) => setSubmissionDeadline(q?.submissionDeadline ?? null)).catch(() => {});
+    getActiveQuarter()
+      .then((q) => {
+        setSubmissionDeadline(q?.submissionDeadline ?? null);
+        setDeadlineErrorMessage("");
+      })
+      .catch((error) => {
+        setDeadlineErrorMessage(getApiErrorMessage(error, "활성 분기 정보를 불러오지 못했습니다."));
+      });
   }, []);
 
   useEffect(() => {
@@ -59,11 +70,13 @@ export function BusinessDashboardPage() {
       .then((summary) => {
         if (isMounted) {
           setDashboardSummary(summary);
+          setDashboardErrorMessage("");
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (isMounted) {
           setDashboardSummary(null);
+          setDashboardErrorMessage(getApiErrorMessage(error, "대시보드 요약을 불러오지 못했습니다."));
         }
       });
 
@@ -155,12 +168,16 @@ export function BusinessDashboardPage() {
           />
         </div>
       </section>
+      <div className="dashboard-error-stack">
+        <ErrorNotice message={dashboardErrorMessage} />
+        <ErrorNotice message={deadlineErrorMessage} />
+      </div>
 
       <section className="section">
         <div className="section-header">
           <div>
             <h2>{tableTitle}</h2>
-            <p>{errorMessage || tableDescription}</p>
+            <p>{errorMessage || dashboardErrorMessage || deadlineErrorMessage || tableDescription}</p>
           </div>
         </div>
         <div className="filter-bar business-filter-bar">

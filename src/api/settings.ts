@@ -90,14 +90,10 @@ export async function updateReviewSchedule(
 
 export async function getActiveQuarter(): Promise<QuarterSetting | null> {
   if (!isBackendApiEnabled()) return null;
-  try {
-    const response = await requestJson<ApiEnvelope<QuarterSetting>>(
-      "/settings/review-quarters/active",
-    );
-    return response.data ?? null;
-  } catch {
-    return null;
-  }
+  const response = await requestJson<ApiEnvelope<QuarterSetting>>(
+    "/settings/review-quarters/active",
+  );
+  return response.data ?? null;
 }
 
 export async function endReviewQuarter(quarterKey: string): Promise<QuarterSetting> {

@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getLegalDashboardSummary, type LegalDashboardSummary } from "../../api/dashboard";
 import { getDepartments, type Department } from "../../api/departments";
+import { getApiErrorMessage } from "../../api/client";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { BusinessAreaReviewCards } from "../../components/admin/BusinessAreaReviewCards";
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
+import { ErrorNotice } from "../../components/common/ErrorNotice";
 import { KpiCard } from "../../components/common/KpiCard";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
@@ -48,9 +50,18 @@ export function AdminDashboardPage() {
   const { errorMessage, isLoading, patents, setPatents } = usePatentList();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<LegalDashboardSummary | null>(null);
+  const [dashboardErrorMessage, setDashboardErrorMessage] = useState("");
+  const [departmentErrorMessage, setDepartmentErrorMessage] = useState("");
 
   useEffect(() => {
-    getDepartments().then(setDepartments).catch(() => {});
+    getDepartments()
+      .then((nextDepartments) => {
+        setDepartments(nextDepartments);
+        setDepartmentErrorMessage("");
+      })
+      .catch((error) => {
+        setDepartmentErrorMessage(getApiErrorMessage(error, "사업부 목록을 불러오지 못했습니다."));
+      });
   }, []);
 
   useEffect(() => {
@@ -60,11 +71,13 @@ export function AdminDashboardPage() {
       .then((summary) => {
         if (isMounted) {
           setDashboardSummary(summary);
+          setDashboardErrorMessage("");
         }
       })
-      .catch(() => {
+      .catch((error) => {
         if (isMounted) {
           setDashboardSummary(null);
+          setDashboardErrorMessage(getApiErrorMessage(error, "대시보드 요약을 불러오지 못했습니다."));
         }
       });
 
@@ -191,6 +204,10 @@ export function AdminDashboardPage() {
           />
         </div>
       </section>
+      <div className="dashboard-error-stack">
+        <ErrorNotice message={dashboardErrorMessage} />
+        <ErrorNotice message={departmentErrorMessage} />
+      </div>
 
       {/*
         이번 분기 병목 현황은 화면 밀도 이슈로 임시 비활성화했습니다.
@@ -211,7 +228,7 @@ export function AdminDashboardPage() {
           <div>
             <h2>특허 조회</h2>
             <p>
-                {errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "조건별로 특허를 조회하고 연차료 납부 예정일을 확인합니다.")}
+                {errorMessage || dashboardErrorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "조건별로 특허를 조회하고 연차료 납부 예정일을 확인합니다.")}
             </p>
           </div>
         </div>

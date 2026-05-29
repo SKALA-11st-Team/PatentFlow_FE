@@ -121,6 +121,14 @@ export function getApiErrorMessage(error: unknown, fallbackMessage: string) {
     return error.message || fallbackMessage;
   }
 
+  if (error instanceof TypeError) {
+    return "서버에 연결하지 못했습니다. 네트워크 상태 또는 BE 실행 상태를 확인해 주세요.";
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
   return fallbackMessage;
 }
 
