@@ -160,13 +160,17 @@ export async function getPatents(query: PatentListQuery = {}): Promise<PatentLis
       return (await getPatentPage(query)).items;
     }
 
-    const firstPage = await getPatentPage({ ...query, page: query.page ?? 1, size: query.size ?? 20 });
+    const firstPage = await getPatentPage({ ...query, page: 1, size: 100 });
     const patentItems = [...firstPage.items];
 
-    for (let page = firstPage.page.page + 1; page <= firstPage.page.totalPages; page += 1) {
-      const nextPage = await getPatentPage({ ...query, page, size: firstPage.page.size });
-      patentItems.push(...nextPage.items);
-    }
+    const remainingPages = Array.from(
+      { length: Math.max(0, firstPage.page.totalPages - firstPage.page.page) },
+      (_, index) => firstPage.page.page + index + 1,
+    );
+    const nextPages = await Promise.all(
+      remainingPages.map((page) => getPatentPage({ ...query, page, size: firstPage.page.size })),
+    );
+    nextPages.forEach((nextPage) => patentItems.push(...nextPage.items));
 
     return patentItems;
   }
@@ -207,13 +211,17 @@ export async function getBusinessPatents(query: PatentListQuery = {}): Promise<P
       return (await getBusinessPatentPage(query)).items;
     }
 
-    const firstPage = await getBusinessPatentPage({ ...query, page: query.page ?? 1, size: query.size ?? 20 });
+    const firstPage = await getBusinessPatentPage({ ...query, page: 1, size: 100 });
     const patentItems = [...firstPage.items];
 
-    for (let page = firstPage.page.page + 1; page <= firstPage.page.totalPages; page += 1) {
-      const nextPage = await getBusinessPatentPage({ ...query, page, size: firstPage.page.size });
-      patentItems.push(...nextPage.items);
-    }
+    const remainingPages = Array.from(
+      { length: Math.max(0, firstPage.page.totalPages - firstPage.page.page) },
+      (_, index) => firstPage.page.page + index + 1,
+    );
+    const nextPages = await Promise.all(
+      remainingPages.map((page) => getBusinessPatentPage({ ...query, page, size: firstPage.page.size })),
+    );
+    nextPages.forEach((nextPage) => patentItems.push(...nextPage.items));
 
     return patentItems;
   }
