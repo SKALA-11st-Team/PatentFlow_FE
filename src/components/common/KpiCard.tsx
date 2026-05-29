@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 interface KpiCardProps {
   denominator?: number;
   helper?: string;
+  isLoading?: boolean;
   isSelected?: boolean;
   label: string;
   onClick?: () => void;
@@ -19,6 +20,7 @@ interface KpiCardProps {
 export function KpiCard({
   denominator,
   helper,
+  isLoading = false,
   isSelected = false,
   label,
   onClick,
@@ -30,10 +32,14 @@ export function KpiCard({
   const content = (
     <>
       <span className="kpi-card-title">{label}</span>
-      <strong>
-        {value}
-        {denominator === undefined ? null : <small className="kpi-denominator"> / {denominator}</small>}
-      </strong>
+      {isLoading ? (
+        <span aria-label={`${label} 불러오는 중`} className="kpi-loading-value" role="status" />
+      ) : (
+        <strong>
+          {value}
+          {denominator === undefined ? null : <small className="kpi-denominator"> / {denominator}</small>}
+        </strong>
+      )}
       {helper ? <small>{helper}</small> : null}
     </>
   );

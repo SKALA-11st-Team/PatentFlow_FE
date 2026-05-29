@@ -7,6 +7,7 @@ import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { KpiCard } from "../../components/common/KpiCard";
 import { PaginationControls } from "../../components/common/PaginationControls";
+import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { QuarterCompletionDonut } from "../../components/dashboard/QuarterCompletionDonut";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import { useClientPagination } from "../../hooks/useClientPagination";
@@ -107,6 +108,7 @@ export function BusinessDashboardPage() {
         />
         <div className="kpi-grid business-kpi-grid">
           <KpiCard
+            isLoading={isLoading && !dashboardSummary}
             label="제출 대상 특허"
             value={assignedCount}
             helper="연차료 검토 요청"
@@ -114,6 +116,7 @@ export function BusinessDashboardPage() {
             to="/business/review-requests?opinion=ALL"
           />
           <KpiCard
+            isLoading={isLoading && !dashboardSummary}
             label="의견 대기"
             value={pendingCount}
             helper="사업부 작성 필요"
@@ -121,6 +124,7 @@ export function BusinessDashboardPage() {
             to="/business/review-requests?opinion=PENDING"
           />
           <KpiCard
+            isLoading={isLoading && !dashboardSummary}
             label="제출 완료"
             value={submittedCount}
             helper="유지/포기 의견 제출"
@@ -191,7 +195,9 @@ export function BusinessDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {displayedPatents.map((patent) => (
+              {isLoading ? (
+                <TableLoadingRows columns={5} />
+              ) : displayedPatents.map((patent) => (
                 <tr key={patent.patentId}>
                   <td>
                     <Link className="text-link table-title-link" to={`/business/patents/${patent.patentId}`}>
@@ -219,7 +225,7 @@ export function BusinessDashboardPage() {
                   </td>
                 </tr>
               ))}
-              {filteredPatents.length === 0 ? (
+              {!isLoading && filteredPatents.length === 0 ? (
                 <tr>
                   <td className="empty-table-cell" colSpan={5}>
                     조회 조건에 맞는 특허가 없습니다.

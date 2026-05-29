@@ -7,6 +7,7 @@ import { BusinessAreaReviewCards } from "../../components/admin/BusinessAreaRevi
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
 import { KpiCard } from "../../components/common/KpiCard";
 import { PaginationControls } from "../../components/common/PaginationControls";
+import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { QuarterCompletionDonut } from "../../components/dashboard/QuarterCompletionDonut";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
@@ -138,12 +139,14 @@ export function AdminDashboardPage() {
         />
         <div className="kpi-grid">
           <KpiCard
+            isLoading={isLoading && !dashboardSummary}
             label="전체 특허"
             value={totalPatentCount}
             helper="등록 특허 기준"
             to="/admin/review-targets?scope=all"
           />
           <KpiCard
+            isLoading={isLoading}
             label="이번 분기 납부 대상"
             value={quarterlyTargetCount}
             helper="검토 workflow 대상"
@@ -153,6 +156,7 @@ export function AdminDashboardPage() {
           <KpiCard
             denominator={quarterlyTargetCount}
             helper="관리자 발송 필요"
+            isLoading={isLoading && !dashboardSummary}
             label="메일 발송 대기"
             value={mailReadyCount}
             to="/admin/review-targets?workflow=MAIL_READY"
@@ -161,6 +165,7 @@ export function AdminDashboardPage() {
           <KpiCard
             denominator={quarterlyTargetCount}
             helper="사업부 회신 필요"
+            isLoading={isLoading && !dashboardSummary}
             label="사업부 응답 대기"
             value={waitingBusinessCount}
             to="/admin/review-targets?workflow=WAITING_BUSINESS_RESPONSE"
@@ -168,6 +173,7 @@ export function AdminDashboardPage() {
           <KpiCard
             denominator={quarterlyTargetCount}
             helper="사업부 의견 확인 필요"
+            isLoading={isLoading}
             label="처리 결과 입력"
             value={businessResponseReceived.length}
             to="/admin/review-targets?workflow=BUSINESS_RESPONSE_RECEIVED"
@@ -176,6 +182,7 @@ export function AdminDashboardPage() {
           <KpiCard
             denominator={quarterlyTargetCount}
             helper={`완료율 ${formatPercent(actionRecordedCount, quarterlyTargetCount)}`}
+            isLoading={isLoading && !dashboardSummary}
             label="처리 완료"
             value={actionRecordedCount}
             to="/admin/review-targets?workflow=LEGAL_ACTION_RECORDED"
@@ -289,7 +296,9 @@ export function AdminDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {displayedPatents.map((patent) => (
+              {isLoading ? (
+                <TableLoadingRows columns={4} />
+              ) : displayedPatents.map((patent) => (
                 <tr
                   className="clickable-row"
                   key={patent.patentId}
@@ -331,7 +340,7 @@ export function AdminDashboardPage() {
                   </td>
                 </tr>
               ))}
-              {filteredPatents.length === 0 ? (
+              {!isLoading && filteredPatents.length === 0 ? (
                 <tr>
                   <td className="empty-table-cell" colSpan={4}>
                     조회 조건에 맞는 특허가 없습니다.

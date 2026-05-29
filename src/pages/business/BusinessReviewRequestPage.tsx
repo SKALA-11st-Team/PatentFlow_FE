@@ -9,6 +9,7 @@ import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
 import { PaginationControls } from "../../components/common/PaginationControls";
+import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { DeadlineCell } from "../../components/patent/DeadlineCell";
 import {
@@ -155,7 +156,9 @@ export function BusinessReviewRequestPage() {
               </tr>
             </thead>
             <tbody>
-              {displayedPatents.map((patent) => {
+              {isLoading ? (
+                <TableLoadingRows columns={5} />
+              ) : displayedPatents.map((patent) => {
                 const submittedOpinion = submittedOpinions[patent.patentId]?.finalOpinion;
                 const displayedOpinion = submittedOpinion ?? patent.businessOpinionDecision;
                 const alreadySubmitted = Boolean(displayedOpinion);
@@ -200,7 +203,7 @@ export function BusinessReviewRequestPage() {
                   </tr>
                 );
               })}
-              {filteredPatents.length === 0 ? (
+              {!isLoading && filteredPatents.length === 0 ? (
                 <tr>
                   <td className="empty-table-cell" colSpan={5}>
                     조회 조건에 맞는 특허가 없습니다.
