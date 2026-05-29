@@ -91,7 +91,7 @@ export function AdminPatentListPage() {
 
   async function handleLookupPatent() {
     if (!form.applicationNumber.trim()) {
-      setLookupMessage("조회용 출원번호를 입력해 주세요.");
+      setLookupMessage("출원번호를 입력해 주세요.");
       return;
     }
 
@@ -237,11 +237,11 @@ export function AdminPatentListPage() {
         <form className="patent-edit-form" onSubmit={handleSavePatent}>
           <div className="external-lookup-row">
             <label>
-              조회용 출원번호
+              출원번호
               <input
                 name="applicationNumber"
                 onChange={handleFormChange}
-                placeholder="예: 10-2024-0115774"
+                placeholder="예: 10-2024-0115774 또는 1020240115774"
                 value={form.applicationNumber}
               />
             </label>
