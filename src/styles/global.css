@@ -640,6 +640,66 @@ textarea {
   max-width: 108px;
 }
 
+.quarter-donut-loading-ring {
+  animation: table-loading-pulse 1.15s ease-in-out infinite;
+  background: var(--color-bg-secondary) !important;
+}
+
+.donut-loading-value,
+.donut-loading-line,
+.dashboard-loading-number,
+.dashboard-loading-line,
+.dashboard-loading-count {
+  animation: table-loading-pulse 1.15s ease-in-out infinite;
+  background: linear-gradient(90deg, var(--color-bg-secondary), rgba(var(--color-primary-rgb), 0.12), var(--color-bg-secondary));
+  border-radius: 999px;
+  display: block;
+}
+
+.donut-loading-value {
+  height: 24px;
+  width: 58px;
+}
+
+.donut-loading-line {
+  height: 14px;
+  margin-top: var(--spacing-xs);
+  width: 84px;
+}
+
+.dashboard-loading-number {
+  height: 28px;
+  margin-bottom: var(--spacing-xs);
+  width: 72px;
+}
+
+.dashboard-loading-line-main {
+  height: 14px;
+  width: 140px;
+}
+
+.dashboard-loading-line-sub {
+  height: 10px;
+  margin-top: var(--spacing-xs);
+  width: 96px;
+}
+
+.dashboard-loading-count {
+  height: 18px;
+  justify-self: end;
+  width: 32px;
+}
+
+.business-area-loading-card {
+  cursor: default;
+  pointer-events: none;
+}
+
+.business-area-loading-card .business-area-dot {
+  animation: table-loading-pulse 1.15s ease-in-out infinite;
+  background: var(--color-bg-secondary);
+}
+
 .kpi-card small {
   color: var(--color-text-light);
   display: block;

@@ -134,6 +134,7 @@ export function AdminDashboardPage() {
         <QuarterCompletionDonut
           completed={actionRecorded.length}
           helper=""
+          isLoading={isLoading}
           label="연차료 처리 완료"
           total={quarterlyTargetCount}
         />
@@ -198,6 +199,7 @@ export function AdminDashboardPage() {
       */}
 
       <BusinessAreaReviewCards
+        isLoading={isLoading}
         onSelectContext={(context) =>
           navigate(`/admin/review-targets?${context.queryParam}=${encodeURIComponent(context.value)}`)
         }

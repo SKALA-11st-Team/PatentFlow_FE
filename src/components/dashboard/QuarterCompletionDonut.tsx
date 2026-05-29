@@ -1,6 +1,7 @@
 interface QuarterCompletionDonutProps {
   completed: number;
   helper: string;
+  isLoading?: boolean;
   label: string;
   total: number;
 }
@@ -10,28 +11,32 @@ interface QuarterCompletionDonutProps {
  * @relatedUI UI-LEGAL-01, UI-BUS-01
  * @description 대시보드에서 이번 분기 대상 대비 완료 비율을 원형 그래프로 표시한다.
  */
-export function QuarterCompletionDonut({ completed, helper, label, total }: QuarterCompletionDonutProps) {
+export function QuarterCompletionDonut({ completed, helper, isLoading = false, label, total }: QuarterCompletionDonutProps) {
   const percent = getCompletionPercent(completed, total);
 
   return (
-    <article className="quarter-donut-card" aria-label={`${label} ${percent}%`}>
+    <article className="quarter-donut-card" aria-busy={isLoading} aria-label={`${label} ${percent}%`}>
       <span>{getCurrentQuarterLabel()}</span>
       <div
-        className="quarter-donut-ring"
+        className={`quarter-donut-ring${isLoading ? " quarter-donut-loading-ring" : ""}`}
         style={{
           background: `conic-gradient(var(--color-success) 0 ${percent}%, var(--color-bg-secondary) ${percent}% 100%)`,
         }}
       >
         <div className="quarter-donut-center">
-          <strong>{percent}%</strong>
-          <small>완료</small>
+          {isLoading ? (
+            <span aria-label={`${label} 불러오는 중`} className="donut-loading-value" role="status" />
+          ) : (
+            <>
+              <strong>{percent}%</strong>
+              <small>완료</small>
+            </>
+          )}
         </div>
       </div>
       <div>
         <strong>{label}</strong>
-        <p>
-          {completed} / {total}건
-        </p>
+        {isLoading ? <span className="donut-loading-line" /> : <p>{completed} / {total}건</p>}
         <small>{helper}</small>
       </div>
     </article>

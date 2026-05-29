@@ -103,6 +103,7 @@ export function BusinessDashboardPage() {
         <QuarterCompletionDonut
           completed={submittedCount}
           helper=""
+          isLoading={isLoading && !dashboardSummary}
           label="의견 제출 완료"
           total={assignedCount}
         />

@@ -3,6 +3,7 @@ import { PaginationControls } from "../common/PaginationControls";
 import type { PatentListItem } from "../../types/patent";
 
 interface BusinessAreaReviewCardsProps {
+  isLoading?: boolean;
   onSelectContext: (context: PatentContextSelection) => void;
   patents: PatentListItem[];
 }
@@ -71,6 +72,7 @@ const patentContextDimensions: PatentContextDimension[] = [
  * @description 관리자 대시보드에서 관련 사업/기술/제품별 특허 검토 현황을 탭 카드로 요약한다.
  */
 export function BusinessAreaReviewCards({
+  isLoading = false,
   onSelectContext,
   patents,
 }: BusinessAreaReviewCardsProps) {
@@ -111,21 +113,30 @@ export function BusinessAreaReviewCards({
           ))}
         </div>
       </div>
-      <div className="business-area-overview">
+      <div aria-busy={isLoading} className="business-area-overview">
         <div className="context-summary-panel business-area-summary-panel">
           <div>
-            <strong>{patents.length}</strong>
+            {isLoading ? <span className="dashboard-loading-number" /> : <strong>{patents.length}</strong>}
             <span>전체 특허</span>
           </div>
           <div>
-            <strong>{summaries.length}</strong>
+            {isLoading ? <span className="dashboard-loading-number" /> : <strong>{summaries.length}</strong>}
             <span>{activeDimension.label} 분류</span>
           </div>
           <p>항목을 누르면 해당 특허 목록으로 이동합니다.</p>
         </div>
         <div className="business-area-list-panel">
           <div className="business-area-list">
-            {pagedSummaries.map((summary) => (
+            {isLoading ? Array.from({ length: 4 }).map((_, index) => (
+              <div aria-hidden="true" className="business-area-card business-area-loading-card" key={index}>
+                <span className="business-area-dot" />
+                <div>
+                  <span className="dashboard-loading-line dashboard-loading-line-main" />
+                  <span className="dashboard-loading-line dashboard-loading-line-sub" />
+                </div>
+                <span className="dashboard-loading-count" />
+              </div>
+            )) : pagedSummaries.map((summary) => (
               <button
                 className="business-area-card"
                 key={summary.value}
