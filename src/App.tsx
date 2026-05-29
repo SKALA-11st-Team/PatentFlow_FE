@@ -63,7 +63,16 @@ function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; chil
     };
   }, [allowedRole]);
 
-  if (authState === "checking") return <main className="login-page">인증 정보를 확인하는 중입니다.</main>;
+  if (authState === "checking") {
+    return (
+      <main className="login-page auth-checking-page">
+        <section className="auth-checking-panel" aria-live="polite">
+          <span className="auth-checking-spinner" aria-hidden="true" />
+          <strong>인증 정보를 확인하는 중입니다.</strong>
+        </section>
+      </main>
+    );
+  }
   if (authState === "unauthenticated") return <Navigate to="/login" replace />;
   if (authState === "denied") {
     const storedUser = getStoredAuthUser();

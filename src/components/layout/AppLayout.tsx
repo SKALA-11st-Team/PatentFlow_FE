@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { logout } from "../../api/auth";
 import { getStoredAuthUser } from "../../api/authStorage";
@@ -24,6 +24,7 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
   const currentUser = getStoredAuthUser();
   const businessDepartmentLabel = !isAdmin ? currentUser?.departmentName?.trim() || "사업부" : null;
   const [notificationItems, setNotificationItems] = useState<AppNotification[]>([]);
+  const notificationMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     getNotifications(role).then(setNotificationItems).catch(() => {});
@@ -42,6 +43,19 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
         { label: "설정", to: "/business/settings" },
       ];
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  useEffect(() => {
+    if (!isNotificationOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!notificationMenuRef.current?.contains(event.target as Node)) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isNotificationOpen]);
+
   const visibleNotifications = useMemo(
     () =>
       notificationItems.filter(
@@ -89,7 +103,7 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
             {description ? <p>{description}</p> : null}
           </div>
           <div className="header-actions">
-            <div className="notification-menu">
+            <div className="notification-menu" ref={notificationMenuRef}>
               <button
                 aria-expanded={isNotificationOpen}
                 aria-label={`알림 ${unreadCount}개`}

@@ -56,6 +56,38 @@ textarea {
   padding: var(--spacing-2xl);
 }
 
+.auth-checking-page {
+  justify-content: center;
+}
+
+.auth-checking-panel {
+  align-items: center;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-dark);
+  display: inline-flex;
+  gap: var(--spacing-sm);
+  min-height: 56px;
+  padding: 0 var(--spacing-lg);
+}
+
+.auth-checking-spinner {
+  animation: auth-checking-spin 0.85s linear infinite;
+  border: 3px solid rgba(var(--color-primary-rgb), 0.18);
+  border-top-color: var(--color-primary);
+  border-radius: 999px;
+  height: 22px;
+  width: 22px;
+}
+
+@keyframes auth-checking-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .login-panel {
   background: var(--color-white);
   border: 1px solid var(--color-border);
