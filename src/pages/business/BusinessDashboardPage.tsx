@@ -107,9 +107,9 @@ export function BusinessDashboardPage() {
       <section className="dashboard-kpi-overview">
         <QuarterCompletionDonut
           completed={submittedCount}
-          helper=""
+          helper="요청 대비 제출 완료"
           isLoading={isLoading && !dashboardSummary}
-          label="의견 제출 완료"
+          label="의견 제출률"
           total={reviewRequestCount}
         />
         <div className="kpi-grid business-kpi-grid">
