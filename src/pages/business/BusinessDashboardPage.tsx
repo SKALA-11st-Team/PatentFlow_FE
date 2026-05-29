@@ -24,6 +24,7 @@ import {
 } from "../../constants/status";
 
 type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
+type DashboardListMode = "REVIEW_REQUESTS" | "ASSIGNED_PATENTS";
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
 
 const sortLabels: Record<SortKey, string> = {
@@ -41,6 +42,7 @@ export function BusinessDashboardPage() {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [opinionFilter, setOpinionFilter] = useState<OpinionFilter>("ALL");
   const [recommendationFilter, setRecommendationFilter] = useState<RecommendationFilter>("ALL");
+  const [listMode, setListMode] = useState<DashboardListMode>("REVIEW_REQUESTS");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
   const [dashboardSummary, setDashboardSummary] = useState<BusinessDashboardSummary | null>(null);
@@ -85,9 +87,10 @@ export function BusinessDashboardPage() {
   const pendingCount = dashboardSummary?.pendingReview ?? pending.length;
   const submittedCount = dashboardSummary?.reviewed ?? submitted.length;
   const reviewRequestCount = pendingCount + submittedCount;
+  const tablePatentSource = listMode === "ASSIGNED_PATENTS" ? patents : assigned;
   const filteredPatents = useMemo(
-    () => getFilteredAndSortedPatents(assigned, searchKeyword, opinionFilter, recommendationFilter, sortKey),
-    [assigned, opinionFilter, recommendationFilter, searchKeyword, sortKey],
+    () => getFilteredAndSortedPatents(tablePatentSource, searchKeyword, opinionFilter, recommendationFilter, sortKey),
+    [tablePatentSource, opinionFilter, recommendationFilter, searchKeyword, sortKey],
   );
   const {
     currentPage,
@@ -96,7 +99,18 @@ export function BusinessDashboardPage() {
     setCurrentPage,
     totalItems,
     totalPages,
-  } = useClientPagination(filteredPatents, [opinionFilter, recommendationFilter, searchKeyword, sortKey]);
+  } = useClientPagination(filteredPatents, [listMode, opinionFilter, recommendationFilter, searchKeyword, sortKey]);
+
+  const showAssignedPatents = () => {
+    setListMode("ASSIGNED_PATENTS");
+    setOpinionFilter("ALL");
+  };
+
+  const tableTitle = listMode === "ASSIGNED_PATENTS" ? "담당 특허" : "의견 요청 특허";
+  const tableDescription =
+    listMode === "ASSIGNED_PATENTS"
+      ? "사업부에 배정된 특허 전체입니다."
+      : "사업 적용 여부와 유지 필요성을 확인해야 하는 특허입니다.";
 
   return (
     <AppLayout
@@ -115,13 +129,16 @@ export function BusinessDashboardPage() {
         <div className="kpi-grid business-kpi-grid">
           <KpiCard
             isLoading={isLoading && !dashboardSummary}
+            isSelected={listMode === "ASSIGNED_PATENTS"}
             label="담당 특허"
             value={departmentPatentCount}
             helper="사업부 배정 기준"
+            onClick={showAssignedPatents}
             tone="primary"
           />
           <KpiCard
             isLoading={isLoading && !dashboardSummary}
+            isSelected={listMode === "REVIEW_REQUESTS" && opinionFilter === "PENDING"}
             label="의견 대기"
             value={pendingCount}
             helper="연차료 검토 요청"
@@ -142,8 +159,8 @@ export function BusinessDashboardPage() {
       <section className="section">
         <div className="section-header">
           <div>
-            <h2>의견 요청 특허</h2>
-            <p>{errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : "사업 적용 여부와 유지 필요성을 확인해야 하는 특허입니다.")}</p>
+            <h2>{tableTitle}</h2>
+            <p>{errorMessage || tableDescription}</p>
           </div>
         </div>
         <div className="filter-bar business-filter-bar">
@@ -196,7 +213,7 @@ export function BusinessDashboardPage() {
                 <th>관련제품</th>
                 <th>AI 레포트 권고</th>
                 <th>사업부 의견</th>
-                <th>회신 기한</th>
+                <th>{listMode === "ASSIGNED_PATENTS" ? "납부 예정일" : "회신 기한"}</th>
               </tr>
             </thead>
             <tbody>
@@ -226,7 +243,7 @@ export function BusinessDashboardPage() {
                     )}
                   </td>
                   <td>
-                    <DeadlineCell dueDate={submissionDeadline} />
+                    <DeadlineCell dueDate={listMode === "ASSIGNED_PATENTS" ? patent.feeDueDate : submissionDeadline} />
                   </td>
                 </tr>
               ))}
