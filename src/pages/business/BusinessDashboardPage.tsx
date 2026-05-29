@@ -76,10 +76,15 @@ export function BusinessDashboardPage() {
     [patents],
   );
   const pending = assigned.filter((patent) => !patent.businessOpinionDecision);
-  const submitted = assigned.filter((patent) => patent.businessOpinionDecision);
-  const assignedCount = dashboardSummary?.totalAssigned ?? assigned.length;
+  const submitted = patents.filter((patent) =>
+    patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED" ||
+    patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED" ||
+    Boolean(patent.businessOpinionDecision),
+  );
+  const departmentPatentCount = dashboardSummary?.totalAssigned ?? patents.length;
   const pendingCount = dashboardSummary?.pendingReview ?? pending.length;
   const submittedCount = dashboardSummary?.reviewed ?? submitted.length;
+  const reviewRequestCount = pendingCount + submittedCount;
   const filteredPatents = useMemo(
     () => getFilteredAndSortedPatents(assigned, searchKeyword, opinionFilter, recommendationFilter, sortKey),
     [assigned, opinionFilter, recommendationFilter, searchKeyword, sortKey],
@@ -105,22 +110,21 @@ export function BusinessDashboardPage() {
           helper=""
           isLoading={isLoading && !dashboardSummary}
           label="의견 제출 완료"
-          total={assignedCount}
+          total={reviewRequestCount}
         />
         <div className="kpi-grid business-kpi-grid">
           <KpiCard
             isLoading={isLoading && !dashboardSummary}
-            label="제출 대상 특허"
-            value={assignedCount}
-            helper="연차료 검토 요청"
+            label="담당 특허"
+            value={departmentPatentCount}
+            helper="사업부 배정 기준"
             tone="primary"
-            to="/business/review-requests?opinion=ALL"
           />
           <KpiCard
             isLoading={isLoading && !dashboardSummary}
             label="의견 대기"
             value={pendingCount}
-            helper="사업부 작성 필요"
+            helper="연차료 검토 요청"
             tone="warning"
             to="/business/review-requests?opinion=PENDING"
           />
@@ -130,7 +134,7 @@ export function BusinessDashboardPage() {
             value={submittedCount}
             helper="유지/포기 의견 제출"
             tone="success"
-            to="/business/review-requests?opinion=SUBMITTED"
+            to="/business/submissions"
           />
         </div>
       </section>
