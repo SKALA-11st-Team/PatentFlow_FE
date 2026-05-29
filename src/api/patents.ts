@@ -350,15 +350,15 @@ export async function markPatentsMailReady(patentIds: string[]): Promise<string[
 /**
  * @relatedFR FR-LEGAL-03
  * @relatedUI UI-LEGAL-04
- * @description 등록번호로 KIPRIS 우선 검색 후 결과가 없으면 Google Patents 검색을 요청한다.
+ * @description 출원번호로 KIPRIS 우선 검색 후 결과가 없으면 Google Patents 검색을 요청한다.
  */
-export async function lookupPatentBibliographicInfo(registrationNumber: string): Promise<PatentBibliographicInfo | null> {
-  const normalizedRegistrationNumber = registrationNumber.trim();
+export async function lookupPatentBibliographicInfo(applicationNumber: string): Promise<PatentBibliographicInfo | null> {
+  const normalizedApplicationNumber = applicationNumber.trim();
 
   if (isBackendApiEnabled()) {
     const response = await requestJson<ApiEnvelope<BackendPatentBibliographicInfo | null>>(
       `/patents/external-lookup${toQueryString({
-        registrationNumber: normalizedRegistrationNumber,
+        applicationNumber: normalizedApplicationNumber,
         sourcePriority: "KIPRIS,GOOGLE_PATENTS",
       })}`,
     );
@@ -366,7 +366,7 @@ export async function lookupPatentBibliographicInfo(registrationNumber: string):
     return response.data ? normalizeBibliographicInfo(response.data) : null;
   }
 
-  return lookupMockPatentBibliographicInfo(normalizedRegistrationNumber);
+  return lookupMockPatentBibliographicInfo(normalizedApplicationNumber);
 }
 
 /**
@@ -982,12 +982,12 @@ function getFilteredMockPatents(query: PatentListQuery) {
 /**
  * @relatedFR FR-LEGAL-03
  * @relatedUI UI-LEGAL-04
- * @description docs/skax_patents_list.md 기반 mock 데이터에서 등록번호 KIPRIS 검색 결과를 흉내낸다.
+ * @description docs/skax_patents_list.md 기반 mock 데이터에서 출원번호 KIPRIS 검색 결과를 흉내낸다.
  */
-function lookupMockPatentBibliographicInfo(registrationNumber: string): PatentBibliographicInfo | null {
-  const keyword = registrationNumber.toLowerCase();
+function lookupMockPatentBibliographicInfo(applicationNumber: string): PatentBibliographicInfo | null {
+  const keyword = applicationNumber.toLowerCase();
   const matchedPatent = skaxPatentRows.find(
-    (patent) => patent.registrationNumber?.toLowerCase() === keyword,
+    (patent) => patent.applicationNumber.toLowerCase() === keyword,
   );
 
   if (!matchedPatent) {

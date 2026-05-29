@@ -90,8 +90,8 @@ export function AdminPatentListPage() {
   }
 
   async function handleLookupPatent() {
-    if (!form.registrationNumber?.trim()) {
-      setLookupMessage("조회용 등록번호를 입력해 주세요.");
+    if (!form.applicationNumber.trim()) {
+      setLookupMessage("조회용 출원번호를 입력해 주세요.");
       return;
     }
 
@@ -100,10 +100,10 @@ export function AdminPatentListPage() {
     setSaveMessage("");
 
     try {
-      const result = await lookupPatentBibliographicInfo(form.registrationNumber);
+      const result = await lookupPatentBibliographicInfo(form.applicationNumber);
 
       if (!result) {
-        setLookupMessage("조회 결과가 없습니다. 등록번호를 다시 확인해 주세요.");
+        setLookupMessage("조회 결과가 없습니다. 출원번호를 다시 확인해 주세요.");
         return;
       }
 
@@ -237,12 +237,12 @@ export function AdminPatentListPage() {
         <form className="patent-edit-form" onSubmit={handleSavePatent}>
           <div className="external-lookup-row">
             <label>
-              조회용 등록번호
+              조회용 출원번호
               <input
-                name="registrationNumber"
+                name="applicationNumber"
                 onChange={handleFormChange}
-                placeholder="예: 10-2932891"
-                value={form.registrationNumber ?? ""}
+                placeholder="예: 10-2024-0115774"
+                value={form.applicationNumber}
               />
             </label>
             <Button disabled={isLookingUp} onClick={handleLookupPatent} type="button">
