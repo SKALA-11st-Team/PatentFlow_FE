@@ -90,7 +90,7 @@ export function AdminDashboardPage() {
   const mailReady = patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
   const waitingBusiness = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE");
   const businessResponseReceived = patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED");
-  const actionRecorded = patents.filter((patent) => patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED");
+  const actionRecorded = patents.filter((patent) => patent.legalActionResult !== null);
   const quarterlyTargetCount = quarterlyTargets.length;
   const totalPatentCount = dashboardSummary?.totalPatents ?? patents.length;
   const mailReadyCount = dashboardSummary?.pendingReview ?? mailReady.length;
@@ -199,7 +199,7 @@ export function AdminDashboardPage() {
             isLoading={isLoading && !dashboardSummary}
             label="처리 완료"
             value={actionRecordedCount}
-            to="/admin/review-targets?workflow=LEGAL_ACTION_RECORDED"
+            to="/admin/review-targets?scope=all"
             tone="success"
           />
         </div>
@@ -409,8 +409,8 @@ function getFilteredAndSortedPatents(
       const matchesWorkflow = workflowFilter === "ALL" || patent.reviewWorkflowStatus === workflowFilter;
       const matchesScope =
         reviewScope === "ALL" ||
-        (reviewScope === "QUARTER" && patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER") ||
-        (reviewScope === "NOT_IN_QUARTER" && patent.reviewWorkflowStatus === "NOT_IN_REVIEW_QUARTER");
+        (reviewScope === "QUARTER" && patent.reviewWorkflowStatus !== "NOT_IN_REVIEW") ||
+        (reviewScope === "NOT_IN_QUARTER" && patent.reviewWorkflowStatus === "NOT_IN_REVIEW");
       const matchesQuarter = quarterFilter === "ALL" || getQuarterFromDate(patent.feeDueDate) === quarterFilter;
       const matchesCountry = countryFilter === "ALL" || patent.country === countryFilter;
       const matchesDateFrom = !dateFrom || patent.feeDueDate >= dateFrom;
@@ -437,7 +437,7 @@ function getCountryOptions(patents: PatentListItem[]) {
  * @description 이번 분기 조회 범위에서는 검토 분기 아님 상태 필터를 숨겨 KPI 대상 기준과 충돌하지 않게 한다.
  */
 function getDashboardWorkflowFilterOptions() {
-  return REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW_QUARTER");
+  return REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW");
 }
 
 /**

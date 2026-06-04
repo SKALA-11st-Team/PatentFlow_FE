@@ -330,7 +330,7 @@ export function createFallbackFinalDecisionResult(patentId: string, payload: Fin
     },
     legalActionResult: payload.legalActionResult,
     patentId,
-    reviewWorkflowStatus: "LEGAL_ACTION_RECORDED",
+    reviewWorkflowStatus: "NOT_IN_REVIEW",
   };
 }
 

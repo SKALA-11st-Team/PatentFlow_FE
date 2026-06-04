@@ -7,26 +7,28 @@ import { AppLayout } from "../../components/layout/AppLayout";
 /**
  * @relatedFR FR-BUS-01
  * @relatedUI UI-BUS-06
- * @description 사업부 사용자의 수신자 표시명을 관리하는 화면.
- *              이메일(로그인 계정)은 변경 불가, 담당자 이름(displayName)만 수정 가능.
+ * @description 사업부 사용자의 이름을 변경하는 화면.
+ *              이메일(로그인 ID)은 변경 불가, 이름(username)만 수정 가능.
  */
 export function BusinessSettingsPage() {
   const user = getStoredAuthUser();
-  const [displayName, setDisplayName] = useState(user?.displayName ?? user?.name ?? "");
+  const [username, setUsername] = useState(user?.username ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const isDirty = displayName.trim() !== (user?.displayName ?? user?.name ?? "");
+  // localStorage 캐시와 비교 — 서버 왕복 없이 저장 버튼 활성화 여부를 결정한다
+  const isDirty = username.trim() !== (user?.username ?? "");
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    if (!displayName.trim()) return;
+    if (!username.trim()) return;
     setIsSaving(true);
     setMessage("");
     try {
-      await updateProfile(displayName.trim());
+      await updateProfile(username.trim());
       if (user) {
-        storeAuthSession({ ...user, displayName: displayName.trim(), name: displayName.trim() });
+        // 서버 응답 없이 localStorage 캐시만 갱신 — 다음 페이지 이동 시 헤더에 즉시 반영되도록 한다
+        storeAuthSession({ ...user, username: username.trim() });
       }
       setMessage("저장되었습니다.");
     } catch (error) {
@@ -46,9 +48,7 @@ export function BusinessSettingsPage() {
         <div className="section-header">
           <div>
             <h2>내 계정 정보</h2>
-            <p>
-              관리자가 사업부 검토 요청 메일을 발송할 때 아래 정보를 사용합니다.
-            </p>
+            <p>관리자가 사업부 검토 요청 메일을 발송할 때 아래 정보를 사용합니다.</p>
           </div>
         </div>
 
@@ -56,36 +56,25 @@ export function BusinessSettingsPage() {
           <form onSubmit={handleSave} className="settings-form">
             <label className="form-field">
               <span className="form-label-text">수신 이메일 (변경 불가)</span>
-              <input
-                disabled
-                className="form-helper-text"
-                type="email"
-                value={user?.email ?? user?.username ?? ""}
-              />
+              <input disabled type="email" value={user?.email ?? ""} />
             </label>
             <label className="form-field">
               <span className="form-label-text">사업부</span>
-              <input
-                disabled
-                className="form-helper-text"
-                value={user?.departmentName ?? "—"}
-              />
+              <input disabled value={user?.departmentName ?? "—"} />
             </label>
             <label className="form-field">
               <span className="form-label-text">담당자 이름</span>
               <input
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={(e) => setUsername(e.target.value)}
                 placeholder="메일에 표시될 담당자 이름"
                 required
-                value={displayName}
+                value={username}
               />
-              <small className="form-helper-text">
-                메일 수신 시 "OOO 담당자님"으로 표시됩니다.
-              </small>
+              <small className="form-helper-text">메일 수신 시 "OOO 담당자님"으로 표시됩니다.</small>
             </label>
             {message ? <p className="notice notice-compact">{message}</p> : null}
             <div>
-              <Button disabled={isSaving || !isDirty || !displayName.trim()} type="submit">
+              <Button disabled={isSaving || !isDirty || !username.trim()} type="submit">
                 {isSaving ? "저장 중…" : "저장"}
               </Button>
             </div>

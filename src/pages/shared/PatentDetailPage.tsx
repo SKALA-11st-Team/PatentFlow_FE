@@ -985,8 +985,8 @@ function formatDateTime(dateText: string) {
 function isFinalDecisionRecordable(patent: PatentDetail) {
   return (
     Boolean(patent.finalDecisionRecord.decisionId) ||
-    patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED" ||
-    patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED"
+    patent.legalActionResult !== null ||
+    patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED"
   );
 }
 

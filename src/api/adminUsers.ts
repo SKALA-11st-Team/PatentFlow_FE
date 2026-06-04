@@ -2,27 +2,27 @@ import { requestJson, type ApiEnvelope } from "./client";
 
 export interface UserItem {
   id: string;
-  username: string;
+  email: string;        // 로그인 ID
+  username: string;     // 실제 이름
   role: "ADMIN" | "BUSINESS";
   departmentId: string | null;
   departmentName: string | null;
-  displayName: string;
   createdAt: string;
 }
 
 export interface CreateUserRequest {
-  username: string;
+  email: string;        // 로그인 ID — 이메일 형식 필수
   role: "ADMIN" | "BUSINESS";
   departmentId: string | null;
   departmentName: string | null;
-  displayName: string;
+  username: string;     // 실제 이름
 }
 
 export type UpdateUserRequest = CreateUserRequest;
 
 export interface ResetPasswordResult {
   userId: string;
-  username: string;
+  email: string;          // 임시 비밀번호를 발송한 수신 이메일 = 로그인 ID (구 username 필드)
   temporaryPassword: string;
 }
 

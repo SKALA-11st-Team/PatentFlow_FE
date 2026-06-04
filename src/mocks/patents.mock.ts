@@ -26,7 +26,6 @@ const reviewTargetWorkflowCycle: ReviewWorkflowStatus[] = [
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "LEGAL_ACTION_RECORDED",
 ];
 
 
@@ -253,7 +252,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
   const reviewWorkflowStatus = getMockReviewWorkflowStatus(index, Boolean(generatedReport));
   const recommendation = generatedReport?.recommendation ?? getRecommendation(row, reviewWorkflowStatus, index);
   const businessOpinionDecision = getBusinessOpinion(reviewWorkflowStatus, recommendation);
-  const legalActionResult = getLegalActionResult(reviewWorkflowStatus, recommendation);
+  const legalActionResult = getLegalActionResult();
   const feeDueDate = getMockDeadlineDate(row.applicationDate);
   const title = normalizeDisplayText(row.title || row.draftTitle || row.managementNumber);
   const draftTitle = normalizeDisplayText(row.draftTitle || row.title || row.managementNumber);
@@ -347,7 +346,7 @@ function getMockReviewWorkflowStatus(index: number, hasGeneratedReport = false):
   }
 
   if (index % 4 !== 0) {
-    return "NOT_IN_REVIEW_QUARTER";
+    return "NOT_IN_REVIEW";
   }
 
   const reviewTargetIndex = Math.floor(index / 4) - 1;
@@ -366,21 +365,16 @@ function getMockDeadlineDate(applicationDate: string) {
 
 function getReviewReason(status: ReviewWorkflowStatus, feeDueDate: string) {
   const reasonMap: Record<ReviewWorkflowStatus, string> = {
-    NOT_IN_REVIEW_QUARTER: "이번 분기 연차료 납부 대상이 아닙니다.",
+    NOT_IN_REVIEW: "이번 분기 연차료 납부 대상이 아닙니다.",
     REVIEW_QUARTER_STARTED: `이번 분기 연차료 납부 대상이며 납부 기한은 ${feeDueDate}입니다.`,
     MAIL_READY: "AI 특허 평가 레포트가 생성되었고 관리자 메일 발송 명령이 필요합니다.",
     WAITING_BUSINESS_RESPONSE: "메일과 레포트를 발송했고 사업부서 담당자의 응답을 기다리고 있습니다.",
     BUSINESS_RESPONSE_RECEIVED: "사업부서 담당자의 응답이 제출되어 최종 처리 결과 입력이 필요합니다.",
-    LEGAL_ACTION_RECORDED: "최종 처리 결과가 입력되어 이번 검토 workflow가 완료되었습니다.",
   };
   return reasonMap[status];
 }
 
 function getRecommendation(row: SkaxPatentRow, status: ReviewWorkflowStatus, index: number): Recommendation {
-  if (status === "LEGAL_ACTION_RECORDED" && index % 3 === 0) {
-    return "ABANDON";
-  }
-
   if (!row.productName || row.productName === "해당사항없음") {
     return "REVIEW_AGAIN";
   }
@@ -402,7 +396,6 @@ function getBusinessOpinion(
 ): BusinessOpinionDecision | null {
   const respondedStatuses: ReviewWorkflowStatus[] = [
     "BUSINESS_RESPONSE_RECEIVED",
-    "LEGAL_ACTION_RECORDED",
   ];
 
   if (!respondedStatuses.includes(status)) {
@@ -412,19 +405,8 @@ function getBusinessOpinion(
   return recommendation === "ABANDON" ? "ABANDON" : "MAINTAIN";
 }
 
-function getLegalActionResult(
-  status: ReviewWorkflowStatus,
-  recommendation: Recommendation,
-): LegalActionResult | null {
-  if (status !== "LEGAL_ACTION_RECORDED") {
-    return null;
-  }
-
-  if (recommendation === "ABANDON") {
-    return "ABANDONED";
-  }
-
-  return "MAINTAINED";
+function getLegalActionResult(): LegalActionResult | null {
+  return null;
 }
 
 function getMissingFields(row: SkaxPatentRow) {

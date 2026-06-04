@@ -93,7 +93,7 @@ export function BusinessDashboardPage() {
   const pending = assigned.filter((patent) => !patent.businessOpinionDecision);
   const submitted = patents.filter((patent) =>
     patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED" ||
-    patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED" ||
+    patent.legalActionResult !== null ||
     Boolean(patent.businessOpinionDecision),
   );
   const departmentPatentCount = dashboardSummary?.totalAssigned ?? patents.length;

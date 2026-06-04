@@ -409,7 +409,7 @@ export function AdminPatentListPage() {
               onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowFilter)}
               value={workflowFilter}
             >
-              {REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW_QUARTER").map((option) => (
+              {REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW").map((option) => (
                 <option key={option} value={option}>
                   {option === "ALL" ? "전체" : reviewWorkflowStatusLabels[option]}
                 </option>
@@ -535,8 +535,8 @@ function getEditablePatentRows(
     .filter((patent) => {
       const matchesScope =
         reviewScope === "ALL" ||
-        (reviewScope === "QUARTER" && patent.reviewWorkflowStatus !== "NOT_IN_REVIEW_QUARTER") ||
-        (reviewScope === "NOT_IN_QUARTER" && patent.reviewWorkflowStatus === "NOT_IN_REVIEW_QUARTER");
+        (reviewScope === "QUARTER" && patent.reviewWorkflowStatus !== "NOT_IN_REVIEW") ||
+        (reviewScope === "NOT_IN_QUARTER" && patent.reviewWorkflowStatus === "NOT_IN_REVIEW");
 
       const matchesWorkflow = workflowFilter === "ALL" || patent.reviewWorkflowStatus === workflowFilter;
 
@@ -575,7 +575,7 @@ function createListItemFromForm(form: PatentFormState, patentId: string): Patent
     departmentId: "",
     departmentName: "",
     lifecycleStatus: "ACTIVE",
-    reviewWorkflowStatus: "NOT_IN_REVIEW_QUARTER",
+    reviewWorkflowStatus: "NOT_IN_REVIEW",
     feeDueDate: getNextAnnualFeeDueDate(form.registrationDate || form.applicationDate),
     reviewReason: "관리자가 등록한 특허입니다. 검토 분기 도래 시 AI 평가 대상에 포함됩니다.",
     currentRecommendation: "HOLD",

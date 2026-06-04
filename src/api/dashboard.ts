@@ -33,7 +33,7 @@ export async function getLegalDashboardSummary(): Promise<LegalDashboardSummary>
     pendingReview: patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY").length,
     waitingBusinessResponse: patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE").length,
     businessResponseReceived: patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED").length,
-    pendingLegalAction: patents.filter((patent) => patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED").length,
+    pendingLegalAction: patents.filter((patent) => patent.legalActionResult !== null).length,
   };
 }
 
@@ -53,7 +53,7 @@ export async function getBusinessDashboardSummary(): Promise<BusinessDashboardSu
     pendingReview: patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE").length,
     reviewed: patents.filter((patent) =>
       patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED" ||
-      patent.reviewWorkflowStatus === "LEGAL_ACTION_RECORDED",
+      patent.legalActionResult !== null,
     ).length,
     maintained: patents.filter((patent) => patent.businessOpinionDecision === "MAINTAIN").length,
     abandoned: patents.filter((patent) => patent.businessOpinionDecision === "ABANDON").length,
