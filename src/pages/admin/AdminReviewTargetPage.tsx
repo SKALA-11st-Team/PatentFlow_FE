@@ -71,7 +71,7 @@ export function AdminReviewTargetPage() {
   const [searchParams] = useSearchParams();
   const initialWorkflow = getInitialWorkflowFilter(searchParams.get("workflow"));
   const scope = getReviewTargetScope(searchParams.get("scope"));
-  const effectiveInitialWorkflow = scope === "QUARTER" && initialWorkflow === "NOT_IN_REVIEW_QUARTER" ? "ALL" : initialWorkflow;
+  const effectiveInitialWorkflow = scope === "QUARTER" && initialWorkflow === "NOT_IN_REVIEW" ? "ALL" : initialWorkflow;
   const initialContextFilter = getInitialContextFilter(searchParams);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>(effectiveInitialWorkflow);
@@ -665,7 +665,7 @@ function getReviewTargetWorkflowFilterOptions(scope: ReviewTargetScope) {
     return REVIEW_WORKFLOW_FILTER_OPTIONS;
   }
 
-  return REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW_QUARTER");
+  return REVIEW_WORKFLOW_FILTER_OPTIONS.filter((option) => option !== "NOT_IN_REVIEW");
 }
 
 /**

@@ -11,12 +11,11 @@ export const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "EXPIRED"] as c
 export type PatentLifecycleStatus = (typeof PATENT_LIFECYCLE_STATUSES)[number];
 
 export const REVIEW_WORKFLOW_STATUSES = [
-  "NOT_IN_REVIEW_QUARTER",
+  "NOT_IN_REVIEW",
   "REVIEW_QUARTER_STARTED",
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "LEGAL_ACTION_RECORDED",
 ] as const;
 
 export type ReviewWorkflowStatus = (typeof REVIEW_WORKFLOW_STATUSES)[number];
@@ -118,21 +117,19 @@ export const lifecycleStatusLabels: Record<PatentLifecycleStatus, string> = {
 };
 
 export const reviewWorkflowStatusLabels: Record<ReviewWorkflowStatus, string> = {
-  NOT_IN_REVIEW_QUARTER: "검토 분기 아님",
+  NOT_IN_REVIEW: "검토 분기 아님",
   REVIEW_QUARTER_STARTED: "리포트 생성 대기",
   MAIL_READY: "레포트 생성 완료 · 메일 발송 대기",
   WAITING_BUSINESS_RESPONSE: "사업부 응답 대기",
   BUSINESS_RESPONSE_RECEIVED: "사업부 응답 완료",
-  LEGAL_ACTION_RECORDED: "처리 완료",
 };
 
 export const reviewWorkflowShortLabels: Record<ReviewWorkflowStatus, string> = {
-  NOT_IN_REVIEW_QUARTER: "대상 아님",
+  NOT_IN_REVIEW: "대상 아님",
   REVIEW_QUARTER_STARTED: "생성 대기",
   MAIL_READY: "발송 대기",
   WAITING_BUSINESS_RESPONSE: "회신 대기",
   BUSINESS_RESPONSE_RECEIVED: "회신 완료",
-  LEGAL_ACTION_RECORDED: "처리 완료",
 };
 
 export const recommendationLabels: Record<Recommendation, string> = {
@@ -241,43 +238,38 @@ export const REVIEW_WORKFLOW_PROGRESS_STATUSES = [
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "LEGAL_ACTION_RECORDED",
 ] as const satisfies readonly ReviewWorkflowStatus[];
 
 export const workflowStageActions: Record<ReviewWorkflowStatus, string> = {
-  NOT_IN_REVIEW_QUARTER: "대상 제외",
+  NOT_IN_REVIEW: "대상 제외",
   REVIEW_QUARTER_STARTED: "리포트 생성",
   MAIL_READY: "메일 발송",
   WAITING_BUSINESS_RESPONSE: "사업부 확인",
   BUSINESS_RESPONSE_RECEIVED: "결과 입력",
-  LEGAL_ACTION_RECORDED: "종료",
 };
 
 export const workflowBottleneckDescriptions: Record<ReviewWorkflowStatus, string> = {
-  NOT_IN_REVIEW_QUARTER: "이번 분기 검토 대상이 아닙니다.",
+  NOT_IN_REVIEW: "이번 분기 검토 대상이 아닙니다.",
   REVIEW_QUARTER_STARTED: "사업부를 배정하고 AI 레포트를 생성해야 합니다.",
   MAIL_READY: "관리자가 사업부 검토 요청 메일을 발송해야 합니다.",
   WAITING_BUSINESS_RESPONSE: "사업부 회신 독려와 제출 여부 확인이 필요합니다.",
   BUSINESS_RESPONSE_RECEIVED: "제출된 사업부 의견을 확인하고 유지/포기 처리 결과 입력이 필요합니다.",
-  LEGAL_ACTION_RECORDED: "이번 분기 처리 workflow가 완료되었습니다.",
 };
 
 export const workflowUrgencyRank: Record<ReviewWorkflowStatus, number> = {
-  NOT_IN_REVIEW_QUARTER: 99,
+  NOT_IN_REVIEW: 99,
   REVIEW_QUARTER_STARTED: 5,
   MAIL_READY: 1,
   WAITING_BUSINESS_RESPONSE: 2,
   BUSINESS_RESPONSE_RECEIVED: 4,
-  LEGAL_ACTION_RECORDED: 99,
 };
 
 export const reviewWorkflowTone: Record<ReviewWorkflowStatus, StatusTone> = {
-  NOT_IN_REVIEW_QUARTER: "neutral",
+  NOT_IN_REVIEW: "neutral",
   REVIEW_QUARTER_STARTED: "warning",
   MAIL_READY: "primary",
   WAITING_BUSINESS_RESPONSE: "warning",
   BUSINESS_RESPONSE_RECEIVED: "success",
-  LEGAL_ACTION_RECORDED: "success",
 };
 
 export function getReviewWorkflowTone(status: ReviewWorkflowStatus) {

@@ -1,19 +1,14 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
 import { getApiErrorMessage } from "../api/client";
 import { Button } from "../components/common/Button";
 import type { UserRole } from "../types/patent";
 
-const DEV_ACCOUNTS: Record<UserRole, { password: string; username: string }> = {
-  ADMIN: {
-    password: "admin1234",
-    username: "admin",
-  },
-  BUSINESS: {
-    password: "business1234",
-    username: "business",
-  },
+// 역할별로 분리 저장 — 관리자와 사업부서 아이디가 서로 달라 독립 관리
+const REMEMBER_KEY: Record<UserRole, string> = {
+  ADMIN: "patentflow_remembered_admin",
+  BUSINESS: "patentflow_remembered_business",
 };
 
 /**
@@ -23,18 +18,26 @@ const DEV_ACCOUNTS: Record<UserRole, { password: string; username: string }> = {
  */
 export function LoginPage() {
   const [role, setRole] = useState<UserRole>("ADMIN");
-  const [username, setUsername] = useState(DEV_ACCOUNTS.ADMIN.username);
-  const [password, setPassword] = useState(DEV_ACCOUNTS.ADMIN.password);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const handleRoleChange = (nextRole: UserRole) => {
-    setRole(nextRole);
-    setUsername(DEV_ACCOUNTS[nextRole].username);
-    setPassword(DEV_ACCOUNTS[nextRole].password);
+  // 역할 탭 전환 시 해당 역할의 저장된 아이디 불러오기
+  useEffect(() => {
+    const saved = localStorage.getItem(REMEMBER_KEY[role]);
+    if (saved) {
+      setEmail(saved);
+      setRememberMe(true);
+    } else {
+      setEmail("");
+      setRememberMe(false);
+    }
+    setPassword("");
     setErrorMessage("");
-  };
+  }, [role]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -42,8 +45,16 @@ export function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const loginResult = await login({ password, username });
+      const loginResult = await login({ email, password });
+      // 서버가 반환한 실제 역할을 우선 사용 — 탭 선택과 실제 역할이 다를 경우를 방어
       const nextRole = loginResult.user.role ?? role;
+
+      // 아이디 기억은 로그인 성공 후 확정된 역할 키(role)에만 저장/삭제한다
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_KEY[role], email);
+      } else {
+        localStorage.removeItem(REMEMBER_KEY[role]);
+      }
 
       navigate(nextRole === "ADMIN" ? "/admin/dashboard" : "/business/dashboard");
     } catch (error) {
@@ -68,14 +79,14 @@ export function LoginPage() {
             <button
               type="button"
               className={role === "ADMIN" ? "selected" : ""}
-              onClick={() => handleRoleChange("ADMIN")}
+              onClick={() => setRole("ADMIN")}
             >
               관리자
             </button>
             <button
               type="button"
               className={role === "BUSINESS" ? "selected" : ""}
-              onClick={() => handleRoleChange("BUSINESS")}
+              onClick={() => setRole("BUSINESS")}
             >
               사업부서
             </button>
@@ -84,9 +95,9 @@ export function LoginPage() {
             아이디
             <input
               autoComplete="username"
-              onChange={(event) => setUsername(event.target.value)}
-              type="text"
-              value={username}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              value={email}
             />
           </label>
           <label>
@@ -97,6 +108,14 @@ export function LoginPage() {
               type="password"
               value={password}
             />
+          </label>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", cursor: "pointer" }}>
+            <input
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              type="checkbox"
+            />
+            아이디 기억하기
           </label>
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
           <Button disabled={isSubmitting} type="submit">

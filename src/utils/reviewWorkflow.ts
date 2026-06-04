@@ -13,7 +13,7 @@ export type ReviewTargetScope = "ALL" | "QUARTER";
  * @description 검토 workflow 상태가 이번 분기 연차료 검토 대상에 포함되는지 반환한다.
  */
 export function isQuarterlyReviewStatus(status: ReviewWorkflowStatus) {
-  return status !== "NOT_IN_REVIEW_QUARTER";
+  return status !== "NOT_IN_REVIEW";
 }
 
 /**

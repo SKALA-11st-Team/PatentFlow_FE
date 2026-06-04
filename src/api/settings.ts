@@ -73,19 +73,122 @@ export async function updateReviewQuarter(
   return response.data!;
 }
 
-export async function updateReviewSchedule(
-  year: number,
-  mailLeadMonths: number,
-  businessResponseDueDate: string | null,
-): Promise<QuarterSetting[]> {
-  const response = await requestJson<ApiEnvelope<QuarterSetting[]>>(
-    "/settings/review-schedule",
-    {
-      method: "PATCH",
-      body: JSON.stringify({ year, mailLeadMonths, businessResponseDueDate }),
-    },
-  );
+// 연도 무관 분기 경계(월/일) 템플릿 — BE의 ReviewPeriodTemplateEntity와 1:1 대응.
+// 연도별로 분기 레코드를 미리 시드하지 않아도 임의 연도의 분기 날짜를 계산할 수 있다.
+export interface ReviewPeriodTemplate {
+  periodNumber: number;
+  startMonth: number;
+  startDay: number;
+  endMonth: number;
+  endDay: number;
+  label: string;
+}
+
+export async function getReviewPeriodTemplates(): Promise<ReviewPeriodTemplate[]> {
+  if (!isBackendApiEnabled()) return [];
+  const response = await requestJson<ApiEnvelope<ReviewPeriodTemplate[]>>("/settings/review-periods");
   return response.data ?? [];
+}
+
+// 현재 AdminSettingsPage의 "분기 기준" 섹션은 정적 테이블로 표시하므로 미사용.
+// 분기 경계를 UI에서 직접 편집할 때 연결한다.
+export async function updateReviewPeriodTemplate(
+  periodNumber: number,
+  startMonth: number,
+  startDay: number,
+  endMonth: number,
+  endDay: number,
+): Promise<ReviewPeriodTemplate> {
+  const response = await requestJson<ApiEnvelope<ReviewPeriodTemplate>>(
+    `/settings/review-periods/${periodNumber}`,
+    { method: "PUT", body: JSON.stringify({ startMonth, startDay, endMonth, endDay }) },
+  );
+  return response.data!;
+}
+
+// 기본값 2 = BE DEFAULT_MAIL_LEAD_MONTHS와 동일 — 백엔드 미연결 시 UI가 같은 기준으로 렌더링
+export async function getMailLeadMonths(): Promise<number> {
+  if (!isBackendApiEnabled()) return 2;
+  const response = await requestJson<ApiEnvelope<{ mailLeadMonths: number }>>("/settings/mail-lead-months");
+  return response.data?.mailLeadMonths ?? 2;
+}
+
+export async function updateMailLeadMonths(months: number): Promise<number> {
+  const response = await requestJson<ApiEnvelope<{ mailLeadMonths: number }>>(
+    "/settings/mail-lead-months",
+    { method: "PATCH", body: JSON.stringify({ mailLeadMonths: months }) },
+  );
+  return response.data?.mailLeadMonths ?? months;
+}
+
+// 회신 기한 = 분기 활성화일 + months개월 + days일
+// 기본값 { months: 1, days: 0 } = BE DEFAULT_RESPONSE_DEADLINE_MONTHS/DAYS와 동일
+export interface ResponseDeadline {
+  months: number;
+  days: number;
+}
+
+export async function getResponseDeadline(): Promise<ResponseDeadline> {
+  if (!isBackendApiEnabled()) return { months: 1, days: 0 };
+  const response = await requestJson<ApiEnvelope<ResponseDeadline>>("/settings/response-deadline");
+  return response.data ?? { months: 1, days: 0 };
+}
+
+export async function updateResponseDeadline(months: number, days: number): Promise<ResponseDeadline> {
+  const response = await requestJson<ApiEnvelope<ResponseDeadline>>(
+    "/settings/response-deadline",
+    { method: "PATCH", body: JSON.stringify({ months, days }) },
+  );
+  return response.data ?? { months, days };
+}
+
+// ── Gmail OAuth2 ──────────────────────────────────────────────────────────────
+
+export interface MailOAuth2Credentials {
+  configured: boolean;
+  clientIdHint: string | null;
+}
+
+export interface MailOAuth2Status {
+  connected: boolean;
+  connectedEmail: string | null;
+}
+
+export async function getMailOAuth2Credentials(): Promise<MailOAuth2Credentials> {
+  if (!isBackendApiEnabled()) return { configured: false, clientIdHint: null };
+  const response = await requestJson<ApiEnvelope<MailOAuth2Credentials>>("/settings/mail/oauth2/google/credentials");
+  return response.data ?? { configured: false, clientIdHint: null };
+}
+
+export async function saveMailOAuth2Credentials(clientId: string, clientSecret: string): Promise<MailOAuth2Credentials> {
+  const response = await requestJson<ApiEnvelope<MailOAuth2Credentials>>(
+    "/settings/mail/oauth2/google/credentials",
+    { method: "PUT", body: JSON.stringify({ clientId, clientSecret }) },
+  );
+  return response.data ?? { configured: false, clientIdHint: null };
+}
+
+// OAuth2 상태 조회 실패 시 나머지 설정 로드를 막지 않도록 호출부에서 .catch()로 감싸야 한다.
+// (AdminSettingsPage의 Promise.all에서 .catch(() => fallback) 처리됨)
+export async function getMailOAuth2Status(): Promise<MailOAuth2Status> {
+  if (!isBackendApiEnabled()) return { connected: false, connectedEmail: null };
+  const response = await requestJson<ApiEnvelope<MailOAuth2Status>>("/settings/mail/oauth2/google/status");
+  return response.data ?? { connected: false, connectedEmail: null };
+}
+
+export async function disconnectMailOAuth2(): Promise<void> {
+  await requestJson<ApiEnvelope<MailOAuth2Status>>(
+    "/settings/mail/oauth2/google",
+    { method: "DELETE" },
+  );
+}
+
+// JWT 인증으로 Google OAuth URL을 받아 브라우저를 이동시킨다.
+// window.location.href 직접 이동 시 JWT 헤더가 없어 401이 발생하므로 API 경유 방식 사용.
+export async function redirectToGoogleOAuth2(): Promise<void> {
+  const response = await requestJson<ApiEnvelope<string>>("/settings/mail/oauth2/google/authorize-url");
+  const url = response.data;
+  if (url) window.location.href = url;
 }
 
 export async function getActiveQuarter(): Promise<QuarterSetting | null> {
@@ -94,14 +197,6 @@ export async function getActiveQuarter(): Promise<QuarterSetting | null> {
     "/settings/review-quarters/active",
   );
   return response.data ?? null;
-}
-
-export async function endReviewQuarter(quarterKey: string): Promise<QuarterSetting> {
-  const response = await requestJson<ApiEnvelope<QuarterSetting>>(
-    `/settings/review-quarters/${quarterKey}/end`,
-    { method: "POST" },
-  );
-  return response.data!;
 }
 
 export async function activateReviewQuarter(quarterKey: string): Promise<QuarterActivateResult> {
