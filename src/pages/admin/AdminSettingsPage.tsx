@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  addClassification,
   adjustAnnualFeeSchedule,
   activateReviewQuarter,
-  deleteClassification,
   disconnectMailOAuth2,
   getAnnualFeeSchedule,
   getClassifications,
@@ -14,7 +12,6 @@ import {
   getResponseDeadline,
   getReviewQuarters,
   redirectToGoogleOAuth2,
-  renameClassification,
   updateCountryExtension,
   updateMailLeadMonths,
   updateMailSettings,
@@ -31,6 +28,9 @@ import {
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/common/Button";
 import { AppLayout } from "../../components/layout/AppLayout";
+import { MailSettingsSection } from "./settings/MailSettingsSection";
+import { QuarterSettingsSection } from "./settings/QuarterSettingsSection";
+import { ClassificationSettingsSection } from "./settings/ClassificationSettingsSection";
 
 /**
  * @relatedFR FR-LEGAL-12, FR-LEGAL-16, FR-LEGAL-21
@@ -204,297 +204,64 @@ export function AdminSettingsPage() {
     }
   }
 
+  function handleConnectOAuth2() {
+    redirectToGoogleOAuth2().catch(() => setMailMessage("Google 연동 URL을 불러오지 못했습니다."));
+  }
+
+  async function handleDisconnectOAuth2() {
+    setIsDisconnecting(true);
+    try {
+      await disconnectMailOAuth2();
+      setOAuth2Status({ connected: false, connectedEmail: null });
+      setMailMessage("Google 계정 연동이 해제되었습니다.");
+    } catch {
+      setMailMessage("연동 해제에 실패했습니다.");
+    } finally {
+      setIsDisconnecting(false);
+    }
+  }
+
   return (
     <AppLayout role="ADMIN" title="설정" description="메일 발송 설정과 연차료 검토 분기를 관리합니다.">
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>메일 발송 설정</h2>
-            <p>Gmail 발송은 Google 계정 연동이 기본입니다. 앱 비밀번호 입력은 레거시 방식으로만 남겨 둡니다.</p>
-          </div>
-        </div>
+      <MailSettingsSection
+        oauth2Status={oauth2Status}
+        isDisconnecting={isDisconnecting}
+        onConnect={handleConnectOAuth2}
+        onDisconnect={handleDisconnectOAuth2}
+        mailMessage={mailMessage}
+        mailSettings={mailSettings}
+        mailForm={mailForm}
+        setMailForm={setMailForm}
+        showLegacyMailForm={showLegacyMailForm}
+        setShowLegacyMailForm={setShowLegacyMailForm}
+        isSavingMail={isSavingMail}
+        onSaveMail={handleSaveMail}
+        mailLeadMonths={mailLeadMonths}
+        mailLeadMonthsInput={mailLeadMonthsInput}
+        setMailLeadMonthsInput={setMailLeadMonthsInput}
+        isSavingMailLead={isSavingMailLead}
+        mailLeadMessage={mailLeadMessage}
+        onSaveMailLeadMonths={handleSaveMailLeadMonths}
+        responseDeadline={responseDeadline}
+        responseDeadlineInput={responseDeadlineInput}
+        setResponseDeadlineInput={setResponseDeadlineInput}
+        isSavingDeadline={isSavingDeadline}
+        deadlineMessage={deadlineMessage}
+        onSaveResponseDeadline={handleSaveResponseDeadline}
+      />
 
-        <div className="settings-card" style={{ marginBottom: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-            {oauth2Status.connected ? (
-              <>
-                <span className="badge badge-success">Google 연동됨</span>
-                <span className="form-helper-text">{oauth2Status.connectedEmail}</span>
-                <Button
-                  disabled={isDisconnecting}
-                  onClick={async () => {
-                    setIsDisconnecting(true);
-                    try {
-                      await disconnectMailOAuth2();
-                      setOAuth2Status({ connected: false, connectedEmail: null });
-                      setMailMessage("Google 계정 연동이 해제되었습니다.");
-                    } catch {
-                      setMailMessage("연동 해제에 실패했습니다.");
-                    } finally {
-                      setIsDisconnecting(false);
-                    }
-                  }}
-                  type="button"
-                  variant="secondary"
-                >
-                  {isDisconnecting ? "해제 중…" : "연동 해제"}
-                </Button>
-              </>
-            ) : (
-              <>
-                <span className="badge badge-neutral">미연동</span>
-                <Button
-                  onClick={() => redirectToGoogleOAuth2().catch(() => setMailMessage("Google 연동 URL을 불러오지 못했습니다."))}
-                  type="button"
-                >
-                  Google 계정으로 연동하기
-                </Button>
-              </>
-            )}
-          </div>
-          <small className="form-helper-text" style={{ marginTop: "0.5rem", display: "block" }}>
-            연동된 Google 계정으로 메일을 발송합니다. 앱 비밀번호보다 안전하며 재입력이 필요 없습니다.
-          </small>
-        </div>
+      <QuarterSettingsSection
+        isLoading={isLoading}
+        message={message}
+        allQuarters={allQuarters}
+        onActivate={handleActivate}
+      />
 
-        {mailMessage ? <p className="notice notice-compact" style={{ margin: "0.5rem 0" }}>{mailMessage}</p> : null}
-
-        {/* 레거시: 앱 비밀번호 (OAuth2 미연동 시 폴백) */}
-        <div className="settings-card">
-          <div style={{ marginBottom: "0.5rem" }}>
-            <button
-              type="button"
-              className="table-action-link"
-              onClick={() => setShowLegacyMailForm((s) => !s)}
-            >
-              {showLegacyMailForm ? "앱 비밀번호 숨기기 (레거시)" : "앱 비밀번호 직접 입력 (레거시, OAuth2 미연동 시 폴백)"}
-            </button>
-          </div>
-          {showLegacyMailForm ? (
-            <form onSubmit={handleSaveMail} className="settings-form">
-              <label className="form-field">
-                <span className="form-label-text">Gmail 계정</span>
-                <input
-                  onChange={(e) => setMailForm((f) => ({ ...f, gmailUsername: e.target.value }))}
-                  placeholder="your@gmail.com"
-                  type="email"
-                  value={mailForm.gmailUsername}
-                />
-              </label>
-              <label className="form-field">
-                <span className="form-label-text">Gmail 앱 비밀번호</span>
-                <input
-                  onChange={(e) => setMailForm((f) => ({ ...f, gmailAppPassword: e.target.value }))}
-                  placeholder={mailSettings?.isAppPasswordConfigured ? "변경하려면 새로 입력 (공백이면 유지)" : "xxxx xxxx xxxx xxxx"}
-                  type="password"
-                  value={mailForm.gmailAppPassword}
-                />
-                <small className="form-helper-text">
-                  Google 계정 → 보안 → 2단계 인증 → 앱 비밀번호에서 발급
-                </small>
-              </label>
-              <div>
-                <Button disabled={isSavingMail || !mailForm.gmailUsername} type="submit">
-                  {isSavingMail ? "저장 중…" : "저장 (레거시)"}
-                </Button>
-              </div>
-            </form>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>검토 요청 메일 발송 기준</h2>
-            <p>분기 시작일 N개월 전에 스케줄러가 자동으로 분기를 활성화하고 검토 요청 메일을 발송합니다.</p>
-          </div>
-        </div>
-        <form className="settings-card settings-form" onSubmit={handleSaveMailLeadMonths}>
-          <label className="form-field">
-            <span className="form-label-text">발송 기준 (개월)</span>
-            <input
-              max={24}
-              min={0}
-              onChange={(e) => setMailLeadMonthsInput(Number(e.target.value))}
-              type="number"
-              value={mailLeadMonthsInput}
-            />
-            <small className="form-helper-text">
-              분기 시작일 몇 개월 전에 검토를 시작할지 설정합니다. 기본값은 2개월입니다.
-              현재 저장값: {mailLeadMonths}개월
-            </small>
-          </label>
-          {mailLeadMessage ? <p className="notice notice-compact">{mailLeadMessage}</p> : null}
-          <div>
-            <Button disabled={isSavingMailLead || mailLeadMonthsInput === mailLeadMonths} type="submit">
-              {isSavingMailLead ? "저장 중…" : "저장"}
-            </Button>
-          </div>
-        </form>
-      </section>
-
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>사업부 회신 기한</h2>
-            <p>
-              분기 활성화(검토 시작) 후 사업부가 회신해야 하는 기한입니다.
-              활성화일 기준 「+ N개월 + M일」로 자동 계산됩니다.
-            </p>
-          </div>
-        </div>
-        <form className="settings-card settings-form" onSubmit={handleSaveResponseDeadline}>
-          <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", flexWrap: "wrap" }}>
-            <label className="form-field" style={{ flex: "1 1 120px" }}>
-              <span className="form-label-text">개월</span>
-              <input
-                max={12}
-                min={0}
-                onChange={(e) => setResponseDeadlineInput((prev) => ({ ...prev, months: Number(e.target.value) }))}
-                type="number"
-                value={responseDeadlineInput.months}
-              />
-            </label>
-            <label className="form-field" style={{ flex: "1 1 120px" }}>
-              <span className="form-label-text">일</span>
-              <input
-                max={30}
-                min={0}
-                onChange={(e) => setResponseDeadlineInput((prev) => ({ ...prev, days: Number(e.target.value) }))}
-                type="number"
-                value={responseDeadlineInput.days}
-              />
-            </label>
-          </div>
-          <small className="form-helper-text">
-            기본값: 검토 시작 후 1개월 0일.
-            현재 저장값: 검토 시작 후 {responseDeadline.months}개월 {responseDeadline.days}일
-          </small>
-          {deadlineMessage ? <p className="notice notice-compact">{deadlineMessage}</p> : null}
-          <div>
-            <Button
-              disabled={
-                isSavingDeadline ||
-                (responseDeadlineInput.months === responseDeadline.months &&
-                  responseDeadlineInput.days === responseDeadline.days)
-              }
-              type="submit"
-            >
-              {isSavingDeadline ? "저장 중…" : "저장"}
-            </Button>
-          </div>
-        </form>
-      </section>
-
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>분기 기준</h2>
-            <p>연차료 납부 기간 기준으로 구분되는 분기 범위입니다.</p>
-          </div>
-        </div>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>분기</th>
-                <th>납부 기간</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { q: "Q1", range: "1월 1일 ~ 3월 31일" },
-                { q: "Q2", range: "4월 1일 ~ 6월 30일" },
-                { q: "Q3", range: "7월 1일 ~ 9월 30일" },
-                { q: "Q4", range: "10월 1일 ~ 12월 31일" },
-              ].map(({ q, range }) => (
-                <tr key={q}>
-                  <td><strong>{q}</strong></td>
-                  <td>{range}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>분기 이력 및 예정 일정</h2>
-            <p>
-              과거 분기 진행 이력과 향후 예정 일정을 확인합니다.
-              분기 시작·종료는 스케줄러가 자동 처리하며, 수동으로 시작할 수도 있습니다.
-            </p>
-          </div>
-        </div>
-        {message ? (
-          <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>
-            {message}
-          </p>
-        ) : null}
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>분기</th>
-                <th>납부 기간</th>
-                <th>검토 시작일</th>
-                <th>회신 기한</th>
-                <th>대상 특허</th>
-                <th>상태</th>
-                <th>작업</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr><td className="empty-table-cell" colSpan={7}>불러오는 중…</td></tr>
-              ) : allQuarters.length === 0 ? (
-                <tr><td className="empty-table-cell" colSpan={7}>분기 데이터가 없습니다.</td></tr>
-              ) : (
-                // .slice()로 원본 배열을 복사한 뒤 정렬 — allQuarters state를 직접 변경하지 않기 위해
-                allQuarters
-                  .slice()
-                  .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""))
-                  .map((quarter) => (
-                    <QuarterHistoryRow
-                      key={quarter.quarterKey}
-                      quarter={quarter}
-                      onActivate={handleActivate}
-                    />
-                  ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <p className="form-helper-text" style={{ marginTop: "0.5rem" }}>
-          분기 종료는 납부 기간 종료일 경과 후 스케줄러가 자동 처리합니다.
-        </p>
-      </section>
-
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>사업/기술 분류 관리</h2>
-            <p>기존 사업은 종료된 사업을 의미합니다. 특허 등록, 필터, AI 레포트에서 같은 기준값을 사용합니다.</p>
-          </div>
-        </div>
-        {classificationMessage ? <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>{classificationMessage}</p> : null}
-        <div className="settings-grid">
-          {classifications.map((group) => (
-            <ClassificationEditor
-              group={group}
-              key={group.type}
-              onAdd={(value) => handleClassificationUpdate(group.type, () => addClassification(group.type, value))}
-              onDelete={(value) => handleClassificationUpdate(group.type, () => deleteClassification(group.type, value))}
-              onRename={(currentValue, nextValue) =>
-                handleClassificationUpdate(group.type, () => renameClassification(group.type, currentValue, nextValue))
-              }
-            />
-          ))}
-        </div>
-      </section>
+      <ClassificationSettingsSection
+        classifications={classifications}
+        classificationMessage={classificationMessage}
+        onClassificationUpdate={handleClassificationUpdate}
+      />
 
       <section className="section">
         <div className="section-header">
@@ -643,207 +410,6 @@ export function AdminSettingsPage() {
       </section>
 
     </AppLayout>
-  );
-}
-
-// 분기 이력·예정 행 — 분기 편집·종료 버튼을 제거하고 읽기 전용으로 단순화.
-// 종료는 스케줄러 자동 처리, 수동 시작만 isUpcoming 상태에서 허용.
-function QuarterHistoryRow({
-  quarter,
-  onActivate,
-}: {
-  quarter: QuarterSetting;
-  onActivate: (key: string) => Promise<void>;
-}) {
-  const [isActivating, setIsActivating] = useState(false);
-
-  const fmt = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" }) : "-";
-  const fmtFull = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("ko-KR") : "-";
-
-  // isUpcoming: 아직 활성화되지 않은 예정 분기 — 수동 시작 버튼 표시 조건
-  // isActive: 현재 진행 중인 분기 — 종료는 스케줄러가 처리하므로 UI에서 별도 버튼 없음
-  const isUpcoming = !quarter.activated && !quarter.ended;
-  const isActive = quarter.activated && !quarter.ended;
-
-  async function activate() {
-    setIsActivating(true);
-    await onActivate(quarter.quarterKey).finally(() => setIsActivating(false));
-  }
-
-  return (
-    // 종료된 분기는 opacity를 낮춰 과거 이력임을 시각적으로 구분
-    <tr style={{ opacity: quarter.ended ? 0.6 : 1 }}>
-      <td>
-        <strong>{quarter.quarterLabel}</strong>
-        {quarter.ended && quarter.endedAt ? (
-          <span className="table-subtext">{fmtFull(quarter.endedAt)} 종료</span>
-        ) : null}
-      </td>
-      <td>
-        {fmt(quarter.startDate)} ~ {fmt(quarter.endDate)}
-      </td>
-      <td>
-        {quarter.activated ? (
-          <>
-            <strong>{fmtFull(quarter.activatedAt)}</strong>
-            <span className="table-subtext">실제 시작</span>
-          </>
-        ) : quarter.scheduledMailSendDate ? (
-          <>
-            <strong>{fmtFull(quarter.scheduledMailSendDate)}</strong>
-            <span className="table-subtext">예정 ({quarter.mailLeadMonths}개월 전)</span>
-          </>
-        ) : "-"}
-      </td>
-      <td>
-        {quarter.submissionDeadline ? (
-          <strong>{fmtFull(quarter.submissionDeadline)}</strong>
-        ) : (
-          <span className="table-subtext">활성화 시 자동 계산</span>
-        )}
-      </td>
-      <td>
-        {quarter.activated
-          ? `${quarter.targetPatentCount}건`
-          : "-"}
-      </td>
-      <td>
-        {quarter.ended ? (
-          <span className="badge badge-neutral">종료</span>
-        ) : isActive ? (
-          <span className="badge badge-success">진행 중</span>
-        ) : (
-          <span className="badge badge-neutral">예정</span>
-        )}
-      </td>
-      <td className="table-cell-actions">
-        {isUpcoming && (
-          <Button
-            disabled={isActivating}
-            onClick={activate}
-            type="button"
-            variant="secondary"
-          >
-            {isActivating ? "처리 중…" : "수동 시작"}
-          </Button>
-        )}
-      </td>
-    </tr>
-  );
-}
-
-function ClassificationEditor({
-  group,
-  onAdd,
-  onDelete,
-  onRename,
-}: {
-  group: ClassificationGroup;
-  onAdd: (value: string) => Promise<void>;
-  onDelete: (value: string) => Promise<void>;
-  onRename: (currentValue: string, nextValue: string) => Promise<void>;
-}) {
-  const [newValue, setNewValue] = useState("");
-  const [editingValue, setEditingValue] = useState("");
-  const [editingNextValue, setEditingNextValue] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const title = group.type === "BUSINESS" ? "사업 분류" : "기술 분류";
-
-  async function run(action: () => Promise<void>) {
-    setIsSaving(true);
-    await action().finally(() => setIsSaving(false));
-  }
-
-  return (
-    <div className="settings-card">
-      <div className="section-header section-header-compact">
-        <div>
-          <h3>{title}</h3>
-          <p>{group.values.length}개 기준값</p>
-        </div>
-      </div>
-      <div className="inline-form-row">
-        <input
-          onChange={(event) => setNewValue(event.target.value)}
-          placeholder={`${title} 추가`}
-          value={newValue}
-        />
-        <Button
-          disabled={isSaving || !newValue.trim()}
-          onClick={() => run(async () => {
-            await onAdd(newValue);
-            setNewValue("");
-          })}
-          type="button"
-          variant="secondary"
-        >
-          추가
-        </Button>
-      </div>
-      <div className="classification-list">
-        {group.values.map((value) => (
-          <div className="classification-row" key={value}>
-            {editingValue === value ? (
-              <input
-                autoFocus
-                onChange={(event) => setEditingNextValue(event.target.value)}
-                value={editingNextValue}
-              />
-            ) : (
-              <span>{value}</span>
-            )}
-            <div className="table-cell-actions">
-              {editingValue === value ? (
-                <>
-                  <Button
-                    disabled={isSaving || !editingNextValue.trim()}
-                    onClick={() => run(async () => {
-                      await onRename(value, editingNextValue);
-                      setEditingValue("");
-                      setEditingNextValue("");
-                    })}
-                    type="button"
-                    variant="secondary"
-                  >
-                    저장
-                  </Button>
-                  <Button
-                    disabled={isSaving}
-                    onClick={() => {
-                      setEditingValue("");
-                      setEditingNextValue("");
-                    }}
-                    type="button"
-                    variant="secondary"
-                  >
-                    취소
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    disabled={isSaving}
-                    onClick={() => {
-                      setEditingValue(value);
-                      setEditingNextValue(value);
-                    }}
-                    type="button"
-                    variant="secondary"
-                  >
-                    수정
-                  </Button>
-                  <Button disabled={isSaving} onClick={() => run(() => onDelete(value))} type="button" variant="secondary">
-                    삭제
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 }
 
