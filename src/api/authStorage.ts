@@ -1,7 +1,10 @@
 import type { UserRole } from "../types/patent";
 
-const ACCESS_TOKEN_STORAGE_KEY = "patentflow.accessToken";
 const USER_STORAGE_KEY = "patentflow.user";
+
+// 보안(SEC-01): accessToken은 localStorage에 보관하지 않고 파일 레벨 메모리에만 둔다.
+// 새로고침 시 메모리 토큰은 사라지며, httpOnly refresh 쿠키 기반 /auth/refresh 로 재발급한다.
+let accessTokenInMemory: string | null = null;
 
 export interface AuthUser {
   departmentId: string | null;
@@ -14,7 +17,7 @@ export interface AuthUser {
 }
 
 export function getStoredAccessToken() {
-  return window.localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+  return accessTokenInMemory;
 }
 
 export function hasStoredAuthSession() {
@@ -37,22 +40,18 @@ export function getStoredAuthUser(): AuthUser | null {
 }
 
 export function storeAuthSession(user: AuthUser, accessToken?: string | null) {
-  // accessToken을 생략(undefined)하면 user 정보만 갱신 — 토큰은 건드리지 않는다
+  // accessToken을 생략(undefined)하면 user 정보만 갱신 — 메모리 토큰은 건드리지 않는다
   if (accessToken === undefined) {
     window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
     return;
   }
 
-  // null이면 토큰 삭제(로그아웃 후 user만 남기는 시나리오 대비), 값이 있으면 교체
-  if (accessToken) {
-    window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
-  } else {
-    window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-  }
+  // null이면 메모리 토큰 삭제(로그아웃 후 user만 남기는 시나리오 대비), 값이 있으면 교체
+  accessTokenInMemory = accessToken ? accessToken : null;
   window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
 }
 
 export function clearAuthSession() {
-  window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  accessTokenInMemory = null;
   window.localStorage.removeItem(USER_STORAGE_KEY);
 }
