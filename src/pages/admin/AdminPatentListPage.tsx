@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Button } from "../../components/common/Button";
+import { ErrorNotice } from "../../components/common/ErrorNotice";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { getDepartments, type Department } from "../../api/departments";
 import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
+import { getApiErrorMessage } from "../../api/client";
 import { getClassifications, type ClassificationGroup } from "../../api/settings";
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
 import { useClientPagination } from "../../hooks/useClientPagination";
@@ -52,7 +54,9 @@ export function AdminPatentListPage() {
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>("ALL");
   const [sort, setSort] = useState("feeDueDate,asc");
   const [lookupMessage, setLookupMessage] = useState("");
+  const [lookupError, setLookupError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -97,6 +101,7 @@ export function AdminPatentListPage() {
 
     setIsLookingUp(true);
     setLookupMessage("");
+    setLookupError("");
     setSaveMessage("");
 
     try {
@@ -120,6 +125,9 @@ export function AdminPatentListPage() {
           ? "KIPRIS 결과를 불러왔습니다."
           : "외부 검색 결과를 불러왔습니다.",
       );
+    } catch (error) {
+      // API-01: 외부 검색 실패 시 에러 메시지를 화면에 노출한다.
+      setLookupError(getApiErrorMessage(error, "특허 외부 검색에 실패했습니다. 잠시 후 다시 시도해 주세요."));
     } finally {
       setIsLookingUp(false);
     }
@@ -128,6 +136,7 @@ export function AdminPatentListPage() {
   async function handleSavePatent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaveMessage("");
+    setSaveError("");
 
     if (!form.managementNumber.trim() || !form.title.trim()) {
       setSaveMessage("관리번호를 직접 입력하고 특허 기본 정보를 확인해 주세요.");
@@ -162,6 +171,9 @@ export function AdminPatentListPage() {
       setForm(emptyPatentForm);
       setIsManualMetadataEditEnabled(false);
       setSaveMessage("특허가 등록되었습니다.");
+    } catch (error) {
+      // API-02: 특허 등록 실패 시 에러 메시지를 화면에 노출한다.
+      setSaveError(getApiErrorMessage(error, "특허 등록에 실패했습니다. 입력값과 BE 상태를 확인해 주세요."));
     } finally {
       setIsSaving(false);
     }
@@ -250,6 +262,7 @@ export function AdminPatentListPage() {
             </Button>
           </div>
           {lookupMessage ? <p className="notice patent-form-notice">{lookupMessage}</p> : null}
+          <ErrorNotice message={lookupError} />
           <div className="patent-inline-action-row">
             <div>
               <strong>AI 추천</strong>
@@ -376,6 +389,7 @@ export function AdminPatentListPage() {
             </Button>
           </div>
           {saveMessage ? <p className="notice patent-form-notice">{saveMessage}</p> : null}
+          <ErrorNotice message={saveError} />
         </form>
       </Section>
 
