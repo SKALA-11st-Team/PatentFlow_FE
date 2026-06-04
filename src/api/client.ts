@@ -1,4 +1,4 @@
-import { getStoredAccessToken } from "./authStorage";
+import { clearAuthSession, getStoredAccessToken } from "./authStorage";
 
 const importMetaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
 const API_BASE_URL = normalizeApiBaseUrl(importMetaEnv?.VITE_API_BASE_URL ?? "");
@@ -96,7 +96,14 @@ async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefr
   });
 
   if (response.status === 401 && allowRefresh && path !== "/auth/login" && path !== "/auth/refresh") {
-    await requestJsonInternal<ApiEnvelope<unknown>>("/auth/refresh", { method: "POST" }, false);
+    try {
+      await requestJsonInternal<ApiEnvelope<unknown>>("/auth/refresh", { method: "POST" }, false);
+    } catch (refreshError) {
+      // API-04: refresh마저 실패하면 세션이 만료된 것 — 강제 로그아웃 후 로그인 화면으로 이동
+      clearAuthSession();
+      redirectToLogin();
+      throw refreshError;
+    }
     return requestJsonInternal<T>(path, init, false);
   }
 
@@ -105,6 +112,12 @@ async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefr
   }
 
   return response.json() as Promise<T>;
+}
+
+function redirectToLogin() {
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.assign("/login");
+  }
 }
 
 function getCookie(name: string): string | undefined {
