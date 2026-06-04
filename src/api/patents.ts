@@ -168,22 +168,51 @@ export async function getPatents(query: PatentListQuery = {}): Promise<PatentLis
       return (await getPatentPage(query)).items;
     }
 
-    const firstPage = await getPatentPage({ ...query, page: 1, size: 100 });
-    const patentItems = [...firstPage.items];
-
-    const remainingPages = Array.from(
-      { length: Math.max(0, firstPage.page.totalPages - firstPage.page.page) },
-      (_, index) => firstPage.page.page + index + 1,
-    );
-    const nextPages = await Promise.all(
-      remainingPages.map((page) => getPatentPage({ ...query, page, size: firstPage.page.size })),
-    );
-    nextPages.forEach((nextPage) => patentItems.push(...nextPage.items));
-
-    return patentItems;
+    // PERF-01: 전체 페이지를 Promise.all로 병렬 로딩하지 않고, 페이징 없이 전체 목록을 한 번에 반환하는
+    // review-targets 엔드포인트를 단일 요청으로 사용한다. (departmentId/keyword는 클라이언트에서 보존 필터링)
+    const reviewTargets = await getReviewTargetPatents({ reviewWorkflowStatus: query.reviewWorkflowStatus });
+    return filterPatentsClientSide(reviewTargets, query);
   }
 
   return getFilteredMockPatents(query);
+}
+
+/**
+ * @relatedFR FR-LEGAL-22, FR-LEGAL-24
+ * @relatedUI UI-LEGAL-01, UI-COM-02, UI-BUS-01
+ * @description 분기/국가/날짜/상태 기준 검토 대상 특허 전체를 페이징 없이 단일 요청으로 조회한다.
+ */
+export async function getReviewTargetPatents(query: PatentListQuery = {}): Promise<PatentListItem[]> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<BackendPatentListItem[]>>(
+      `/patents/review-targets${toQueryString({
+        reviewWorkflowStatus: query.reviewWorkflowStatus,
+      })}`,
+    );
+
+    return (response.data ?? []).map(mapBackendPatentListItem);
+  }
+
+  return getFilteredMockPatents(query);
+}
+
+/**
+ * 백엔드 전체 목록 응답에 대해 기존 getPatents 전량 로드와 동일하게 departmentId/keyword 필터를 클라이언트에서 보존한다.
+ */
+function filterPatentsClientSide(items: PatentListItem[], query: PatentListQuery): PatentListItem[] {
+  const keyword = query.keyword?.trim().toLowerCase();
+  return items.filter((item) => {
+    if (query.departmentId && item.departmentId !== query.departmentId) {
+      return false;
+    }
+    if (keyword) {
+      const haystack = [item.title, item.managementNumber, item.applicationNumber, item.registrationNumber];
+      if (!haystack.some((value) => typeof value === "string" && value.toLowerCase().includes(keyword))) {
+        return false;
+      }
+    }
+    return true;
+  });
 }
 
 /**
@@ -219,19 +248,9 @@ export async function getBusinessPatents(query: PatentListQuery = {}): Promise<P
       return (await getBusinessPatentPage(query)).items;
     }
 
-    const firstPage = await getBusinessPatentPage({ ...query, page: 1, size: 100 });
-    const patentItems = [...firstPage.items];
-
-    const remainingPages = Array.from(
-      { length: Math.max(0, firstPage.page.totalPages - firstPage.page.page) },
-      (_, index) => firstPage.page.page + index + 1,
-    );
-    const nextPages = await Promise.all(
-      remainingPages.map((page) => getBusinessPatentPage({ ...query, page, size: firstPage.page.size })),
-    );
-    nextPages.forEach((nextPage) => patentItems.push(...nextPage.items));
-
-    return patentItems;
+    // PERF-01: 전체 페이지 병렬 로딩(Promise.all) 제거. 사업부별 특허 수는 단일 페이지(최대 100건) 범위 내이므로
+    // 단일 페이지 응답만 반환한다. (TODO: 단일 부서 특허가 100건을 초과하면 서버 페이징 연동 필요)
+    return (await getBusinessPatentPage({ ...query, page: 1, size: 100 })).items;
   }
 
   return getFilteredMockPatents(query);
