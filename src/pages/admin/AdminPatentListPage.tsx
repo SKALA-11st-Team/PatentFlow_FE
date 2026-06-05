@@ -212,6 +212,8 @@ export function AdminPatentListPage() {
       setSaveMessage(
         `AI 추천: ${suggestion.businessArea} / ${suggestion.technologyArea} (${suggestion.confidenceText})`,
       );
+    } catch (error) {
+      setSaveMessage(getApiErrorMessage(error, "AI 분야 추천에 실패했습니다. 잠시 후 다시 시도해 주세요."));
     } finally {
       setIsSuggestingContext(false);
     }

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getPatentDetail, suggestPatentContextFields, updatePatent } from "../../api/patents";
+import { getApiErrorMessage } from "../../api/client";
 import { getClassifications, type ClassificationGroup } from "../../api/settings";
 import { Button } from "../../components/common/Button";
 import { Section } from "../../components/common/Section";
@@ -140,6 +141,8 @@ export function AdminPatentEditPage() {
       setSaveMessage(
         `AI 추천: ${suggestion.businessArea} / ${suggestion.technologyArea} (신뢰도 ${suggestion.confidenceText})`,
       );
+    } catch (error) {
+      setSaveMessage(getApiErrorMessage(error, "AI 분야 추천에 실패했습니다. 잠시 후 다시 시도해 주세요."));
     } finally {
       setIsSuggestingContext(false);
     }
