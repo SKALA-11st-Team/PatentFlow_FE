@@ -2073,6 +2073,21 @@ tbody tr:hover {
   line-height: 1.2;
 }
 
+.score-result {
+  align-items: flex-end;
+  display: grid;
+  gap: var(--spacing-xs);
+  justify-items: end;
+  min-width: 64px;
+}
+
+.evaluation-badge-stack {
+  align-items: flex-end;
+  display: grid;
+  gap: var(--spacing-xs);
+  justify-items: end;
+}
+
 .score-detail-list {
   color: var(--color-text-muted);
   font-size: 13px;

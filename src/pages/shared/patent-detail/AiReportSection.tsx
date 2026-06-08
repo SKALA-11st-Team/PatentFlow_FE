@@ -25,7 +25,7 @@ export function AiReportStructuredContent({ report }: { report: PatentDetail["ai
                       <>
                         {" "}
                         <a className="inline-source-link" href={detail.source.url} rel="noreferrer" target="_blank">
-                          🔗 {detail.source.title}
+                          출처 {detail.source.title}
                         </a>
                       </>
                     ) : null}
@@ -34,7 +34,10 @@ export function AiReportStructuredContent({ report }: { report: PatentDetail["ai
               </ul>
             ) : null}
           </div>
-          <b>{score.score ?? "N/A"}</b>
+          <div className="score-result">
+            <b>{score.score ?? "N/A"}</b>
+            {score.grade ? <Badge tone={getGradeTone(score.grade)}>{score.grade}</Badge> : null}
+          </div>
         </div>
       ))}
     </div>
@@ -66,12 +69,18 @@ export function AiReportSection({ report }: { report: PatentDetail["aiEvaluation
           <span>종합 점수</span>
           <strong>{formatReportDisplayScore(report)}</strong>
           {report.totalScoreText ? <small>원문 점수 {report.totalScoreText}</small> : null}
+          {report.finalGrade ? <small>종합 등급 {report.finalGrade}</small> : null}
+          {report.finalIndicator ? <small>{report.finalIndicator}</small> : null}
           <small>작성일 {formatDate(report.createdAt)}</small>
         </div>
-        <Badge tone={getRecommendationTone(report.recommendation)}>
-          {recommendationLabels[report.recommendation]}
-        </Badge>
+        <div className="evaluation-badge-stack">
+          <Badge tone={getRecommendationTone(report.recommendation)}>
+            {recommendationLabels[report.recommendation]}
+          </Badge>
+          {report.degraded ? <Badge tone="warning">제한 생성</Badge> : null}
+        </div>
       </div>
+      {report.degraded && report.failureReason ? <p className="notice notice-warning">{report.failureReason}</p> : null}
       <p className="notice">{report.recommendationText}</p>
       {report.keyEvidence ? (
         <div className="report-callout">
@@ -102,4 +111,11 @@ export function AiReportSection({ report }: { report: PatentDetail["aiEvaluation
       ) : null}
     </Section>
   );
+}
+
+function getGradeTone(grade: string) {
+  if (grade.startsWith("A")) return "success";
+  if (grade.startsWith("B")) return "primary";
+  if (grade.startsWith("C")) return "warning";
+  return "danger";
 }

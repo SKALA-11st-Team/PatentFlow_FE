@@ -25,6 +25,7 @@ import type {
   BusinessOpinion,
   PatentBibliographicInfo,
   PatentDetail,
+  AiReportJob,
   EvaluationScore,
   FinalDecisionRecord,
   LegalActionResult,
@@ -123,10 +124,16 @@ interface BackendPatentDetail extends BackendPatentListItem {
     createdAt: string;
     recommendation: PatentDetail["aiEvaluationReport"]["recommendation"];
     recommendationReason: string;
-    totalScore: number;
+    totalScore: number | null;
+    averageScore?: number | null;
+    finalGrade?: string | null;
+    finalIndicator?: string | null;
+    degraded?: boolean | null;
+    failureReason?: string | null;
     scores: Array<{
       category: string;
       score: number | null;
+      grade?: string | null;
       evidence: string;
     }>;
     missingInformation: string[];
@@ -355,17 +362,44 @@ export async function recordPatentFinalDecision(
 }
 
 /**
- * @description 단건 특허에 대해 AI 평가 레포트 생성을 요청한다. 생성 완료 시 상태가 MAIL_READY로 전환된다.
+ * @description 단건 특허에 대해 AI 평가 레포트 생성을 비동기 잡으로 요청한다.
  */
-export async function requestPatentAiReport(patentId: string): Promise<PatentDetail | undefined> {
+export async function requestPatentAiReport(patentId: string): Promise<AiReportJob | undefined> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<BackendPatentDetail>>(`/patents/${patentId}/request-ai-report`, {
+    const response = await requestJson<ApiEnvelope<AiReportJob>>(`/patents/${patentId}/request-ai-report`, {
       method: "POST",
       body: "{}",
     });
-    return response.data ? mapBackendPatentDetail(response.data) : undefined;
+    return response.data ?? undefined;
   }
-  return requestMockPatentAiReport(patentId);
+  await requestMockPatentAiReport(patentId);
+  return {
+    jobId: `MOCK-AIJOB-${patentId}`,
+    patentId,
+    status: "SUCCEEDED",
+    requestedAt: new Date().toISOString(),
+    startedAt: new Date().toISOString(),
+    finishedAt: new Date().toISOString(),
+    message: "AI 평가 레포트가 생성되었습니다.",
+    reportId: null,
+  };
+}
+
+export async function getPatentAiReportStatus(patentId: string): Promise<AiReportJob | undefined> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<AiReportJob>>(`/patents/${patentId}/ai-report/status`);
+    return response.data ?? undefined;
+  }
+  return {
+    jobId: `MOCK-AIJOB-${patentId}`,
+    patentId,
+    status: "SUCCEEDED",
+    requestedAt: null,
+    startedAt: null,
+    finishedAt: new Date().toISOString(),
+    message: "AI 평가 레포트가 생성되었습니다.",
+    reportId: null,
+  };
 }
 
 /**
@@ -543,16 +577,24 @@ function mapBackendSummary(summary: BackendPatentDetail["summary"]): PatentSumma
 
 export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationReport"]): AiEvaluationReport {
   const scores = mapBackendEvaluationScores(report.scores);
-  const averageScore = getAverageScore(scores);
+  const scoreAverage = getAverageScore(scores);
+  const rawTotalScore = typeof report.totalScore === "number" ? report.totalScore : getScoreTotal(scores) ?? 0;
+  const averageScore = typeof report.averageScore === "number"
+    ? report.averageScore
+    : scoreAverage ?? (rawTotalScore > 0 ? Math.round((rawTotalScore / 4) * 10) / 10 : undefined);
 
   return {
     evaluationId: report.reportId,
     createdAt: report.createdAt,
     recommendation: report.recommendation,
     recommendationText: report.recommendationReason,
-    totalScore: averageScore ?? report.totalScore,
-    totalScoreText: getTotalScoreText(scores, averageScore),
+    totalScore: rawTotalScore,
+    totalScoreText: getTotalScoreText(scores, averageScore, rawTotalScore),
     averageScore,
+    finalGrade: report.finalGrade ?? null,
+    finalIndicator: report.finalIndicator ?? null,
+    degraded: Boolean(report.degraded),
+    failureReason: report.failureReason ?? null,
     scores,
     missingInformation: report.missingInformation,
     rawMarkdown: report.rawMarkdown,
@@ -574,6 +616,7 @@ export function mapBackendEvaluationScores(scores: BackendPatentDetail["aiEvalua
     return [{
       category: score.category,
       score: score.score,
+      grade: score.grade ?? null,
       evidenceSummary: score.evidence,
     }];
   });
@@ -593,16 +636,25 @@ export function getAverageScore(scores: EvaluationScore[]) {
   return Math.round((scoreValues.reduce((sum, score) => sum + score, 0) / scoreValues.length) * 10) / 10;
 }
 
-export function getTotalScoreText(scores: EvaluationScore[], averageScore: number | undefined) {
+export function getScoreTotal(scores: EvaluationScore[]) {
   const scoreValues = scores.map((score) => score.score).filter((score): score is number => typeof score === "number");
 
-  if (averageScore === undefined || scoreValues.length === 0) {
+  if (scoreValues.length === 0) {
     return undefined;
   }
 
-  const totalScore = scoreValues.reduce((sum, score) => sum + score, 0);
+  return scoreValues.reduce((sum, score) => sum + score, 0);
+}
 
-  return `${totalScore}/${scores.length * 100}점, 평균 ${averageScore}점`;
+export function getTotalScoreText(scores: EvaluationScore[], averageScore: number | undefined, rawTotalScore?: number) {
+  const scoreTotal = rawTotalScore ?? getScoreTotal(scores);
+
+  if (averageScore === undefined || scoreTotal === undefined) {
+    return undefined;
+  }
+
+  const maxScore = scores.length > 0 ? scores.length * 100 : 400;
+  return `${scoreTotal}/${maxScore}점, 평균 ${averageScore}점`;
 }
 
 

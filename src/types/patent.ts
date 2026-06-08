@@ -62,6 +62,7 @@ export interface PatentSummary {
 export interface EvaluationScore {
   category: EvaluationCategory;
   score: number | null;
+  grade?: string | null;
   evidenceSummary: string;
   evidenceDetails?: EvaluationEvidenceDetail[];
 }
@@ -82,6 +83,10 @@ export interface AiEvaluationReport {
   totalScore: number;
   totalScoreText?: string;
   averageScore?: number;
+  finalGrade?: string | null;
+  finalIndicator?: string | null;
+  degraded?: boolean;
+  failureReason?: string | null;
   keyEvidence?: string;
   judgementGrounds?: string[];
   scores: EvaluationScore[];
@@ -93,6 +98,19 @@ export interface AiEvaluationReport {
   }[];
   rawMarkdown?: string;
   markdownFilePath?: string;
+}
+
+export type AiReportJobStatus = "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "DEGRADED";
+
+export interface AiReportJob {
+  jobId: string | null;
+  patentId: string;
+  status: AiReportJobStatus | null;
+  requestedAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  message: string | null;
+  reportId: string | null;
 }
 
 export interface FinalDecisionRecord {

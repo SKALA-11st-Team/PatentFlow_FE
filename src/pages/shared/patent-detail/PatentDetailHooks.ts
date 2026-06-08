@@ -6,6 +6,7 @@ import { getDepartmentRecipientMappings, getMailingHistory } from "../../../api/
 import {
   getPatentDetail,
   getBusinessPatentDetail,
+  getPatentAiReportStatus,
   getPatentHistory,
   getPatents,
   recordPatentFinalDecision,
@@ -20,7 +21,7 @@ import { useBusinessChecklistItems } from "../../../hooks/useBusinessChecklistIt
 import { businessOpinionLabels, legalActionResultLabels } from "../../../constants/status";
 import type { BusinessChecklistSubmission } from "../../../types/businessChecklist";
 import type { DepartmentRecipientMapping, MailingHistoryItem } from "../../../types/mailing";
-import type { LegalActionResult, PatentDetail, PatentHistoryItem, UserRole } from "../../../types/patent";
+import type { AiReportJob, LegalActionResult, PatentDetail, PatentHistoryItem, UserRole } from "../../../types/patent";
 import {
   createGroupedBusinessReviewMailDrafts,
   toBusinessReviewMailSendDraft,
@@ -43,6 +44,36 @@ export function formatDate(dateText: string) {
  */
 export function formatReportDisplayScore(report: PatentDetail["aiEvaluationReport"]) {
   return report.averageScore ?? report.totalScore;
+}
+
+const AI_REPORT_POLL_INTERVAL_MS = 3000;
+const AI_REPORT_POLL_TIMEOUT_MS = 20 * 60 * 1000;
+
+async function waitForAiReportJob(patentId: string, initialJob?: AiReportJob): Promise<AiReportJob | undefined> {
+  if (initialJob && isAiReportTerminalStatus(initialJob.status)) {
+    return initialJob;
+  }
+
+  const startedAt = Date.now();
+  let latestJob = initialJob;
+
+  while (Date.now() - startedAt < AI_REPORT_POLL_TIMEOUT_MS) {
+    await sleep(AI_REPORT_POLL_INTERVAL_MS);
+    latestJob = await getPatentAiReportStatus(patentId);
+    if (latestJob && isAiReportTerminalStatus(latestJob.status)) {
+      return latestJob;
+    }
+  }
+
+  throw new Error("AI 레포트 생성 상태 확인 시간이 초과되었습니다.");
+}
+
+function isAiReportTerminalStatus(status: AiReportJob["status"] | null | undefined) {
+  return status === "SUCCEEDED" || status === "FAILED" || status === "DEGRADED";
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 /**
@@ -417,10 +448,25 @@ export function usePatentDetail(role: UserRole) {
     setIsWorkflowActionProcessing(true);
     setWorkflowActionMessage("");
     try {
-      const updated = await requestPatentAiReport(patent.patentId);
-      if (updated) setPatent(updated);
-      if (updated) refreshPatentHistory(updated.patentId);
-      setWorkflowActionMessage("AI 레포트 생성이 완료되었습니다.");
+      const job = await requestPatentAiReport(patent.patentId);
+      setWorkflowActionMessage(job?.message ?? "AI 레포트 생성을 시작했습니다.");
+      const completedJob = await waitForAiReportJob(patent.patentId, job);
+
+      if (completedJob?.status === "FAILED") {
+        setWorkflowActionMessage(completedJob.message ?? "AI 레포트 생성에 실패했습니다.");
+        return;
+      }
+
+      const updated = await getPatentDetail(patent.patentId);
+      if (updated) {
+        setPatent(updated);
+        refreshPatentHistory(updated.patentId);
+      }
+      setWorkflowActionMessage(
+        completedJob?.status === "DEGRADED"
+          ? completedJob.message ?? "AI 레포트가 제한된 근거로 생성되었습니다."
+          : "AI 레포트 생성이 완료되었습니다.",
+      );
     } catch (error) {
       setWorkflowActionMessage(error instanceof Error ? error.message : "AI 레포트 생성에 실패했습니다.");
     } finally {
