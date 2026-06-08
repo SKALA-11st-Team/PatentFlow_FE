@@ -71,6 +71,7 @@ export async function getMailingHistory(query: MailingHistoryQuery = {}): Promis
       `/mailings/history${toQueryString({
         patentId: query.patentId,
         recipientEmail: query.recipientEmail,
+        size: 500,
       })}`,
     );
 

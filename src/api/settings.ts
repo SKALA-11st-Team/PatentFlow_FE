@@ -147,19 +147,19 @@ export interface MailOAuth2Status {
 
 export async function getMailOAuth2Status(): Promise<MailOAuth2Status> {
   if (!isBackendApiEnabled()) return { connected: false, connectedEmail: null };
-  const response = await requestJson<ApiEnvelope<MailOAuth2Status>>("/settings/mail/oauth2/google/status");
+  const response = await requestJson<ApiEnvelope<MailOAuth2Status>>("/admin/settings/mail/oauth2/google/status");
   return response.data ?? { connected: false, connectedEmail: null };
 }
 
 export async function disconnectMailOAuth2(): Promise<void> {
   await requestJson<ApiEnvelope<MailOAuth2Status>>(
-    "/settings/mail/oauth2/google",
+    "/admin/settings/mail/oauth2/google",
     { method: "DELETE" },
   );
 }
 
 export async function redirectToGoogleOAuth2(): Promise<void> {
-  const response = await requestJson<ApiEnvelope<string>>("/settings/mail/oauth2/google/authorize-url");
+  const response = await requestJson<ApiEnvelope<string>>("/admin/settings/mail/oauth2/google/authorize-url");
   const url = response.data;
   if (url) window.location.href = url;
 }
