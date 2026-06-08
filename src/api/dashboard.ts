@@ -6,7 +6,8 @@ export interface LegalDashboardSummary {
   pendingReview: number;
   waitingBusinessResponse: number;
   businessResponseReceived: number;
-  pendingLegalAction: number;
+  pendingFinalDecision: number;
+  legalActionCompleted: number;
 }
 
 export interface BusinessDashboardSummary {
@@ -33,7 +34,10 @@ export async function getLegalDashboardSummary(): Promise<LegalDashboardSummary>
     pendingReview: patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY").length,
     waitingBusinessResponse: patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE").length,
     businessResponseReceived: patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED").length,
-    pendingLegalAction: patents.filter((patent) => patent.legalActionResult !== null).length,
+    pendingFinalDecision: patents.filter(
+      (patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED" && patent.legalActionResult === null,
+    ).length,
+    legalActionCompleted: patents.filter((patent) => patent.legalActionResult !== null).length,
   };
 }
 
@@ -66,7 +70,8 @@ function createEmptyLegalDashboardSummary(): LegalDashboardSummary {
     pendingReview: 0,
     waitingBusinessResponse: 0,
     businessResponseReceived: 0,
-    pendingLegalAction: 0,
+    pendingFinalDecision: 0,
+    legalActionCompleted: 0,
   };
 }
 

@@ -117,7 +117,7 @@ export function AdminDashboardPage() {
   const totalPatentCount = dashboardSummary?.totalPatents ?? patents.length;
   const mailReadyCount = dashboardSummary?.pendingReview ?? mailReady.length;
   const waitingBusinessCount = dashboardSummary?.waitingBusinessResponse ?? waitingBusiness.length;
-  const actionRecordedCount = dashboardSummary?.pendingLegalAction ?? actionRecorded.length;
+  const actionRecordedCount = dashboardSummary?.legalActionCompleted ?? actionRecorded.length;
   const filteredPatents = useMemo(
     () => getFilteredAndSortedPatents(
       patents,
