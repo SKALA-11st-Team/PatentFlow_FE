@@ -12,6 +12,7 @@ import {
   recordPatentFinalDecision,
   requestPatentAiReport,
   sendBusinessReviewMails,
+  updatePatentFinalDecision,
 } from "../../../api/patents";
 import {
   createBusinessChecklistDraft,
@@ -423,7 +424,10 @@ export function usePatentDetail(role: UserRole) {
         return;
       }
 
-      const result = await recordPatentFinalDecision(currentPatent.patentId, {
+      const saveFinalDecision = currentPatent.finalDecisionRecord.decisionId
+        ? updatePatentFinalDecision
+        : recordPatentFinalDecision;
+      const result = await saveFinalDecision(currentPatent.patentId, {
         legalActionResult: legalActionDraft,
         reason: trimmedReason,
       });

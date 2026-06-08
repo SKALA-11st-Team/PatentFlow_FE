@@ -10,6 +10,7 @@ import {
   getMailOAuth2Status,
   getMailSettings,
   getResponseDeadline,
+  getReviewPeriodTemplates,
   getReviewQuarters,
   redirectToGoogleOAuth2,
   updateCountryExtension,
@@ -23,6 +24,7 @@ import {
   type MailOAuth2Status,
   type MailSettings,
   type QuarterSetting,
+  type ReviewPeriodTemplate,
   type ResponseDeadline,
 } from "../../api/settings";
 import { getApiErrorMessage } from "../../api/client";
@@ -47,8 +49,6 @@ export function AdminSettingsPage() {
   const [mailMessage, setMailMessage] = useState("");
   const [countryExtensions, setCountryExtensions] = useState<CountryExtension[]>([]);
   const [extMessage, setExtMessage] = useState("");
-  // *Months = 서버에 저장된 확정값, *MonthsInput = 사용자가 수정 중인 임시값
-  // 저장 버튼은 두 값이 다를 때만 활성화해 불필요한 API 호출을 막는다.
   const [mailLeadMonths, setMailLeadMonths] = useState(2);
   const [mailLeadMonthsInput, setMailLeadMonthsInput] = useState(2);
   const [isSavingMailLead, setIsSavingMailLead] = useState(false);
@@ -57,8 +57,8 @@ export function AdminSettingsPage() {
   const [responseDeadlineInput, setResponseDeadlineInput] = useState<ResponseDeadline>({ months: 1, days: 0 });
   const [isSavingDeadline, setIsSavingDeadline] = useState(false);
   const [deadlineMessage, setDeadlineMessage] = useState("");
-  // 당해 연도 + 내년 분기를 합쳐 이력/예정 테이블에 표시한다.
   const [allQuarters, setAllQuarters] = useState<QuarterSetting[]>([]);
+  const [reviewPeriodTemplates, setReviewPeriodTemplates] = useState<ReviewPeriodTemplate[]>([]);
   const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
   const [classificationMessage, setClassificationMessage] = useState("");
   const [oauth2Status, setOAuth2Status] = useState<MailOAuth2Status>({ connected: false, connectedEmail: null });
@@ -67,7 +67,6 @@ export function AdminSettingsPage() {
   const [annualFeeCountry, setAnnualFeeCountry] = useState("ALL");
   const [annualFeeMessage, setAnnualFeeMessage] = useState("");
 
-  // OAuth2 콜백에서 돌아왔을 때 URL 파라미터로 결과를 전달받아 메시지를 표시한다.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("oauth2_success")) {
@@ -82,22 +81,30 @@ export function AdminSettingsPage() {
   useEffect(() => {
     setIsLoading(true);
     const currentYear = new Date().getFullYear();
-    // 당해·내년 분기를 한 번에 로드해 이력 테이블에 2개 연도를 함께 표시한다.
-    // mailLeadMonths·responseDeadline은 기존 review-schedule 단일 엔드포인트에서
-    // 분리된 독립 엔드포인트로 각각 조회한다.
     Promise.all([
       getReviewQuarters(currentYear),
       getReviewQuarters(currentYear + 1),
+      getReviewPeriodTemplates(),
       getMailSettings(),
       getCountryExtensions(),
       getClassifications(),
       getMailLeadMonths(),
       getResponseDeadline(),
-      // OAuth2 상태 조회 실패 시 fallback을 반환해 나머지 설정 로드가 중단되지 않도록 한다
       getMailOAuth2Status().catch(() => ({ connected: false, connectedEmail: null } as MailOAuth2Status)),
     ])
-      .then(([thisYearQ, nextYearQ, nextMailSettings, nextExtensions, nextClassifications, nextMailLead, nextDeadline, nextOAuth2]) => {
+      .then(([
+        thisYearQ,
+        nextYearQ,
+        nextReviewPeriodTemplates,
+        nextMailSettings,
+        nextExtensions,
+        nextClassifications,
+        nextMailLead,
+        nextDeadline,
+        nextOAuth2,
+      ]) => {
         setAllQuarters([...thisYearQ, ...nextYearQ]);
+        setReviewPeriodTemplates(nextReviewPeriodTemplates);
         setMailSettings(nextMailSettings);
         setMailForm({ gmailUsername: nextMailSettings.gmailUsername ?? "", gmailAppPassword: "" });
         setCountryExtensions(nextExtensions);
@@ -192,7 +199,6 @@ export function AdminSettingsPage() {
     try {
       const result = await activateReviewQuarter(quarterKey);
       setMessage(`${quarterKey} 분기 시작 완료: 검토 시작 ${result.reviewStartedCount}건`);
-      // 활성화 후 activated/submissionDeadline 등이 변경되므로 양쪽 연도를 다시 불러온다.
       const currentYear = new Date().getFullYear();
       const [thisYearQ, nextYearQ] = await Promise.all([
         getReviewQuarters(currentYear),
@@ -254,6 +260,7 @@ export function AdminSettingsPage() {
         isLoading={isLoading}
         message={message}
         allQuarters={allQuarters}
+        reviewPeriodTemplates={reviewPeriodTemplates}
         onActivate={handleActivate}
       />
 

@@ -101,7 +101,6 @@ export function MailSettingsSection({
 
         {mailMessage ? <p className="notice notice-compact" style={{ margin: "0.5rem 0" }}>{mailMessage}</p> : null}
 
-        {/* 레거시: 앱 비밀번호 (OAuth2 미연동 시 폴백) */}
         <div className="settings-card">
           <div style={{ marginBottom: "0.5rem" }}>
             <button
@@ -109,7 +108,7 @@ export function MailSettingsSection({
               className="table-action-link"
               onClick={() => setShowLegacyMailForm((s) => !s)}
             >
-              {showLegacyMailForm ? "앱 비밀번호 숨기기 (레거시)" : "앱 비밀번호 직접 입력 (레거시, OAuth2 미연동 시 폴백)"}
+              {showLegacyMailForm ? "앱 비밀번호 숨기기 (레거시)" : "앱 비밀번호 직접 입력 (레거시, Google 계정 미연동 시 폴백)"}
             </button>
           </div>
           {showLegacyMailForm ? (

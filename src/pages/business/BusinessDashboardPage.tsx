@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getStoredAuthUser } from "../../api/authStorage";
 import { getApiErrorMessage } from "../../api/client";
 import { getBusinessDashboardSummary, type BusinessDashboardSummary } from "../../api/dashboard";
-import { getActiveQuarter } from "../../api/settings";
+import { getActiveQuarter, type QuarterSetting } from "../../api/settings";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Badge } from "../../components/common/Badge";
 import { ErrorNotice } from "../../components/common/ErrorNotice";
@@ -47,6 +47,7 @@ export function BusinessDashboardPage() {
   const [listMode, setListMode] = useState<DashboardListMode>("REVIEW_REQUESTS");
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
+  const [activeQuarter, setActiveQuarter] = useState<QuarterSetting | null>(null);
   const [dashboardSummary, setDashboardSummary] = useState<BusinessDashboardSummary | null>(null);
   const [dashboardErrorMessage, setDashboardErrorMessage] = useState("");
   const [deadlineErrorMessage, setDeadlineErrorMessage] = useState("");
@@ -55,10 +56,12 @@ export function BusinessDashboardPage() {
   useEffect(() => {
     getActiveQuarter()
       .then((q) => {
+        setActiveQuarter(q);
         setSubmissionDeadline(q?.submissionDeadline ?? null);
         setDeadlineErrorMessage("");
       })
       .catch((error) => {
+        setActiveQuarter(null);
         setDeadlineErrorMessage(getApiErrorMessage(error, "활성 분기 정보를 불러오지 못했습니다."));
       });
   }, []);
@@ -137,6 +140,7 @@ export function BusinessDashboardPage() {
           helper="요청 대비 제출 완료"
           isLoading={isLoading && !dashboardSummary}
           label="의견 제출률"
+          quarterLabel={activeQuarter?.quarterLabel}
           total={reviewRequestCount}
         />
         <div className="kpi-grid business-kpi-grid">

@@ -349,10 +349,25 @@ export async function recordPatentFinalDecision(
   patentId: string,
   payload: FinalDecisionPayload,
 ): Promise<FinalDecisionResult> {
+  return savePatentFinalDecision(patentId, payload, "POST");
+}
+
+export async function updatePatentFinalDecision(
+  patentId: string,
+  payload: FinalDecisionPayload,
+): Promise<FinalDecisionResult> {
+  return savePatentFinalDecision(patentId, payload, "PATCH");
+}
+
+async function savePatentFinalDecision(
+  patentId: string,
+  payload: FinalDecisionPayload,
+  method: "POST" | "PATCH",
+): Promise<FinalDecisionResult> {
   if (isBackendApiEnabled()) {
     const response = await requestJson<ApiEnvelope<FinalDecisionResult>>(`/patents/${patentId}/final-decision`, {
       body: JSON.stringify(payload),
-      method: "POST",
+      method,
     });
 
     return response.data ?? createFallbackFinalDecisionResult(patentId, payload);

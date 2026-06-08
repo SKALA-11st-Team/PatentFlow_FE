@@ -18,6 +18,15 @@ describe("annualFee Utils", () => {
       expect(getNextAnnualFeeDueDate("2020-05-19", baseDate)).toBe("2024-05-19");
     });
 
+    it("등록일이 아닌 출원일을 넘겼을 때 등록일 월일로 보정하지 않는다", () => {
+      const baseDate = new Date("2024-05-19");
+      const applicationDate = "2020-02-10";
+      const registrationDate = "2021-11-30";
+
+      expect(getNextAnnualFeeDueDate(applicationDate, baseDate)).toBe("2025-02-10");
+      expect(getNextAnnualFeeDueDate(applicationDate, baseDate)).not.toBe(getNextAnnualFeeDueDate(registrationDate, baseDate));
+    });
+
     it("잘못된 날짜 형식이 입력되면 빈 문자열을 반환한다", () => {
       expect(getNextAnnualFeeDueDate("invalid-date")).toBe("");
       expect(getNextAnnualFeeDueDate("")).toBe("");

@@ -7,6 +7,11 @@ import type { UserRole } from "../types/patent";
 
 // 역할별로 분리 저장 — 관리자와 사업부서 아이디가 서로 달라 독립 관리
 const REMEMBER_KEY: Record<UserRole, string> = {
+  ADMIN: "patentflow.remembered.admin",
+  BUSINESS: "patentflow.remembered.business",
+};
+
+const LEGACY_REMEMBER_KEY: Record<UserRole, string> = {
   ADMIN: "patentflow_remembered_admin",
   BUSINESS: "patentflow_remembered_business",
 };
@@ -27,7 +32,7 @@ export function LoginPage() {
 
   // 역할 탭 전환 시 해당 역할의 저장된 아이디 불러오기
   useEffect(() => {
-    const saved = localStorage.getItem(REMEMBER_KEY[role]);
+    const saved = getRememberedEmail(role);
     if (saved) {
       setEmail(saved);
       setRememberMe(true);
@@ -51,9 +56,9 @@ export function LoginPage() {
 
       // 아이디 기억은 로그인 성공 후 확정된 역할 키(role)에만 저장/삭제한다
       if (rememberMe) {
-        localStorage.setItem(REMEMBER_KEY[role], email);
+        storeRememberedEmail(role, email);
       } else {
-        localStorage.removeItem(REMEMBER_KEY[role]);
+        clearRememberedEmail(role);
       }
 
       navigate(nextRole === "ADMIN" ? "/admin/dashboard" : "/business/dashboard");
@@ -125,4 +130,29 @@ export function LoginPage() {
       </section>
     </main>
   );
+}
+
+function getRememberedEmail(role: UserRole) {
+  const saved = localStorage.getItem(REMEMBER_KEY[role]);
+  if (saved) {
+    return saved;
+  }
+
+  const legacySaved = localStorage.getItem(LEGACY_REMEMBER_KEY[role]);
+  if (legacySaved) {
+    storeRememberedEmail(role, legacySaved);
+    localStorage.removeItem(LEGACY_REMEMBER_KEY[role]);
+  }
+
+  return legacySaved;
+}
+
+function storeRememberedEmail(role: UserRole, email: string) {
+  localStorage.setItem(REMEMBER_KEY[role], email);
+  localStorage.removeItem(LEGACY_REMEMBER_KEY[role]);
+}
+
+function clearRememberedEmail(role: UserRole) {
+  localStorage.removeItem(REMEMBER_KEY[role]);
+  localStorage.removeItem(LEGACY_REMEMBER_KEY[role]);
 }

@@ -7,6 +7,8 @@ import { BellIcon, NotificationPanel } from "../notification/NotificationPanel";
 import type { AppNotification } from "../../types/notification";
 import type { UserRole } from "../../types/patent";
 
+const NOTIFICATION_REFRESH_INTERVAL_MS = 60_000;
+
 interface AppLayoutProps {
   children: ReactNode;
   role: UserRole;
@@ -27,7 +29,25 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
   const notificationMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getNotifications(role).then(setNotificationItems).catch(() => {});
+    let isMounted = true;
+
+    const loadNotifications = () => {
+      getNotifications(role)
+        .then((items) => {
+          if (isMounted) {
+            setNotificationItems(items);
+          }
+        })
+        .catch(() => {});
+    };
+
+    loadNotifications();
+    const intervalId = window.setInterval(loadNotifications, NOTIFICATION_REFRESH_INTERVAL_MS);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
   }, [role]);
   const navItems = isAdmin
     ? [

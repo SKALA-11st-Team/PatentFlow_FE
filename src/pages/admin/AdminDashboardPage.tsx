@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getLegalDashboardSummary, type LegalDashboardSummary } from "../../api/dashboard";
 import { getDepartments, type Department } from "../../api/departments";
 import { getApiErrorMessage } from "../../api/client";
+import { getActiveQuarter, type QuarterSetting } from "../../api/settings";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { BusinessAreaReviewCards } from "../../components/admin/BusinessAreaReviewCards";
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
@@ -50,6 +51,7 @@ export function AdminDashboardPage() {
   const { errorMessage, isLoading, patents, setPatents } = usePatentList();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<LegalDashboardSummary | null>(null);
+  const [activeQuarter, setActiveQuarter] = useState<QuarterSetting | null>(null);
   const [dashboardErrorMessage, setDashboardErrorMessage] = useState("");
   const [departmentErrorMessage, setDepartmentErrorMessage] = useState("");
 
@@ -62,6 +64,26 @@ export function AdminDashboardPage() {
       .catch((error) => {
         setDepartmentErrorMessage(getApiErrorMessage(error, "사업부 목록을 불러오지 못했습니다."));
       });
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getActiveQuarter()
+      .then((quarter) => {
+        if (isMounted) {
+          setActiveQuarter(quarter);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setActiveQuarter(null);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -146,9 +168,10 @@ export function AdminDashboardPage() {
       <section className="dashboard-kpi-overview">
         <QuarterCompletionDonut
           completed={actionRecorded.length}
-          helper=""
+          helper="현재 분기 납부 대상 대비 완료"
           isLoading={isLoading}
           label="연차료 처리 완료"
+          quarterLabel={activeQuarter?.quarterLabel}
           total={quarterlyTargetCount}
         />
         <div className="kpi-grid">
@@ -208,12 +231,6 @@ export function AdminDashboardPage() {
         <ErrorNotice message={dashboardErrorMessage} />
         <ErrorNotice message={departmentErrorMessage} />
       </div>
-
-      {/*
-        이번 분기 병목 현황은 화면 밀도 이슈로 임시 비활성화했습니다.
-        다시 사용할 때는 WorkflowBottleneckOverview 컴포넌트를 import한 뒤 아래처럼 렌더링하세요.
-        <WorkflowBottleneckOverview quarterlyTargets={quarterlyTargets} />
-      */}
 
       <BusinessAreaReviewCards
         isLoading={isLoading}

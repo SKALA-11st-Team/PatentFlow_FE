@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Button } from "../../../components/common/Button";
-import type { QuarterSetting } from "../../../api/settings";
+import type { QuarterSetting, ReviewPeriodTemplate } from "../../../api/settings";
 
 interface QuarterSettingsSectionProps {
   isLoading: boolean;
   message: string;
   allQuarters: QuarterSetting[];
+  reviewPeriodTemplates: ReviewPeriodTemplate[];
   onActivate: (quarterKey: string) => Promise<void>;
 }
 
@@ -14,7 +15,15 @@ interface QuarterSettingsSectionProps {
  * @relatedUI UI-LEGAL-07
  * @description 연차료 검토 분기 기준과 분기 이력·예정 일정을 표시하고 수동 분기 시작을 제공하는 설정 섹션.
  */
-export function QuarterSettingsSection({ isLoading, message, allQuarters, onActivate }: QuarterSettingsSectionProps) {
+export function QuarterSettingsSection({
+  isLoading,
+  message,
+  allQuarters,
+  reviewPeriodTemplates,
+  onActivate,
+}: QuarterSettingsSectionProps) {
+  const quarterPeriodRows = getQuarterPeriodRows(reviewPeriodTemplates);
+
   return (
     <>
       <section className="section">
@@ -33,12 +42,7 @@ export function QuarterSettingsSection({ isLoading, message, allQuarters, onActi
               </tr>
             </thead>
             <tbody>
-              {[
-                { q: "Q1", range: "1월 1일 ~ 3월 31일" },
-                { q: "Q2", range: "4월 1일 ~ 6월 30일" },
-                { q: "Q3", range: "7월 1일 ~ 9월 30일" },
-                { q: "Q4", range: "10월 1일 ~ 12월 31일" },
-              ].map(({ q, range }) => (
+              {quarterPeriodRows.map(({ q, range }) => (
                 <tr key={q}>
                   <td><strong>{q}</strong></td>
                   <td>{range}</td>
@@ -83,7 +87,6 @@ export function QuarterSettingsSection({ isLoading, message, allQuarters, onActi
               ) : allQuarters.length === 0 ? (
                 <tr><td className="empty-table-cell" colSpan={7}>분기 데이터가 없습니다.</td></tr>
               ) : (
-                // .slice()로 원본 배열을 복사한 뒤 정렬 — allQuarters state를 직접 변경하지 않기 위해
                 allQuarters
                   .slice()
                   .sort((a, b) => (a.startDate ?? "").localeCompare(b.startDate ?? ""))
@@ -106,8 +109,6 @@ export function QuarterSettingsSection({ isLoading, message, allQuarters, onActi
   );
 }
 
-// 분기 이력·예정 행 — 분기 편집·종료 버튼을 제거하고 읽기 전용으로 단순화.
-// 종료는 스케줄러 자동 처리, 수동 시작만 isUpcoming 상태에서 허용.
 function QuarterHistoryRow({
   quarter,
   onActivate,
@@ -122,8 +123,6 @@ function QuarterHistoryRow({
   const fmtFull = (d: string | null) =>
     d ? new Date(d).toLocaleDateString("ko-KR") : "-";
 
-  // isUpcoming: 아직 활성화되지 않은 예정 분기 — 수동 시작 버튼 표시 조건
-  // isActive: 현재 진행 중인 분기 — 종료는 스케줄러가 처리하므로 UI에서 별도 버튼 없음
   const isUpcoming = !quarter.activated && !quarter.ended;
   const isActive = quarter.activated && !quarter.ended;
 
@@ -133,7 +132,6 @@ function QuarterHistoryRow({
   }
 
   return (
-    // 종료된 분기는 opacity를 낮춰 과거 이력임을 시각적으로 구분
     <tr style={{ opacity: quarter.ended ? 0.6 : 1 }}>
       <td>
         <strong>{quarter.quarterLabel}</strong>
@@ -192,4 +190,23 @@ function QuarterHistoryRow({
       </td>
     </tr>
   );
+}
+
+function getQuarterPeriodRows(reviewPeriodTemplates: ReviewPeriodTemplate[]) {
+  const templates = reviewPeriodTemplates.length > 0
+    ? reviewPeriodTemplates
+    : [
+        { periodNumber: 1, startMonth: 1, startDay: 1, endMonth: 3, endDay: 31, label: "Q1" },
+        { periodNumber: 2, startMonth: 4, startDay: 1, endMonth: 6, endDay: 30, label: "Q2" },
+        { periodNumber: 3, startMonth: 7, startDay: 1, endMonth: 9, endDay: 30, label: "Q3" },
+        { periodNumber: 4, startMonth: 10, startDay: 1, endMonth: 12, endDay: 31, label: "Q4" },
+      ];
+
+  return templates
+    .slice()
+    .sort((first, second) => first.periodNumber - second.periodNumber)
+    .map((template) => ({
+      q: template.label || `Q${template.periodNumber}`,
+      range: `${template.startMonth}월 ${template.startDay}일 ~ ${template.endMonth}월 ${template.endDay}일`,
+    }));
 }
