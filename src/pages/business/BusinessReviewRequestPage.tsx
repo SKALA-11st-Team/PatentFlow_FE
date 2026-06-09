@@ -420,10 +420,17 @@ function BusinessOpinionModal({
                   <small>원문 점수 {patent.aiEvaluationReport.totalScoreText}</small>
                 ) : null}
               </div>
-              <Badge tone={getRecommendationTone(patent.aiEvaluationReport.recommendation)}>
-                {recommendationLabels[patent.aiEvaluationReport.recommendation]}
-              </Badge>
+              <div className="evaluation-badge-stack">
+                <Badge tone={getRecommendationTone(patent.aiEvaluationReport.recommendation)}>
+                  {recommendationLabels[patent.aiEvaluationReport.recommendation]}
+                </Badge>
+                {/* CONTRACT-07: 폴백/제한 생성 레포트를 정상 레포트와 구분해 배지로 표면화한다. */}
+                {patent.aiEvaluationReport.degraded ? <Badge tone="warning">제한 생성</Badge> : null}
+              </div>
             </div>
+            {patent.aiEvaluationReport.degraded && patent.aiEvaluationReport.failureReason ? (
+              <p className="notice notice-warning">{patent.aiEvaluationReport.failureReason}</p>
+            ) : null}
             <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
             {patent.aiEvaluationReport.keyEvidence ? <p>{patent.aiEvaluationReport.keyEvidence}</p> : null}
             <div className="modal-score-grid">
