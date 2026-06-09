@@ -428,20 +428,6 @@ export async function getPatentAiReportStatus(patentId: string): Promise<AiRepor
 }
 
 /**
- * @description 복수 특허를 MAIL_READY 상태로 일괄 전환한다.
- */
-export async function markPatentsMailReady(patentIds: string[]): Promise<string[]> {
-  if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<string[]>>("/patents/batch/mark-mail-ready", {
-      method: "POST",
-      body: JSON.stringify({ patentIds }),
-    });
-    return response.data ?? [];
-  }
-  return patentIds;
-}
-
-/**
  * @relatedFR FR-LEGAL-03
  * @relatedUI UI-LEGAL-04
  * @description 출원번호로 KIPRIS 우선 검색 후 결과가 없으면 Google Patents 검색을 요청한다.
