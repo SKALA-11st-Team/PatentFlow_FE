@@ -39,12 +39,19 @@ export async function getLatestBusinessSubmission(
   patent: PatentDetail | PatentListItem,
 ): Promise<BusinessSubmissionVersion | null> {
   if (isBackendApiEnabled()) {
-    const submissions = await getBusinessSubmissionVersions(patent);
-
-    return submissions.length > 0 ? submissions[submissions.length - 1] : null;
+    return deriveLatestSubmission(await getBusinessSubmissionVersions(patent));
   }
 
   return getMockLatestBusinessSubmission(patent);
+}
+
+/**
+ * @description BIZ-04: 제출 이력 배열에서 최신 제출을 도출한다(추가 API 호출 없이). 백엔드·mock 모두 동일 규칙.
+ */
+export function deriveLatestSubmission(
+  versions: BusinessSubmissionVersion[],
+): BusinessSubmissionVersion | null {
+  return versions.length > 0 ? versions[versions.length - 1] : null;
 }
 
 function mapBackendBusinessSubmission(submission: BackendBusinessSubmissionVersion): BusinessSubmissionVersion {

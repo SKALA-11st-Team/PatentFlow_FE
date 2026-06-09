@@ -5,7 +5,7 @@ import { Badge } from "../../components/common/Badge";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { Section } from "../../components/common/Section";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
-import { getBusinessSubmissionVersions, getLatestBusinessSubmission } from "../../api/businessSubmissions";
+import { deriveLatestSubmission, getBusinessSubmissionVersions } from "../../api/businessSubmissions";
 import { getApiErrorMessage } from "../../api/client";
 import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
@@ -39,16 +39,16 @@ export function BusinessSubmissionHistoryPage() {
     let isMounted = true;
 
     async function loadSubmissions() {
-      const data: Record<string, { versions: BusinessSubmissionVersion[], latest: BusinessSubmissionVersion | null }> = {};
-
-      for (const patent of submittedPatents) {
-        const versions = await getBusinessSubmissionVersions(patent);
-        const latest = await getLatestBusinessSubmission(patent);
-        data[patent.patentId] = { versions, latest };
-      }
+      // BIZ-04: 특허당 API 1회(versions)만 호출하고 latest는 클라이언트에서 도출 + 특허 간 병렬화(2N 직렬 → N 병렬).
+      const entries = await Promise.all(
+        submittedPatents.map(async (patent) => {
+          const versions = await getBusinessSubmissionVersions(patent);
+          return [patent.patentId, { versions, latest: deriveLatestSubmission(versions) }] as const;
+        }),
+      );
 
       if (isMounted) {
-        setSubmissionData(data);
+        setSubmissionData(Object.fromEntries(entries));
         setSubmissionErrorMessage("");
       }
     }

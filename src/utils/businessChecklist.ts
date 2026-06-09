@@ -60,35 +60,45 @@ export function getChecklistResponse(submission: BusinessChecklistSubmission, it
   };
 }
 
+// BIZ-07: 체크리스트 항목 → AI 평가 카테고리 매핑(인라인 하드코딩을 명명 상수로 외부화 — 매핑 근거 투명화).
+export const CHECKLIST_ITEM_TO_AI_CATEGORY: Record<string, string> = {
+  TECH_COMPLETENESS: "TECHNOLOGY",
+  TECH_ORIGINALITY: "TECHNOLOGY",
+  MARKETABILITY: "MARKET",
+  EXPECTED_EFFECT: "BUSINESS_ALIGNMENT",
+};
+
+// BIZ-07: 0~100 대표 점수 → 1~4 제안 점수 임계값(내림차순, 경계 포함). 하드코딩 80/65/45를 명명 상수화.
+export const AI_SUGGESTED_SCORE_THRESHOLDS: ReadonlyArray<{ min: number; score: number }> = [
+  { min: 80, score: 4 },
+  { min: 65, score: 3 },
+  { min: 45, score: 2 },
+];
+export const DEFAULT_AI_SUGGESTED_SCORE = 2; // 점수 미상(0/null/undefined) 시 중립값
+const LOWEST_AI_SUGGESTED_SCORE = 1;
+
+/**
+ * @description BIZ-07: 0~100 대표 점수를 1~4 제안 점수로 환산한다(임계값 단일 정본). 점수 미상이면 중립값.
+ */
+export function suggestedScoreFromRepresentative(score: number | null | undefined): number {
+  if (!score) {
+    return DEFAULT_AI_SUGGESTED_SCORE;
+  }
+  const match = AI_SUGGESTED_SCORE_THRESHOLDS.find((threshold) => score >= threshold.min);
+  return match ? match.score : LOWEST_AI_SUGGESTED_SCORE;
+}
+
 function getAiSuggestedScore(patent: PatentDetail, itemId: string) {
   const reportScores = patent.aiEvaluationReport.scores;
-  const categoryScoreMap: Record<string, number | null | undefined> = {
-    TECH_COMPLETENESS: reportScores.find((score) => score.category === "TECHNOLOGY")?.score,
-    TECH_ORIGINALITY: reportScores.find((score) => score.category === "TECHNOLOGY")?.score,
-    MARKETABILITY: reportScores.find((score) => score.category === "MARKET")?.score,
-    EXPECTED_EFFECT: reportScores.find((score) => score.category === "BUSINESS_ALIGNMENT")?.score,
-  };
+  const category = CHECKLIST_ITEM_TO_AI_CATEGORY[itemId];
+  const categoryScore = category
+    ? reportScores.find((score) => score.category === category)?.score
+    : undefined;
   // CONTRACT-02: 카테고리 점수가 없을 때의 폴백은 0~100 대표 평균이어야 한다. 과거에는 0~400
   // 원문 합(totalScore)을 그대로 임계값(80/65/45)에 비교해, 합이 큰 특허는 항상 4점이 되는 버그가 있었다.
-  const score = categoryScoreMap[itemId]
+  const score = categoryScore
     ?? patent.aiEvaluationReport.averageScore
     ?? getAverageScore(patent.aiEvaluationReport.scores);
 
-  if (!score) {
-    return 2;
-  }
-
-  if (score >= 80) {
-    return 4;
-  }
-
-  if (score >= 65) {
-    return 3;
-  }
-
-  if (score >= 45) {
-    return 2;
-  }
-
-  return 1;
+  return suggestedScoreFromRepresentative(score);
 }

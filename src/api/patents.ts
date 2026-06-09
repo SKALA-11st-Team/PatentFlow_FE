@@ -265,9 +265,19 @@ export async function getBusinessPatents(query: PatentListQuery = {}): Promise<P
       return (await getBusinessPatentPage(query)).items;
     }
 
-    // PERF-01: 전체 페이지 병렬 로딩(Promise.all) 제거. 사업부별 특허 수는 단일 페이지(최대 100건) 범위 내이므로
-    // 단일 페이지 응답만 반환한다. (TODO: 단일 부서 특허가 100건을 초과하면 서버 페이징 연동 필요)
-    return (await getBusinessPatentPage({ ...query, page: 1, size: 100 })).items;
+    // BIZ-05: 1페이지(최대 100건)를 먼저 받고, 부서 특허가 100건을 초과할 때만 나머지 페이지를 수집한다.
+    // (PERF-01 유지: 일반(≤100건) 부서는 단일 호출 그대로 — 무조건 전체 병렬 로딩으로 회귀하지 않는다.
+    //  100건 초과 대형 부서의 목록 누락·KPI 불일치만 보정한다.)
+    const firstPage = await getBusinessPatentPage({ ...query, page: 1, size: 100 });
+    if (firstPage.page.totalPages <= 1) {
+      return firstPage.items;
+    }
+    const remainingPages = await Promise.all(
+      Array.from({ length: firstPage.page.totalPages - 1 }, (_, index) =>
+        getBusinessPatentPage({ ...query, page: index + 2, size: 100 }),
+      ),
+    );
+    return remainingPages.reduce((all, pageResult) => all.concat(pageResult.items), [...firstPage.items]);
   }
 
   return getFilteredMockPatents(query);
