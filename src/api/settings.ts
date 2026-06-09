@@ -219,9 +219,15 @@ export interface AnnualFeeScheduleItem {
   registrationDate: string | null;
   expectedExpirationDate: string | null;
   annualFeeBaseDate: string | null;
+  // FEE-06: 납부일 의미 분리 — calculated(국가 규칙 재계산) / stored(저장값, 과거일 수 있음) /
+  // effective(과거면 미래로 굴린 실효 납부일). nextAnnualFeeDueDate는 effective와 동일(하위호환).
+  calculatedAnnualFeeDueDate: string | null;
+  storedAnnualFeeDueDate: string | null;
+  effectiveAnnualFeeDueDate: string | null;
   nextAnnualFeeDueDate: string | null;
   adjustedAnnualFeeDueDate: string | null;
   latestAdjustmentReason: string | null;
+  countryExtensionMonths: number;
   adjustmentHistory: AnnualFeeAdjustmentHistory[];
 }
 

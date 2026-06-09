@@ -38,6 +38,17 @@ describe("annualFee Utils", () => {
       expect(getNextAnnualFeeDueDate("2024-02-30")).toBe("");
     });
 
+    // FEE-04: 출원일이 없으면 등록일로 폴백한다(BE applicationDate ?? registrationDate와 정합).
+    it("출원일이 비어 있으면 등록일 기준으로 계산한다", () => {
+      const baseDate = new Date("2024-05-19");
+      expect(getNextAnnualFeeDueDate("", baseDate, "2020-03-10")).toBe("2025-03-10");
+    });
+
+    it("출원일·등록일이 모두 없으면 빈 문자열을 유지한다", () => {
+      const baseDate = new Date("2024-05-19");
+      expect(getNextAnnualFeeDueDate("", baseDate, null)).toBe("");
+    });
+
   });
 
   describe("getRemainingDaysUntilDate", () => {

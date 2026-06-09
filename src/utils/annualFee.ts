@@ -3,16 +3,21 @@
  * @relatedUI UI-LEGAL-01, UI-LEGAL-04, UI-BUS-03
  * @description 출원일 기준으로 매년 도래하는 다음 연차료 납부 기한을 계산한다.
  */
-export function getNextAnnualFeeDueDate(applicationDateText: string, baseDate = new Date()) {
-  const applicationDate = parseDate(applicationDateText);
-  
-  if (!applicationDate) {
-    // 유효하지 않은 날짜인 경우 계산이 불가능하므로 빈 문자열 반환
+export function getNextAnnualFeeDueDate(
+  applicationDateText: string,
+  baseDate = new Date(),
+  registrationDateText?: string | null,
+) {
+  // FEE-04: BE와 동일 기준 — 출원일 우선, 없으면 등록일로 폴백한다(FE가 출원일만 보던 불일치 해소).
+  // 둘 다 유효하지 않으면 빈 문자열 유지(당해 12/31 폴백은 BE effective 필드를 정본으로 사용).
+  const baseDateValue = parseDate(applicationDateText) ?? parseDate(registrationDateText);
+
+  if (!baseDateValue) {
     return "";
   }
 
   const todayStart = getDateStart(baseDate);
-  const dueDate = new Date(todayStart.getFullYear(), applicationDate.getMonth(), applicationDate.getDate());
+  const dueDate = new Date(todayStart.getFullYear(), baseDateValue.getMonth(), baseDateValue.getDate());
 
   while (dueDate.getTime() < todayStart.getTime()) {
     dueDate.setFullYear(dueDate.getFullYear() + 1);

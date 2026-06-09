@@ -403,7 +403,7 @@ export function AdminSettingsPage() {
                 <td>🇺🇸 미국 (US)</td>
                 <td>매년</td>
                 <td>출원일 기준 매년</td>
-                <td>국가별 조정 이력으로 별도 관리</td>
+                <td>유지 결정 시 위 설정 연장 개월 적용</td>
               </tr>
               <tr>
                 <td>기타 (TW / UAE 등)</td>
@@ -490,8 +490,14 @@ function AnnualFeeScheduleRow({
       </td>
       <td>{item.annualFeeBaseDate ?? "-"}</td>
       <td>
-        <strong>{item.nextAnnualFeeDueDate ?? "-"}</strong>
+        {/* FEE-06: 실효 납부일(effective)을 표시하고, 저장값(stored)이 과거라 굴려진 경우 원본을 함께 노출. */}
+        <strong>{item.effectiveAnnualFeeDueDate ?? item.nextAnnualFeeDueDate ?? "-"}</strong>
         {item.adjustedAnnualFeeDueDate ? <span className="table-subtext">조정됨</span> : null}
+        {item.storedAnnualFeeDueDate
+          && item.effectiveAnnualFeeDueDate
+          && item.storedAnnualFeeDueDate !== item.effectiveAnnualFeeDueDate ? (
+          <span className="table-subtext">저장값 {item.storedAnnualFeeDueDate} → 재계산</span>
+        ) : null}
       </td>
       <td>
         {item.latestAdjustmentReason ? (
