@@ -113,10 +113,12 @@ export function AdminDashboardPage() {
   const waitingBusiness = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE");
   const businessResponseReceived = patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED");
   const actionRecorded = patents.filter((patent) => patent.legalActionResult !== null);
-  const quarterlyTargetCount = quarterlyTargets.length;
+  // DASH-01: 모든 KPI를 BE 요약 단일 출처로 통일(클라이언트 재집계는 fallback) — 동일 화면 합 불일치 방지.
+  const quarterlyTargetCount = dashboardSummary?.quarterlyTargetCount ?? quarterlyTargets.length;
   const totalPatentCount = dashboardSummary?.totalPatents ?? patents.length;
   const mailReadyCount = dashboardSummary?.pendingReview ?? mailReady.length;
   const waitingBusinessCount = dashboardSummary?.waitingBusinessResponse ?? waitingBusiness.length;
+  const businessResponseReceivedCount = dashboardSummary?.businessResponseReceived ?? businessResponseReceived.length;
   const actionRecordedCount = dashboardSummary?.legalActionCompleted ?? actionRecorded.length;
   const filteredPatents = useMemo(
     () => getFilteredAndSortedPatents(
@@ -167,7 +169,7 @@ export function AdminDashboardPage() {
     >
       <section className="dashboard-kpi-overview">
         <QuarterCompletionDonut
-          completed={actionRecorded.length}
+          completed={actionRecordedCount}
           helper="현재 분기 납부 대상 대비 완료"
           isLoading={isLoading}
           label="연차료 처리 완료"
@@ -210,9 +212,9 @@ export function AdminDashboardPage() {
           <KpiCard
             denominator={quarterlyTargetCount}
             helper="사업부 의견 확인 필요"
-            isLoading={isLoading}
+            isLoading={isLoading && !dashboardSummary}
             label="처리 결과 입력"
-            value={businessResponseReceived.length}
+            value={businessResponseReceivedCount}
             to="/admin/review-targets?workflow=BUSINESS_RESPONSE_RECEIVED"
             tone="warning"
           />

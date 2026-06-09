@@ -3,6 +3,8 @@ import { patents } from "../mocks/patents.mock";
 
 export interface LegalDashboardSummary {
   totalPatents: number;
+  // DASH-01: 이번 분기 검토 대상 수(KPI 분모 단일 출처).
+  quarterlyTargetCount: number;
   pendingReview: number;
   waitingBusinessResponse: number;
   businessResponseReceived: number;
@@ -31,6 +33,7 @@ export async function getLegalDashboardSummary(): Promise<LegalDashboardSummary>
 
   return {
     totalPatents: patents.length,
+    quarterlyTargetCount: patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW").length,
     pendingReview: patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY").length,
     waitingBusinessResponse: patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE").length,
     businessResponseReceived: patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED").length,
@@ -67,6 +70,7 @@ export async function getBusinessDashboardSummary(): Promise<BusinessDashboardSu
 function createEmptyLegalDashboardSummary(): LegalDashboardSummary {
   return {
     totalPatents: 0,
+    quarterlyTargetCount: 0,
     pendingReview: 0,
     waitingBusinessResponse: 0,
     businessResponseReceived: 0,
