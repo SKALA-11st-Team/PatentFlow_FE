@@ -48,7 +48,6 @@ export function AdminSettingsPage() {
   const [isSavingMail, setIsSavingMail] = useState(false);
   const [mailMessage, setMailMessage] = useState("");
   const [countryExtensions, setCountryExtensions] = useState<CountryExtension[]>([]);
-  const [extMessage, setExtMessage] = useState("");
   const [mailLeadMonths, setMailLeadMonths] = useState(2);
   const [mailLeadMonthsInput, setMailLeadMonthsInput] = useState(2);
   const [isSavingMailLead, setIsSavingMailLead] = useState(false);
@@ -277,7 +276,6 @@ export function AdminSettingsPage() {
             <p>관리자가 특허를 유지 처리하면 납부 기한이 아래 설정값(개월)만큼 자동 연장됩니다.</p>
           </div>
         </div>
-        {extMessage ? <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>{extMessage}</p> : null}
         <div className="table-wrap">
           <table>
             <thead>
@@ -293,13 +291,9 @@ export function AdminSettingsPage() {
                   key={ext.country}
                   ext={ext}
                   onSave={async (country, months) => {
-                    try {
-                      const updated = await updateCountryExtension(country, months);
-                      setCountryExtensions((prev) => prev.map((e) => (e.country === country ? updated : e)));
-                      setExtMessage(`${updated.label} 연장 기간이 ${updated.extensionMonths}개월로 저장되었습니다.`);
-                    } catch (error) {
-                      setExtMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
-                    }
+                    // SETTINGS-10: 저장 결과 피드백은 행(row) 내부에서 표시한다(다국가 연속 저장 메시지 충돌 방지).
+                    const updated = await updateCountryExtension(country, months);
+                    setCountryExtensions((prev) => prev.map((e) => (e.country === country ? updated : e)));
                   }}
                 />
               ))}
@@ -429,11 +423,21 @@ function CountryExtensionRow({
 }) {
   const [months, setMonths] = useState(ext.extensionMonths);
   const [isSaving, setIsSaving] = useState(false);
+  // SETTINGS-10: 저장 결과를 행 단위로 표시 — 여러 국가를 연속 저장해도 메시지가 섞이지 않는다.
+  const [saveMessage, setSaveMessage] = useState("");
   const isDirty = months !== ext.extensionMonths;
 
   async function save() {
     setIsSaving(true);
-    await onSave(ext.country, months).finally(() => setIsSaving(false));
+    setSaveMessage("");
+    try {
+      await onSave(ext.country, months);
+      setSaveMessage(`${months}개월로 저장됨`);
+    } catch (error) {
+      setSaveMessage(error instanceof Error ? error.message : "저장 실패");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
@@ -453,6 +457,7 @@ function CountryExtensionRow({
         <Button disabled={isSaving || !isDirty} onClick={save} type="button" variant="secondary">
           {isSaving ? "저장 중…" : "저장"}
         </Button>
+        {saveMessage ? <span className="table-subtext">{saveMessage}</span> : null}
       </td>
     </tr>
   );

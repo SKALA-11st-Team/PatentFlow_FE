@@ -46,6 +46,11 @@ export function createBusinessReviewMailDraftFromPatents(
     `   - 특허 원문: ${getOriginalPatentUrl(patent)}`,
   ]);
 
+  // MAIL-10: placeholder(patentflow.example.com) 대신 실제 앱 URL — VITE_APP_URL 우선, 없으면 현재 origin,
+  // 둘 다 없으면 접속 URL 라인을 생략한다(메일에 가짜 URL 노출 방지).
+  const importMetaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+  const accessUrl = (importMetaEnv?.VITE_APP_URL?.trim())
+    || (typeof window !== "undefined" ? window.location.origin : "");
   return {
     body: [
       `${recipient.name}님,`,
@@ -56,7 +61,7 @@ export function createBusinessReviewMailDraftFromPatents(
       "",
       "회신 기한까지 사업부 의견을 제출해 주세요.",
       "각 특허의 AI 특허 평가 레포트와 평가 근거를 확인한 뒤 유지 또는 포기 의견을 제출해 주세요.",
-      "접속 URL: https://patentflow.example.com (실제 URL로 변경 필요)",
+      ...(accessUrl ? [`접속 URL: ${accessUrl}`] : []),
     ].join("\n"),
     ccEmails: recipient.ccEmails,
     patents,

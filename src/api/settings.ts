@@ -57,22 +57,6 @@ export async function getReviewQuarters(year?: number): Promise<QuarterSetting[]
   return response.data ?? [];
 }
 
-export async function updateReviewQuarter(
-  quarterKey: string,
-  startDate: string | null,
-  endDate: string | null,
-  businessResponseDueDate: string | null,
-): Promise<QuarterSetting> {
-  const response = await requestJson<ApiEnvelope<QuarterSetting>>(
-    `/settings/review-quarters/${quarterKey}`,
-    {
-      body: JSON.stringify({ startDate, endDate, businessResponseDueDate, submissionDeadline: businessResponseDueDate }),
-      method: "PUT",
-    },
-  );
-  return response.data!;
-}
-
 // 연도 무관 분기 경계(월/일) 템플릿 — BE의 ReviewPeriodTemplateEntity와 1:1 대응.
 // 연도별로 분기 레코드를 미리 시드하지 않아도 임의 연도의 분기 날짜를 계산할 수 있다.
 export interface ReviewPeriodTemplate {
@@ -88,20 +72,6 @@ export async function getReviewPeriodTemplates(): Promise<ReviewPeriodTemplate[]
   if (!isBackendApiEnabled()) return [];
   const response = await requestJson<ApiEnvelope<ReviewPeriodTemplate[]>>("/settings/review-periods");
   return response.data ?? [];
-}
-
-export async function updateReviewPeriodTemplate(
-  periodNumber: number,
-  startMonth: number,
-  startDay: number,
-  endMonth: number,
-  endDay: number,
-): Promise<ReviewPeriodTemplate> {
-  const response = await requestJson<ApiEnvelope<ReviewPeriodTemplate>>(
-    `/settings/review-periods/${periodNumber}`,
-    { method: "PUT", body: JSON.stringify({ startMonth, startDay, endMonth, endDay }) },
-  );
-  return response.data!;
 }
 
 // 기본값 2 = BE DEFAULT_MAIL_LEAD_MONTHS와 동일 — 백엔드 미연결 시 UI가 같은 기준으로 렌더링
