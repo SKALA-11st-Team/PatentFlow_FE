@@ -4,7 +4,8 @@ import { getStoredAuthUser } from "../../api/authStorage";
 import { getApiErrorMessage } from "../../api/client";
 import { submitBusinessChecklist } from "../../api/businessChecklist";
 import { getBusinessSubmissionVersions } from "../../api/businessSubmissions";
-import { getBusinessPatentDetail } from "../../api/patents";
+// CONTRACT-02: 대표 점수 산식은 api/patents의 단일 정본을 공유해 척도 드리프트를 막는다.
+import { formatReportDisplayScore, getBusinessPatentDetail } from "../../api/patents";
 import { getActiveQuarter } from "../../api/settings";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
@@ -585,15 +586,6 @@ function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSub
       Number.isFinite(submission.qualitativeScore) &&
       submission.finalOpinion,
   );
-}
-
-/**
- * @relatedFR FR-LEGAL-06, FR-LEGAL-08, FR-BUS-01
- * @relatedUI UI-BUS-02
- * @description 사업부 의견 모달의 AI 레포트 대표 점수는 평균 점수를 표시한다.
- */
-function formatReportDisplayScore(report: PatentDetail["aiEvaluationReport"]) {
-  return report.averageScore ?? report.totalScore;
 }
 
 /**

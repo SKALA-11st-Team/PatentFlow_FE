@@ -36,7 +36,7 @@ const demoAiEvaluationReports: Record<string, AiEvaluationReport> = {
     recommendation: "REVIEW_AGAIN",
     recommendationText:
       '종합적으로 권리·기술·시장성은 대체로 긍정적이나, 포트폴리오 연계·구체적 구현·상용화 성과 등 핵심 정보의 부재로 인해 추가 확인이 필요하므로 "조건부 유지" 권고입니다.',
-    totalScore: 72.3,
+    totalScore: 289,
     totalScoreText: "289/400점, 평균 72.3점",
     averageScore: 72.3,
     keyEvidence:

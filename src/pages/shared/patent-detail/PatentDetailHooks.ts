@@ -14,6 +14,8 @@ import {
   sendBusinessReviewMails,
   updatePatentFinalDecision,
 } from "../../../api/patents";
+// CONTRACT-02: 대표 점수 산식은 api/patents의 단일 정본을 재노출한다(기존 import 경로 호환).
+export { formatReportDisplayScore } from "../../../api/patents";
 import {
   createBusinessChecklistDraft,
   getBusinessChecklistTotal,
@@ -36,15 +38,6 @@ import {
  */
 export function formatDate(dateText: string) {
   return dateText.slice(0, 10);
-}
-
-/**
- * @relatedFR FR-LEGAL-06, FR-LEGAL-08
- * @relatedUI UI-LEGAL-04, UI-BUS-03
- * @description AI 레포트 종합 점수는 원문 합산 점수가 아니라 평균 점수를 대표값으로 표시한다.
- */
-export function formatReportDisplayScore(report: PatentDetail["aiEvaluationReport"]) {
-  return report.averageScore ?? report.totalScore;
 }
 
 const AI_REPORT_POLL_INTERVAL_MS = 3000;

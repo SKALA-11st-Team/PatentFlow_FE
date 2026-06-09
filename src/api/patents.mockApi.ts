@@ -113,10 +113,13 @@ function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recom
         evidenceSummary: "AI 평가 생성 후 상세 근거 확인이 필요한 항목입니다.",
         score: null,
       }));
+  // CONTRACT-02: totalScore=0~400 원문 합, averageScore=0~100 평균으로 라이브 응답과 동일한 척도를 유지한다.
   const scoredValues = scores.flatMap((score) => (score.score == null ? [] : [score.score]));
+  const scoreSum = scoredValues.reduce((sum, score) => sum + score, 0);
   const averageScore = scoredValues.length
-    ? Number((scoredValues.reduce((sum, score) => sum + score, 0) / scoredValues.length).toFixed(1))
-    : patent.aiEvaluationReport.totalScore;
+    ? Number((scoreSum / scoredValues.length).toFixed(1))
+    : patent.aiEvaluationReport.averageScore;
+  const maxScore = scores.length * 100;
 
   return {
     ...patent.aiEvaluationReport,
@@ -125,9 +128,9 @@ function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recom
     evaluationId: `REPORT-${patent.patentId}-${Date.now()}`,
     recommendation,
     recommendationText: getGeneratedMockRecommendationText(recommendation),
-    totalScore: averageScore,
+    totalScore: scoredValues.length ? scoreSum : patent.aiEvaluationReport.totalScore,
     totalScoreText: scoredValues.length
-      ? `평균 ${averageScore}점`
+      ? `${scoreSum}/${maxScore}점, 평균 ${averageScore}점`
       : patent.aiEvaluationReport.totalScoreText,
     scores,
   };

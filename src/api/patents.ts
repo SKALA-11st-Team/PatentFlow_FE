@@ -661,6 +661,17 @@ export function getScoreTotal(scores: EvaluationScore[]) {
   return scoreValues.reduce((sum, score) => sum + score, 0);
 }
 
+/**
+ * @relatedFR FR-LEGAL-06, FR-LEGAL-08, FR-BUS-01
+ * @relatedUI UI-LEGAL-04, UI-BUS-02, UI-BUS-03
+ * @description AI 레포트 대표 종합 점수의 단일 정본(CONTRACT-02). 항상 0~100 평균을 반환한다.
+ * averageScore가 있으면 그 값을, 없으면 축별 점수(0~100) 평균에서 산출하며, 0~400 원문 합
+ * (totalScore)은 절대 대표값으로 노출하지 않는다(원문 합은 totalScoreText로만 보조 표기).
+ */
+export function formatReportDisplayScore(report: AiEvaluationReport) {
+  return report.averageScore ?? getAverageScore(report.scores);
+}
+
 export function getTotalScoreText(scores: EvaluationScore[], averageScore: number | undefined, rawTotalScore?: number) {
   const scoreTotal = rawTotalScore ?? getScoreTotal(scores);
 

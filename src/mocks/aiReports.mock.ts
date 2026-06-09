@@ -212,7 +212,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 73.3,
+    "totalScore": 293,
     "totalScoreText": "293/400점, 평균 73.3점"
   },
   "P202405001-KR0": {
@@ -369,7 +369,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 72.3,
+    "totalScore": 289,
     "totalScoreText": "289/400점, 평균 72.3점"
   },
   "P201306003-KR0": {
@@ -527,7 +527,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 68
       }
     ],
-    "totalScore": 68.8,
+    "totalScore": 275,
     "totalScoreText": "275/400점, 평균 68.8점"
   },
   "P201611005-KR0": {
@@ -674,7 +674,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 70
       }
     ],
-    "totalScore": 70,
+    "totalScore": 280,
     "totalScoreText": "280/400점, 평균 70점"
   },
   "P201808001-KR0": {
@@ -830,7 +830,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 68.8,
+    "totalScore": 275,
     "totalScoreText": "275/400점, 평균 68.8점"
   },
   "P201204004-KR0": {
@@ -999,7 +999,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 68
       }
     ],
-    "totalScore": 71.5,
+    "totalScore": 286,
     "totalScoreText": "286/400점, 평균 71.5점"
   },
   "P202111002-KR0": {
@@ -1169,7 +1169,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 70
       }
     ],
-    "totalScore": 74,
+    "totalScore": 296,
     "totalScoreText": "296/400점, 평균 74점"
   },
   "P202207001-KR2": {
@@ -1326,7 +1326,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 72
       }
     ],
-    "totalScore": 74.8,
+    "totalScore": 299,
     "totalScoreText": "299/400점, 평균 74.8점"
   },
   "P201210021-KR0": {
@@ -1463,7 +1463,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 69.3,
+    "totalScore": 277,
     "totalScoreText": "277/400점, 평균 69.3점"
   },
   "P202301007-KR0": {
@@ -1607,7 +1607,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 73.3,
+    "totalScore": 293,
     "totalScoreText": "293/400점, 평균 73.3점"
   },
   "P201510004-KR0": {
@@ -1777,7 +1777,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 68
       }
     ],
-    "totalScore": 74,
+    "totalScore": 296,
     "totalScoreText": "296/400점, 평균 74점"
   },
   "P202003001-KR0": {
@@ -1922,7 +1922,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 72
       }
     ],
-    "totalScore": 72.5,
+    "totalScore": 290,
     "totalScoreText": "290/400점, 평균 72.5점"
   },
   "P202207001-KR0": {
@@ -2089,7 +2089,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 60
       }
     ],
-    "totalScore": 70.5,
+    "totalScore": 282,
     "totalScoreText": "282/400점, 평균 70.5점"
   },
   "P202301005-KR0": {
@@ -2238,7 +2238,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 75.3,
+    "totalScore": 301,
     "totalScoreText": "301/400점, 평균 75.3점"
   },
   "P200702002-KR0": {
@@ -2394,7 +2394,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 73.3,
+    "totalScore": 293,
     "totalScoreText": "293/400점, 평균 73.3점"
   },
   "P201506004-KR0": {
@@ -2540,7 +2540,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 68
       }
     ],
-    "totalScore": 70,
+    "totalScore": 280,
     "totalScoreText": "280/400점, 평균 70점"
   },
   "P201507002-KR0": {
@@ -2683,7 +2683,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 69.3,
+    "totalScore": 277,
     "totalScoreText": "277/400점, 평균 69.3점"
   },
   "P200809002-KR0": {
@@ -2822,7 +2822,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 65
       }
     ],
-    "totalScore": 68.3,
+    "totalScore": 273,
     "totalScoreText": "273/400점, 평균 68.3점"
   },
   "P200704001-KR0": {
@@ -2972,7 +2972,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 60
       }
     ],
-    "totalScore": 66.8,
+    "totalScore": 267,
     "totalScoreText": "267/400점, 평균 66.8점"
   },
   "P202107001-KR0": {
@@ -3112,7 +3112,7 @@ export const aiReportsByManagementNumber: Record<string, AiEvaluationReport> = {
         "score": 70
       }
     ],
-    "totalScore": 75.5,
+    "totalScore": 302,
     "totalScoreText": "302/400점, 평균 75.5점"
   }
 };

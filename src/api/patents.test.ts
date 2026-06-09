@@ -1,9 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { 
-  getAverageScore, 
+import {
+  getAverageScore,
   mapBackendAiEvaluationReport,
-  mapBackendEvaluationScores, 
-  getTotalScoreText 
+  mapBackendEvaluationScores,
+  getTotalScoreText,
+  formatReportDisplayScore
 } from "./patents";
 import type { EvaluationScore } from "../types/patent";
 
@@ -101,5 +102,37 @@ describe("patents API Utils", () => {
       expect(report.failureReason).toBe("외부 근거 일부 누락");
       expect(report.scores[0].grade).toBe("D");
     });
+  });
+});
+
+describe("formatReportDisplayScore (CONTRACT-02 척도 단일화)", () => {
+  type Report = Parameters<typeof formatReportDisplayScore>[0];
+  const fourAxisScores = [
+    { category: "RIGHTS", score: 80, evidenceSummary: "" },
+    { category: "TECHNOLOGY", score: 90, evidenceSummary: "" },
+    { category: "MARKET", score: 70, evidenceSummary: "" },
+    { category: "BUSINESS_ALIGNMENT", score: 60, evidenceSummary: "" },
+  ];
+
+  it("averageScore가 있으면 그 0~100 값을 대표값으로 반환한다", () => {
+    const report = { averageScore: 72.3, totalScore: 289, scores: fourAxisScores } as unknown as Report;
+    expect(formatReportDisplayScore(report)).toBe(72.3);
+  });
+
+  it("averageScore가 없으면 축별 점수(0~100) 평균에서 산출한다", () => {
+    const report = { totalScore: 300, scores: fourAxisScores } as unknown as Report;
+    expect(formatReportDisplayScore(report)).toBe(75);
+  });
+
+  it("0~400 원문 합(totalScore)을 대표값으로 노출하지 않는다", () => {
+    const report = { totalScore: 300, scores: fourAxisScores } as unknown as Report;
+    const result = formatReportDisplayScore(report);
+    expect(result).not.toBe(300);
+    expect(result).toBeLessThanOrEqual(100);
+  });
+
+  it("점수가 전혀 없으면 undefined를 반환한다", () => {
+    const report = { totalScore: 0, scores: [] } as unknown as Report;
+    expect(formatReportDisplayScore(report)).toBeUndefined();
   });
 });

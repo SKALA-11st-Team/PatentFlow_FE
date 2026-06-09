@@ -1,3 +1,4 @@
+import { getAverageScore } from "../api/patents";
 import { businessChecklistItems } from "../mocks/businessChecklist.mock";
 import type {
   BusinessChecklistResponse,
@@ -67,7 +68,11 @@ function getAiSuggestedScore(patent: PatentDetail, itemId: string) {
     MARKETABILITY: reportScores.find((score) => score.category === "MARKET")?.score,
     EXPECTED_EFFECT: reportScores.find((score) => score.category === "BUSINESS_ALIGNMENT")?.score,
   };
-  const score = categoryScoreMap[itemId] ?? patent.aiEvaluationReport.totalScore;
+  // CONTRACT-02: 카테고리 점수가 없을 때의 폴백은 0~100 대표 평균이어야 한다. 과거에는 0~400
+  // 원문 합(totalScore)을 그대로 임계값(80/65/45)에 비교해, 합이 큰 특허는 항상 4점이 되는 버그가 있었다.
+  const score = categoryScoreMap[itemId]
+    ?? patent.aiEvaluationReport.averageScore
+    ?? getAverageScore(patent.aiEvaluationReport.scores);
 
   if (!score) {
     return 2;
