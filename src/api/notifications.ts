@@ -54,3 +54,21 @@ export async function updateNotificationReadState(notificationId: string, isRead
     notification.isRead = isRead;
   }
 }
+
+/**
+ * @relatedFR FR-COM-02
+ * @relatedUI UI-COM-03
+ * @description NOTI-08: 역할 대상 알림을 모두 읽음 처리한다(BE read-all 연동).
+ */
+export async function markAllNotificationsRead(role: UserRole) {
+  if (isBackendApiEnabled()) {
+    await requestJson(`/notifications/read-all?role=${role}`, { method: "PATCH" });
+    return;
+  }
+
+  notifications
+    .filter((notification) => notification.targetRole === "COMMON" || notification.targetRole === role)
+    .forEach((notification) => {
+      notification.isRead = true;
+    });
+}

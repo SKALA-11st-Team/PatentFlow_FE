@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { logout } from "../../api/auth";
 import { getStoredAuthUser } from "../../api/authStorage";
-import { getNotifications, updateNotificationReadState } from "../../api/notifications";
+import { getNotifications, markAllNotificationsRead, updateNotificationReadState } from "../../api/notifications";
 import { BellIcon, NotificationPanel } from "../notification/NotificationPanel";
 import type { AppNotification } from "../../types/notification";
 import type { UserRole } from "../../types/patent";
@@ -76,14 +76,8 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [isNotificationOpen]);
 
-  const visibleNotifications = useMemo(
-    () =>
-      notificationItems.filter(
-        (notification) => notification.targetRole === "COMMON" || notification.targetRole === role,
-      ),
-    [notificationItems, role],
-  );
-  const unreadCount = visibleNotifications.filter((notification) => !notification.isRead).length;
+  // NOTI-07: 백엔드(및 mock fallback)가 이미 역할로 필터하므로 표시 레이어에서 재필터하지 않는다.
+  const unreadCount = notificationItems.filter((notification) => !notification.isRead).length;
   const handleToggleNotificationRead = (notificationId: string, isRead: boolean) => {
     setNotificationItems((currentNotifications) =>
       currentNotifications.map((notification) =>
@@ -91,6 +85,13 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
       ),
     );
     updateNotificationReadState(notificationId, isRead).catch(() => {});
+  };
+  // NOTI-08: 모두 읽음 — 낙관적 업데이트 후 BE read-all 호출.
+  const handleMarkAllNotificationsRead = () => {
+    setNotificationItems((currentNotifications) =>
+      currentNotifications.map((notification) => ({ ...notification, isRead: true })),
+    );
+    markAllNotificationsRead(role).catch(() => {});
   };
 
   return (
@@ -136,9 +137,10 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
               </button>
               {isNotificationOpen ? (
                 <NotificationPanel
-                  notifications={visibleNotifications}
+                  notifications={notificationItems}
                   onClose={() => setIsNotificationOpen(false)}
                   onToggleRead={handleToggleNotificationRead}
+                  onMarkAllRead={handleMarkAllNotificationsRead}
                 />
               ) : null}
             </div>

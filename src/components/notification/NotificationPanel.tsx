@@ -5,6 +5,7 @@ interface NotificationPanelProps {
   notifications: AppNotification[];
   onClose: () => void;
   onToggleRead: (notificationId: string, isRead: boolean) => void;
+  onMarkAllRead?: () => void;
 }
 
 /**
@@ -12,14 +13,20 @@ interface NotificationPanelProps {
  * @relatedUI UI-COM-03
  * @description 공통 헤더에서 관리자/사업부 대상 알림 목록을 오늘, 지난주, 그 이전으로 묶어 표시한다.
  */
-export function NotificationPanel({ notifications, onClose, onToggleRead }: NotificationPanelProps) {
+export function NotificationPanel({ notifications, onClose, onToggleRead, onMarkAllRead }: NotificationPanelProps) {
   const groupedNotifications = getGroupedNotifications(notifications);
+  const unreadCount = notifications.filter((notification) => !notification.isRead).length;
 
   return (
     <div className="notification-panel" role="dialog" aria-label="알림">
       <div className="notification-panel-header">
         <strong>알림</strong>
-        <span>{notifications.filter((notification) => !notification.isRead).length}개 미확인</span>
+        <span>{unreadCount}개 미확인</span>
+        {onMarkAllRead && unreadCount > 0 ? (
+          <button className="notification-mark-all" onClick={onMarkAllRead} type="button">
+            모두 읽음
+          </button>
+        ) : null}
       </div>
       <div className="notification-list">
         {groupedNotifications.map((group) => (
