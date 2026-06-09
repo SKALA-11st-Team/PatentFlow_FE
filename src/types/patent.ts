@@ -69,9 +69,10 @@ export interface EvaluationScore {
 
 export interface EvaluationEvidenceDetail {
   text: string;
+  // ORCH-06/AIREPORT-02: 산업 보고서 등 URL 없는 출처도 있어 url은 선택값이다(있으면 클릭형 링크).
   source?: {
     title: string;
-    url: string;
+    url?: string;
   };
 }
 
@@ -94,7 +95,7 @@ export interface AiEvaluationReport {
   businessCheckRequests?: string[];
   externalSources?: {
     title: string;
-    url: string;
+    url?: string;
   }[];
   rawMarkdown?: string;
   markdownFilePath?: string;

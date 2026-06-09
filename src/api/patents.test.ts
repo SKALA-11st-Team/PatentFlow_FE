@@ -136,3 +136,52 @@ describe("formatReportDisplayScore (CONTRACT-02 척도 단일화)", () => {
     expect(formatReportDisplayScore(report)).toBeUndefined();
   });
 });
+
+describe("ORCH-06/AIREPORT-02 리치 근거 풀스루", () => {
+  it("축별 evidenceDetails와 리포트 레벨 리치 근거를 화면 모델로 통과시킨다", () => {
+    const report = mapBackendAiEvaluationReport({
+      reportId: "R-2",
+      createdAt: "2026-06-09T00:00:00Z",
+      recommendation: "MAINTAIN",
+      recommendationReason: "유지",
+      totalScore: 300,
+      averageScore: 75,
+      finalGrade: "B",
+      finalIndicator: "유지 권고",
+      degraded: false,
+      failureReason: null,
+      scores: [
+        {
+          category: "MARKET",
+          score: 70,
+          grade: "B",
+          evidence: "시장성 근거",
+          evidenceDetails: [
+            { text: "AI 반도체 시장 급성장", source: { title: "한국경제", url: "https://example.com/1" } },
+            { text: "반도체 산업 전망", source: { title: "KIET", url: null } },
+          ],
+        },
+      ],
+      missingInformation: ["상용화 실적"],
+      keyEvidence: "기술성: 기술성 근거",
+      judgementGrounds: ["합산 300/400, 평균 75."],
+      businessCheckRequests: ["사업부 적용 계획 확인"],
+      externalSources: [
+        { title: "한국경제", url: "https://example.com/1" },
+        { title: "KIET", url: null },
+      ],
+    });
+
+    expect(report.keyEvidence).toBe("기술성: 기술성 근거");
+    expect(report.judgementGrounds).toEqual(["합산 300/400, 평균 75."]);
+    expect(report.businessCheckRequests).toEqual(["사업부 적용 계획 확인"]);
+    expect(report.externalSources).toEqual([
+      { title: "한국경제", url: "https://example.com/1" },
+      { title: "KIET", url: undefined },
+    ]);
+    const market = report.scores[0];
+    expect(market.evidenceDetails).toHaveLength(2);
+    expect(market.evidenceDetails?.[0].source).toEqual({ title: "한국경제", url: "https://example.com/1" });
+    expect(market.evidenceDetails?.[1].source).toEqual({ title: "KIET", url: undefined });
+  });
+});

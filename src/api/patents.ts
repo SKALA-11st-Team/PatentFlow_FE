@@ -135,8 +135,18 @@ interface BackendPatentDetail extends BackendPatentListItem {
       score: number | null;
       grade?: string | null;
       evidence: string;
+      // ORCH-06/AIREPORT-02: 축별 세부 근거(클릭형 출처).
+      evidenceDetails?: Array<{
+        text: string;
+        source?: { title?: string | null; url?: string | null } | null;
+      }> | null;
     }>;
     missingInformation: string[];
+    // ORCH-06/AIREPORT-02: 리포트 레벨 리치 근거.
+    keyEvidence?: string | null;
+    judgementGrounds?: string[] | null;
+    businessCheckRequests?: string[] | null;
+    externalSources?: Array<{ title?: string | null; url?: string | null }> | null;
     rawMarkdown?: string;
     markdownFilePath?: string;
   };
@@ -610,8 +620,13 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
     finalIndicator: report.finalIndicator ?? null,
     degraded: Boolean(report.degraded),
     failureReason: report.failureReason ?? null,
+    // ORCH-06/AIREPORT-02: 리포트 레벨 리치 근거를 화면 모델로 풀스루한다(그동안 항상 빈 값이던 필드).
+    keyEvidence: report.keyEvidence ?? undefined,
+    judgementGrounds: report.judgementGrounds ?? undefined,
     scores,
     missingInformation: report.missingInformation,
+    businessCheckRequests: report.businessCheckRequests ?? undefined,
+    externalSources: mapBackendExternalSources(report.externalSources),
     rawMarkdown: report.rawMarkdown,
     markdownFilePath: report.markdownFilePath,
   };
@@ -633,8 +648,30 @@ export function mapBackendEvaluationScores(scores: BackendPatentDetail["aiEvalua
       score: score.score,
       grade: score.grade ?? null,
       evidenceSummary: score.evidence,
+      // ORCH-06/AIREPORT-02: 축별 세부 근거(클릭형 출처)를 풀스루한다.
+      evidenceDetails: mapBackendEvidenceDetails(score.evidenceDetails),
     }];
   });
+}
+
+type BackendSource = { title?: string | null; url?: string | null } | null | undefined;
+
+function mapBackendSource(source: BackendSource) {
+  if (!source) {
+    return undefined;
+  }
+  return { title: source.title ?? "", url: source.url ?? undefined };
+}
+
+function mapBackendEvidenceDetails(
+  details: Array<{ text: string; source?: BackendSource }> | null | undefined,
+) {
+  return (details ?? []).map((detail) => ({ text: detail.text, source: mapBackendSource(detail.source) }));
+}
+
+function mapBackendExternalSources(sources: Array<BackendSource> | null | undefined) {
+  return (sources ?? [])
+    .map((source) => ({ title: source?.title ?? "", url: source?.url ?? undefined }));
 }
 
 export function isEvaluationCategory(category: string): category is EvaluationScore["category"] {

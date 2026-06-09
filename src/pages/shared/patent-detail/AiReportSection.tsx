@@ -24,9 +24,13 @@ export function AiReportStructuredContent({ report }: { report: PatentDetail["ai
                     {detail.source ? (
                       <>
                         {" "}
-                        <a className="inline-source-link" href={detail.source.url} rel="noreferrer" target="_blank">
-                          출처 {detail.source.title}
-                        </a>
+                        {detail.source.url ? (
+                          <a className="inline-source-link" href={detail.source.url} rel="noreferrer" target="_blank">
+                            출처 {detail.source.title}
+                          </a>
+                        ) : (
+                          <span className="inline-source">출처 {detail.source.title}</span>
+                        )}
                       </>
                     ) : null}
                   </li>
