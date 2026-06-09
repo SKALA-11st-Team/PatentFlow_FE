@@ -75,7 +75,7 @@ function parseAiReport(entry) {
   const recommendationText = getBoldBulletValue(entry.content, "AI 검토 의견");
   const keyEvidence = getBoldBulletValue(entry.content, "핵심 근거");
   const judgementGrounds = parseBullets(getSection(entry.content, "## 2. 판단 근거", "## 3. 평가축별 근거")).map(
-    (item) => normalizeRemovedAxisText(item.text),
+    (item) => item.text,
   );
   const businessCheckRequests = parseBullets(getSection(entry.content, "## 4. 사업부 확인 요청 사항")).map(
     (item) => item.text,
@@ -112,12 +112,6 @@ function parseAiReport(entry) {
     totalScore: averageScore ?? categoryTotal,
     totalScoreText: `${categoryTotal}/${scores.length * 100}점, 평균 ${averageScore}점`,
   };
-}
-
-function normalizeRemovedAxisText(text) {
-  return text
-    .replace(/라이프사이클 경제성은/g, "보호기간과 유지비 관점은")
-    .replace(/라이프사이클 경제성/g, "보호기간과 유지비 관점");
 }
 
 function parsePatentSummary(entry) {
