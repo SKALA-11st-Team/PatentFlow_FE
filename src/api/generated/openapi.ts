@@ -644,6 +644,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/patents/filter-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getFilterOptions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/patents/external-lookup": {
         parameters: {
             query?: never;
@@ -1682,6 +1698,18 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponsePatentFilterOptionsResponse: {
+            data?: components["schemas"]["PatentFilterOptionsResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PatentFilterOptionsResponse: {
+            countries?: string[];
+            businessAreas?: string[];
+            technologyAreas?: string[];
+            productNames?: string[];
+        };
         ApiResponsePatentBibliographicInfoResponse: {
             data?: components["schemas"]["PatentBibliographicInfoResponse"];
             message?: string;
@@ -2279,6 +2307,14 @@ export interface operations {
                 departmentId?: string;
                 reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
                 sort?: string;
+                quarter?: string;
+                country?: string;
+                dateFrom?: string;
+                dateTo?: string;
+                businessArea?: string;
+                technologyArea?: string;
+                productName?: string;
+                inReview?: boolean;
             };
             header?: never;
             path?: never;
@@ -3119,6 +3155,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListPatentListItemResponse"];
+                };
+            };
+        };
+    };
+    getFilterOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePatentFilterOptionsResponse"];
                 };
             };
         };

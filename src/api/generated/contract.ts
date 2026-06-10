@@ -98,4 +98,9 @@ export interface ContractGuards {
     "totalCount" | "businessArea" | "technologyArea" | "product"
   >;
   areaGroup: AssertSchemaKeys<Schemas["AreaGroupResponse"], "value" | "count" | "relatedLabels">;
+  // src/api/patents.ts — getPatentFilterOptions (CONTRACT-09/DASH-08)
+  patentFilterOptions: AssertSchemaKeys<
+    Schemas["PatentFilterOptionsResponse"],
+    "countries" | "businessAreas" | "technologyAreas" | "productNames"
+  >;
 }

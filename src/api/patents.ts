@@ -44,11 +44,28 @@ export interface PatentListQuery {
   reviewWorkflowStatus?: ReviewWorkflowStatus;
   size?: number;
   sort?: string;
+  // CONTRACT-09/DASH-08: 서버 위임 필터(분기/국가/날짜/영역/검토여부).
+  quarter?: string;
+  country?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  businessArea?: string;
+  technologyArea?: string;
+  productName?: string;
+  inReview?: boolean;
 }
 
 export interface PatentListPage {
   items: PatentListItem[];
   page: PageMeta;
+}
+
+// CONTRACT-09/DASH-08: 검토 대상 목록 화면의 필터 드롭다운 옵션(전체 특허 distinct).
+export interface PatentFilterOptions {
+  countries: string[];
+  businessAreas: string[];
+  technologyAreas: string[];
+  productNames: string[];
 }
 
 export interface BulkMailingResult {
@@ -246,6 +263,15 @@ export async function getPatentPage(query: PatentListQuery = {}): Promise<Patent
         reviewWorkflowStatus: query.reviewWorkflowStatus,
         size: query.size,
         sort: query.sort,
+        // CONTRACT-09/DASH-08: 분기/국가/날짜/영역/검토여부를 서버로 위임.
+        quarter: query.quarter,
+        country: query.country,
+        dateFrom: query.dateFrom,
+        dateTo: query.dateTo,
+        businessArea: query.businessArea,
+        technologyArea: query.technologyArea,
+        productName: query.productName,
+        inReview: query.inReview === undefined ? undefined : String(query.inReview),
       })}`,
     );
 
@@ -256,6 +282,35 @@ export async function getPatentPage(query: PatentListQuery = {}): Promise<Patent
   }
 
   return getMockPatentPage(query);
+}
+
+/**
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
+ * @relatedUI UI-LEGAL-01, UI-COM-02
+ * @description CONTRACT-09/DASH-08: 검토 대상 목록 필터 드롭다운 옵션(국가·사업·기술·제품)을 전체 특허
+ *     기준으로 조회한다. 서버 필터로 목록이 좁혀져도 옵션은 줄지 않는다(클라이언트 전체 배열 의존 제거).
+ */
+export async function getPatentFilterOptions(): Promise<PatentFilterOptions> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<PatentFilterOptions>>("/patents/filter-options");
+    return response.data ?? { countries: [], businessAreas: [], technologyAreas: [], productNames: [] };
+  }
+
+  return computeMockFilterOptions();
+}
+
+function computeMockFilterOptions(): PatentFilterOptions {
+  const all = getFilteredMockPatents({});
+  const distinct = (values: string[]) =>
+    Array.from(new Set(values.map((value) => value?.trim()).filter((value): value is string => !!value && value !== "N/A")))
+      .sort((first, second) => first.localeCompare(second, "ko"));
+
+  return {
+    countries: distinct(all.map((patent) => patent.country)),
+    businessAreas: distinct(all.map((patent) => patent.businessArea)),
+    technologyAreas: distinct(all.map((patent) => patent.technologyArea)),
+    productNames: distinct(all.map((patent) => patent.productName)),
+  };
 }
 
 export async function getBusinessPatents(query: PatentListQuery = {}): Promise<PatentListItem[]> {
