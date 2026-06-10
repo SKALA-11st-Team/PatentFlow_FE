@@ -17,6 +17,7 @@ import { BusinessReviewRequestPage } from "./pages/business/BusinessReviewReques
 import { BusinessSettingsPage } from "./pages/business/BusinessSettingsPage";
 import { BusinessSubmissionHistoryPage } from "./pages/business/BusinessSubmissionHistoryPage";
 import { LoginPage } from "./pages/LoginPage";
+import { ToastProvider } from "./components/common/ToastProvider";
 import type { UserRole } from "./types/patent";
 
 function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; children: React.ReactNode }) {
@@ -106,5 +107,9 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ToastProvider>
+      <RouterProvider router={router} />
+    </ToastProvider>
+  );
 }

@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/business-checklist-items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateBusinessChecklistItem"];
+        post?: never;
+        delete: operations["deleteBusinessChecklistItem"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/patents/{patentId}": {
         parameters: {
             query?: never;
@@ -190,6 +206,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["addClassification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/business-checklist-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getBusinessChecklistItems"];
+        put?: never;
+        post: operations["createBusinessChecklistItem"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1164,6 +1196,33 @@ export interface components {
             type?: string;
             values?: string[];
         };
+        BusinessChecklistItemRequest: {
+            category: string;
+            title: string;
+            description?: string;
+            score4Label: string;
+            score3Label: string;
+            score2Label: string;
+            score1Label: string;
+        };
+        ApiResponseBusinessChecklistItemResponse: {
+            data?: components["schemas"]["BusinessChecklistItemResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        BusinessChecklistItemResponse: {
+            id?: string;
+            category?: string;
+            title?: string;
+            description?: string;
+            options?: components["schemas"]["BusinessChecklistScoreOptionResponse"][];
+        };
+        BusinessChecklistScoreOptionResponse: {
+            /** Format: int32 */
+            score?: number;
+            label?: string;
+        };
         PatentUpsertRequest: {
             managementNumber: string;
             title: string;
@@ -1784,6 +1843,12 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponseListBusinessChecklistItemResponse: {
+            data?: components["schemas"]["BusinessChecklistItemResponse"][];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         PageInfo: {
             /** Format: int32 */
             page?: number;
@@ -2020,24 +2085,6 @@ export interface components {
             /** Format: int32 */
             abandoned?: number;
         };
-        ApiResponseListBusinessChecklistItemResponse: {
-            data?: components["schemas"]["BusinessChecklistItemResponse"][];
-            message?: string;
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        BusinessChecklistItemResponse: {
-            id?: string;
-            category?: string;
-            title?: string;
-            description?: string;
-            options?: components["schemas"]["BusinessChecklistScoreOptionResponse"][];
-        };
-        BusinessChecklistScoreOptionResponse: {
-            /** Format: int32 */
-            score?: number;
-            label?: string;
-        };
         ApiResponseListAnnualFeeScheduleItemResponse: {
             data?: components["schemas"]["AnnualFeeScheduleItemResponse"][];
             message?: string;
@@ -2243,6 +2290,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseClassificationResponse"];
+                };
+            };
+        };
+    };
+    updateBusinessChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessChecklistItemRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBusinessChecklistItemResponse"];
+                };
+            };
+        };
+    };
+    deleteBusinessChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -2505,6 +2600,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseClassificationResponse"];
+                };
+            };
+        };
+    };
+    getBusinessChecklistItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListBusinessChecklistItemResponse"];
+                };
+            };
+        };
+    };
+    createBusinessChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BusinessChecklistItemRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBusinessChecklistItemResponse"];
                 };
             };
         };

@@ -1,4 +1,6 @@
 import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
+import { businessChecklistItems as mockChecklistSeed } from "../mocks/businessChecklist.mock";
+import type { BusinessChecklistItem } from "../types/businessChecklist";
 
 export interface MailSettings {
   gmailUsername: string | null;
@@ -192,6 +194,82 @@ export async function getValuationCriteriaHistory(): Promise<ValuationCriteriaVe
   if (!isBackendApiEnabled()) return structuredClone(mockValuationCriteriaHistory);
   const response = await requestJson<ApiEnvelope<ValuationCriteriaVersion[]>>("/settings/valuation-criteria/history");
   return response.data ?? [];
+}
+
+// ── 사업부 체크리스트 항목 관리 (리걸팀) ─────────────────────
+
+export interface BusinessChecklistItemPayload {
+  category: string;
+  title: string;
+  description: string;
+  score4Label: string;
+  score3Label: string;
+  score2Label: string;
+  score1Label: string;
+}
+
+// 데모(mock) 모드에서도 편집이 동작하도록 인메모리 사본을 유지한다.
+let mockChecklistItems: BusinessChecklistItem[] = structuredClone(mockChecklistSeed);
+
+function payloadToItem(id: string, payload: BusinessChecklistItemPayload): BusinessChecklistItem {
+  return {
+    id,
+    category: payload.category,
+    title: payload.title,
+    description: payload.description,
+    options: [
+      { score: 4, label: payload.score4Label },
+      { score: 3, label: payload.score3Label },
+      { score: 2, label: payload.score2Label },
+      { score: 1, label: payload.score1Label },
+    ],
+  };
+}
+
+export async function getAdminChecklistItems(): Promise<BusinessChecklistItem[]> {
+  if (!isBackendApiEnabled()) return structuredClone(mockChecklistItems);
+  const response = await requestJson<ApiEnvelope<BusinessChecklistItem[]>>("/settings/business-checklist-items");
+  return response.data ?? [];
+}
+
+export async function createChecklistItem(payload: BusinessChecklistItemPayload): Promise<BusinessChecklistItem> {
+  if (!isBackendApiEnabled()) {
+    const item = payloadToItem(`CHK-${Math.random().toString(36).slice(2, 10).toUpperCase()}`, payload);
+    mockChecklistItems.push(item);
+    return structuredClone(item);
+  }
+  const response = await requestJson<ApiEnvelope<BusinessChecklistItem>>("/settings/business-checklist-items", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return response.data as BusinessChecklistItem;
+}
+
+export async function updateChecklistItem(
+  itemId: string,
+  payload: BusinessChecklistItemPayload,
+): Promise<BusinessChecklistItem> {
+  if (!isBackendApiEnabled()) {
+    const item = payloadToItem(itemId, payload);
+    mockChecklistItems = mockChecklistItems.map((current) => (current.id === itemId ? item : current));
+    return structuredClone(item);
+  }
+  const response = await requestJson<ApiEnvelope<BusinessChecklistItem>>(
+    `/settings/business-checklist-items/${itemId}`,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
+  return response.data as BusinessChecklistItem;
+}
+
+export async function deleteChecklistItem(itemId: string): Promise<void> {
+  if (!isBackendApiEnabled()) {
+    if (mockChecklistItems.length <= 1) {
+      throw new Error("체크리스트 항목은 최소 1개가 있어야 합니다.");
+    }
+    mockChecklistItems = mockChecklistItems.filter((current) => current.id !== itemId);
+    return;
+  }
+  await requestJson<ApiEnvelope<void>>(`/settings/business-checklist-items/${itemId}`, { method: "DELETE" });
 }
 
 export interface MailOAuth2Status {

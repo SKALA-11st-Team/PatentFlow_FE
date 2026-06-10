@@ -34,6 +34,7 @@ import { MailSettingsSection } from "./settings/MailSettingsSection";
 import { QuarterSettingsSection } from "./settings/QuarterSettingsSection";
 import { ClassificationSettingsSection } from "./settings/ClassificationSettingsSection";
 import { ValuationCriteriaSection } from "./settings/ValuationCriteriaSection";
+import { ChecklistSettingsSection } from "./settings/ChecklistSettingsSection";
 
 /**
  * @relatedFR FR-LEGAL-12, FR-LEGAL-16, FR-LEGAL-21
@@ -271,6 +272,8 @@ export function AdminSettingsPage() {
       />
 
       <ValuationCriteriaSection />
+
+      <ChecklistSettingsSection />
 
       <section className="section">
         <div className="section-header">
