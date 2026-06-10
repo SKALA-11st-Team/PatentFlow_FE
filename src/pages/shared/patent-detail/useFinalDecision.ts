@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { getPatentDetail, recordPatentFinalDecision, updatePatentFinalDecision } from "../../../api/patents";
+import { useToast } from "../../../components/common/toastContext";
 import { legalActionResultLabels } from "../../../constants/status";
 import type { LegalActionResult, PatentDetail } from "../../../types/patent";
 
@@ -17,6 +18,7 @@ interface UseFinalDecisionArgs {
  *     decisionMessage는 메일 발송 흐름도 같은 영역에 메시지를 쓰므로 setter를 함께 노출한다.
  */
 export function useFinalDecision({ patent, setPatent, refreshPatentHistory }: UseFinalDecisionArgs) {
+  const { showToast } = useToast();
   const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
   const [legalActionDraft, setLegalActionDraft] = useState<LegalActionResult>("MAINTAINED");
   const [decisionReasonDraft, setDecisionReasonDraft] = useState("");
@@ -56,6 +58,7 @@ export function useFinalDecision({ patent, setPatent, refreshPatentHistory }: Us
       }
 
       setDecisionMessage(`${legalActionResultLabels[result.legalActionResult]} 결과를 저장했습니다.`);
+      showToast(`${legalActionResultLabels[result.legalActionResult]} 결과를 저장했습니다.`, "success");
       setIsDecisionModalOpen(false);
     } catch (error) {
       setDecisionMessage(error instanceof Error ? error.message : "최종 처리 결과를 저장하지 못했습니다.");

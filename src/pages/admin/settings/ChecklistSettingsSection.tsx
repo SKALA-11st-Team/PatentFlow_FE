@@ -8,7 +8,7 @@ import {
   type BusinessChecklistItemPayload,
 } from "../../../api/settings";
 import { Button } from "../../../components/common/Button";
-import { useToast } from "../../../components/common/ToastProvider";
+import { useToast } from "../../../components/common/toastContext";
 import type { BusinessChecklistItem } from "../../../types/businessChecklist";
 
 const EMPTY_PAYLOAD: BusinessChecklistItemPayload = {

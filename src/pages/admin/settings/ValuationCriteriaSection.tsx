@@ -10,6 +10,7 @@ import {
   type ValuationCriteriaVersion,
 } from "../../../api/settings";
 import { Button } from "../../../components/common/Button";
+import { useToast } from "../../../components/common/toastContext";
 
 const AXIS_LABELS: Record<string, string> = {
   legal: "권리성",
@@ -54,6 +55,7 @@ const hasInvalidNumber = (draft: NumberDraft, { min = 0, max = 100 } = {}) =>
  *     subscore 배점)을 조정하는 관리자 설정 섹션. 변경은 이후 생성되는 레포트부터 적용된다.
  */
 export function ValuationCriteriaSection() {
+  const { showToast } = useToast();
   const [criteria, setCriteria] = useState<ValuationCriteria | null>(null);
   const [history, setHistory] = useState<ValuationCriteriaVersion[]>([]);
   const [axisDraft, setAxisDraft] = useState<NumberDraft>({});
@@ -128,9 +130,13 @@ export function ValuationCriteriaSection() {
       const updated = await updateValuationCriteria(payload);
       applyCriteria(updated);
       setHistory(await getValuationCriteriaHistory());
-      setMessage(`가치평가 기준 v${updated.config.version}이 저장되었습니다. 이후 생성되는 AI 레포트부터 적용됩니다.`);
+      setMessage("");
+      showToast(
+        `가치평가 기준 v${updated.config.version}이 저장되었습니다. 이후 생성되는 AI 레포트부터 적용됩니다.`,
+        "success",
+      );
     } catch (error) {
-      setMessage(getApiErrorMessage(error, "가치평가 기준 저장에 실패했습니다."));
+      showToast(getApiErrorMessage(error, "가치평가 기준 저장에 실패했습니다."), "error");
     } finally {
       setIsSaving(false);
     }

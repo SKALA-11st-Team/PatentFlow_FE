@@ -3767,3 +3767,66 @@ tbody tr:hover {
 .checklist-item-form .inline-action-group {
   justify-content: flex-end;
 }
+
+/* ── markdown 편집창(편집/분할/미리보기) ──────────────────── */
+
+.ai-report-edit-markdown-tools {
+  align-items: center;
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.ai-report-edit-charcount {
+  color: var(--color-text-light);
+  font-size: 0.8rem;
+}
+
+.segmented-control {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+}
+
+.segmented-control button {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: var(--spacing-xs) var(--spacing-md);
+}
+
+.segmented-control button.active {
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-dark);
+  font-weight: 600;
+}
+
+.ai-report-edit-markdown-body {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.ai-report-edit-markdown-body.is-split {
+  grid-template-columns: 1fr 1fr;
+}
+
+.ai-report-edit-markdown-body.is-split .ai-report-edit-markdown-preview {
+  max-height: none;
+}
+
+.ai-report-edit-markdown-body textarea {
+  min-height: 280px;
+  resize: vertical;
+}
+
+@media (max-width: 720px) {
+  .ai-report-edit-markdown-body.is-split {
+    grid-template-columns: 1fr;
+  }
+}

@@ -4,6 +4,7 @@ import {
   revertPatentAiReport,
   updatePatentAiReport,
 } from "../../../api/patents";
+import { useToast } from "../../../components/common/toastContext";
 import type { AiEvaluationReport, AiReportOverridesPayload } from "../../../types/patent";
 
 /**
@@ -17,8 +18,10 @@ export function useAiReportEditing(
   report: AiEvaluationReport | null,
   onReportUpdated: (report: AiEvaluationReport) => void,
 ) {
+  const { showToast } = useToast();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  // 성공은 토스트로 알리고, 인라인 메시지는 오류(모달 내 표시)에만 쓴다.
   const [editMessage, setEditMessage] = useState("");
   const [originalReport, setOriginalReport] = useState<AiEvaluationReport | null>(null);
   const [isShowingOriginal, setIsShowingOriginal] = useState(false);
@@ -39,7 +42,7 @@ export function useAiReportEditing(
           setIsEditModalOpen(false);
           setIsShowingOriginal(false);
           setOriginalReport(null);
-          setEditMessage("레포트 수정 내용이 저장되었습니다.");
+          showToast("레포트 수정 내용이 저장되었습니다. 사업부에는 수정본이 표시됩니다.", "success");
           return true;
         }
         setEditMessage("레포트 수정에 실패했습니다. 잠시 후 다시 시도해주세요.");
@@ -52,7 +55,7 @@ export function useAiReportEditing(
         setIsSavingEdit(false);
       }
     },
-    [patentId, report, onReportUpdated],
+    [patentId, report, onReportUpdated, showToast],
   );
 
   const handleRevertEdit = useCallback(async () => {
@@ -65,14 +68,14 @@ export function useAiReportEditing(
         onReportUpdated(reverted);
         setIsShowingOriginal(false);
         setOriginalReport(null);
-        setEditMessage("AI 원본 레포트로 되돌렸습니다.");
+        showToast("AI 원본 레포트로 되돌렸습니다.", "success");
       }
     } catch (error) {
-      setEditMessage(error instanceof Error ? error.message : "되돌리기에 실패했습니다.");
+      showToast(error instanceof Error ? error.message : "되돌리기에 실패했습니다.", "error");
     } finally {
       setIsSavingEdit(false);
     }
-  }, [patentId, onReportUpdated]);
+  }, [patentId, onReportUpdated, showToast]);
 
   const handleToggleOriginal = useCallback(async () => {
     if (isShowingOriginal) {
@@ -88,9 +91,9 @@ export function useAiReportEditing(
         setIsShowingOriginal(true);
       }
     } catch (error) {
-      setEditMessage(error instanceof Error ? error.message : "AI 원본을 불러오지 못했습니다.");
+      showToast(error instanceof Error ? error.message : "AI 원본을 불러오지 못했습니다.", "error");
     }
-  }, [patentId, isShowingOriginal]);
+  }, [patentId, isShowingOriginal, showToast]);
 
   return {
     isEditModalOpen,

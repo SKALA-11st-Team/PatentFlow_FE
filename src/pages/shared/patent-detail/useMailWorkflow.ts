@@ -1,6 +1,7 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { getDepartmentRecipientMappings, getMailingHistory } from "../../../api/mailing";
 import { getPatentDetail, getPatents, sendBusinessReviewMails } from "../../../api/patents";
+import { useToast } from "../../../components/common/toastContext";
 import type { DepartmentRecipientMapping, MailingHistoryItem } from "../../../types/mailing";
 import type { PatentDetail } from "../../../types/patent";
 import {
@@ -24,6 +25,7 @@ interface UseMailWorkflowArgs {
  *     usePatentDetail 메가훅에서 순수 분리한 클러스터로, 동작 변경은 없다.
  */
 export function useMailWorkflow({ patent, setPatent, refreshPatentHistory, setActionMessage }: UseMailWorkflowArgs) {
+  const { showToast } = useToast();
   const [mailDrafts, setMailDrafts] = useState<BusinessReviewMailDraft[]>([]);
   const [recipientMappings, setRecipientMappings] = useState<DepartmentRecipientMapping[]>([]);
   const [activeMailIndex, setActiveMailIndex] = useState(0);
@@ -135,11 +137,14 @@ export function useMailWorkflow({ patent, setPatent, refreshPatentHistory, setAc
       setMailDrafts([]);
       setActiveMailIndex(0);
       setIsSendConfirmOpen(false);
-      setActionMessage(
-        result.updatedCount > 0 ? "사업부 검토 요청 메일을 발송했습니다." : "메일 발송 처리할 선택 건이 없습니다.",
-      );
+      const resultMessage =
+        result.updatedCount > 0 ? "사업부 검토 요청 메일을 발송했습니다." : "메일 발송 처리할 선택 건이 없습니다.";
+      setActionMessage(resultMessage);
+      showToast(resultMessage, result.updatedCount > 0 ? "success" : "info");
     } catch (error) {
-      setActionMessage(error instanceof Error ? error.message : "메일 발송 처리에 실패했습니다.");
+      const errorMessage = error instanceof Error ? error.message : "메일 발송 처리에 실패했습니다.";
+      setActionMessage(errorMessage);
+      showToast(errorMessage, "error");
     } finally {
       setIsSendingMail(false);
     }

@@ -67,7 +67,8 @@ export function AiReportEditModal({
     (report.businessCheckRequests ?? []).join("\n"),
   );
   const [rawMarkdown, setRawMarkdown] = useState(report.rawMarkdown ?? "");
-  const [isPreviewingMarkdown, setIsPreviewingMarkdown] = useState(false);
+  // markdown 편집 모드: 편집 전용 / 편집+미리보기 분할 / 미리보기 전용.
+  const [markdownMode, setMarkdownMode] = useState<"edit" | "split" | "preview">("edit");
   const [isConfirmingBusinessOverwrite, setIsConfirmingBusinessOverwrite] = useState(false);
   const [scoreDrafts, setScoreDrafts] = useState<Record<string, ScoreDraft>>(() =>
     Object.fromEntries(
@@ -142,8 +143,16 @@ export function AiReportEditModal({
     await onSave(overrides);
   };
 
+  // 저장하지 않은 변경이 있으면 닫기 전에 확인한다(ESC/바깥 클릭 포함).
+  const handleClose = () => {
+    if (hasChanges && !window.confirm("저장하지 않은 수정 내용이 있습니다. 닫으시겠습니까?")) {
+      return;
+    }
+    onClose();
+  };
+
   return (
-    <Modal ariaLabel="AI 레포트 수정" className="business-checklist-modal ai-report-edit-modal" onClose={onClose}>
+    <Modal ariaLabel="AI 레포트 수정" className="business-checklist-modal ai-report-edit-modal" onClose={handleClose}>
       <div className="modal-header">
         <h2>AI 레포트 수정</h2>
         <p>수정한 항목만 저장되며, AI 원본 레포트는 그대로 보존됩니다.</p>
@@ -238,22 +247,44 @@ export function AiReportEditModal({
         <div className="ai-report-edit-markdown">
           <div className="ai-report-edit-markdown-head">
             <h3>레포트 전문 (markdown)</h3>
-            <Button onClick={() => setIsPreviewingMarkdown((current) => !current)} type="button" variant="secondary">
-              {isPreviewingMarkdown ? "편집" : "미리보기"}
-            </Button>
-          </div>
-          {isPreviewingMarkdown ? (
-            <div className="ai-report-edit-markdown-preview">
-              <MarkdownView content={rawMarkdown || "(내용 없음)"} />
+            <div className="ai-report-edit-markdown-tools">
+              <span className="ai-report-edit-charcount">{rawMarkdown.length.toLocaleString()}자</span>
+              <div className="segmented-control" role="tablist">
+                {([
+                  ["edit", "편집"],
+                  ["split", "분할"],
+                  ["preview", "미리보기"],
+                ] as const).map(([mode, label]) => (
+                  <button
+                    aria-selected={markdownMode === mode}
+                    className={markdownMode === mode ? "active" : ""}
+                    key={mode}
+                    onClick={() => setMarkdownMode(mode)}
+                    role="tab"
+                    type="button"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-          ) : (
-            <textarea
-              aria-label="레포트 전문 markdown"
-              onChange={(event) => setRawMarkdown(event.target.value)}
-              rows={12}
-              value={rawMarkdown}
-            />
-          )}
+          </div>
+          <div className={`ai-report-edit-markdown-body ${markdownMode === "split" ? "is-split" : ""}`}>
+            {markdownMode !== "preview" ? (
+              <textarea
+                aria-label="레포트 전문 markdown"
+                onChange={(event) => setRawMarkdown(event.target.value)}
+                rows={14}
+                spellCheck={false}
+                value={rawMarkdown}
+              />
+            ) : null}
+            {markdownMode !== "edit" ? (
+              <div className="ai-report-edit-markdown-preview">
+                <MarkdownView content={rawMarkdown || "(내용 없음)"} />
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {isConfirmingBusinessOverwrite ? (
@@ -266,7 +297,7 @@ export function AiReportEditModal({
       </div>
 
       <div className="modal-actions">
-        <Button onClick={onClose} type="button" variant="secondary">
+        <Button onClick={handleClose} type="button" variant="secondary">
           취소
         </Button>
         <Button disabled={!hasChanges || hasInvalidScore || isSaving} onClick={handleSubmit} type="button">

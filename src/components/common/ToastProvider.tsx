@@ -1,26 +1,11 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-
-export type ToastTone = "success" | "error" | "info";
+import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
+import { ToastContext, type ToastTone } from "./toastContext";
 
 interface ToastItem {
   id: number;
   tone: ToastTone;
   message: string;
 }
-
-interface ToastContextValue {
-  showToast: (message: string, tone?: ToastTone) => void;
-}
-
-const ToastContext = createContext<ToastContextValue | null>(null);
 
 const TOAST_DURATION_MS = 4000;
 
@@ -67,10 +52,4 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       ) : null}
     </ToastContext.Provider>
   );
-}
-
-/** Provider 밖(테스트 등)에서도 안전하게 동작하도록 no-op 폴백을 제공한다. */
-export function useToast(): ToastContextValue {
-  const context = useContext(ToastContext);
-  return context ?? { showToast: () => {} };
 }
