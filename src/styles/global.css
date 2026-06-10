@@ -3563,3 +3563,72 @@ tbody tr:hover {
   overflow-y: auto;
   padding: var(--spacing-md);
 }
+
+/* ── UI-008: AI 가치평가 기준 설정 ─────────────────────────── */
+
+.valuation-criteria-grid {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin-top: var(--spacing-lg);
+}
+
+.valuation-criteria-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+}
+
+.valuation-criteria-card h3 {
+  margin: 0;
+}
+
+.valuation-criteria-help {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.valuation-criteria-field {
+  align-items: center;
+  display: flex;
+  gap: var(--spacing-md);
+  justify-content: space-between;
+}
+
+.valuation-criteria-field span {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.valuation-criteria-field input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  text-align: right;
+  width: 5.5rem;
+}
+
+.valuation-criteria-sum {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.valuation-criteria-advanced {
+  margin-top: var(--spacing-lg);
+}
+
+.valuation-criteria-advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.valuation-criteria-advanced .history-mini-list {
+  display: grid;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}

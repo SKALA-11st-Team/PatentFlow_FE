@@ -33,6 +33,7 @@ import { AppLayout } from "../../components/layout/AppLayout";
 import { MailSettingsSection } from "./settings/MailSettingsSection";
 import { QuarterSettingsSection } from "./settings/QuarterSettingsSection";
 import { ClassificationSettingsSection } from "./settings/ClassificationSettingsSection";
+import { ValuationCriteriaSection } from "./settings/ValuationCriteriaSection";
 
 /**
  * @relatedFR FR-LEGAL-12, FR-LEGAL-16, FR-LEGAL-21
@@ -268,6 +269,8 @@ export function AdminSettingsPage() {
         classificationMessage={classificationMessage}
         onClassificationUpdate={handleClassificationUpdate}
       />
+
+      <ValuationCriteriaSection />
 
       <section className="section">
         <div className="section-header">

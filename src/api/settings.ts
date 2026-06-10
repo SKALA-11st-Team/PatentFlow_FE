@@ -110,6 +110,90 @@ export async function updateResponseDeadline(months: number, days: number): Prom
   return response.data ?? { months, days };
 }
 
+// ── AI 가치평가 기준 (UI-008) ─────────────────────────────────
+
+export interface ValuationCriteriaConfig {
+  version: number;
+  axisWeights: Record<string, number>;
+  gradeCutoffs: Record<string, number>;
+  maintainThreshold: number;
+  subscoreWeights: Record<string, Record<string, number>>;
+}
+
+export interface ValuationCriteria {
+  config: ValuationCriteriaConfig;
+  isDefault: boolean;
+  updatedBy: string | null;
+  updatedAt: string | null;
+}
+
+export interface ValuationCriteriaVersion {
+  version: number;
+  createdBy: string | null;
+  createdAt: string;
+  config: ValuationCriteriaConfig;
+}
+
+export type ValuationCriteriaPayload = Omit<ValuationCriteriaConfig, "version">;
+
+// agent 기본값(schemas/valuation.py DEFAULT_*)과 동일 — mock 모드 및 '기본값 복원' 표시용.
+export const DEFAULT_VALUATION_CRITERIA: ValuationCriteria = {
+  config: {
+    version: 0,
+    axisWeights: { legal: 25, technology: 25, market: 25, business_fit: 25 },
+    gradeCutoffs: { A: 80, B: 60, C: 40 },
+    maintainThreshold: 60,
+    subscoreWeights: {
+      legal: { right_stability: 35, claim_protection: 40, portfolio_defensive_value: 25 },
+      business_fit: { official_business_evidence: 30, product_function_direct_match: 45, business_context_fit: 25 },
+    },
+  },
+  isDefault: true,
+  updatedBy: null,
+  updatedAt: null,
+};
+
+// 데모(mock) 모드에서도 저장/이력이 동작하도록 인메모리로 유지한다.
+let mockValuationCriteria: ValuationCriteria = structuredClone(DEFAULT_VALUATION_CRITERIA);
+const mockValuationCriteriaHistory: ValuationCriteriaVersion[] = [];
+
+export async function getValuationCriteria(): Promise<ValuationCriteria> {
+  if (!isBackendApiEnabled()) return structuredClone(mockValuationCriteria);
+  const response = await requestJson<ApiEnvelope<ValuationCriteria>>("/settings/valuation-criteria");
+  return response.data ?? structuredClone(DEFAULT_VALUATION_CRITERIA);
+}
+
+export async function updateValuationCriteria(payload: ValuationCriteriaPayload): Promise<ValuationCriteria> {
+  if (!isBackendApiEnabled()) {
+    const nextVersion = mockValuationCriteria.config.version + 1;
+    const updatedAt = new Date().toISOString();
+    mockValuationCriteria = {
+      config: { ...structuredClone(payload), version: nextVersion },
+      isDefault: false,
+      updatedBy: "데모 관리자",
+      updatedAt,
+    };
+    mockValuationCriteriaHistory.unshift({
+      version: nextVersion,
+      createdBy: "데모 관리자",
+      createdAt: updatedAt,
+      config: structuredClone(mockValuationCriteria.config),
+    });
+    return structuredClone(mockValuationCriteria);
+  }
+  const response = await requestJson<ApiEnvelope<ValuationCriteria>>("/settings/valuation-criteria", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  return response.data ?? structuredClone(DEFAULT_VALUATION_CRITERIA);
+}
+
+export async function getValuationCriteriaHistory(): Promise<ValuationCriteriaVersion[]> {
+  if (!isBackendApiEnabled()) return structuredClone(mockValuationCriteriaHistory);
+  const response = await requestJson<ApiEnvelope<ValuationCriteriaVersion[]>>("/settings/valuation-criteria/history");
+  return response.data ?? [];
+}
+
 export interface MailOAuth2Status {
   connected: boolean;
   connectedEmail: string | null;
