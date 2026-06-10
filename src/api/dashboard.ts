@@ -1,5 +1,7 @@
-import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
+import { isBackendApiEnabled, requestJson, toQueryString, type ApiEnvelope } from "./client";
 import { patents } from "../mocks/patents.mock";
+import type { PatentListItem } from "../types/patent";
+import type { PatentListQuery } from "./patents";
 
 export interface LegalDashboardSummary {
   totalPatents: number;
@@ -18,6 +20,20 @@ export interface BusinessDashboardSummary {
   reviewed: number;
   maintained: number;
   abandoned: number;
+}
+
+// DASH-F3: 영역(사업/기술/제품) 분포의 한 그룹. color/share/정렬은 표시 시점에 FE에서 계산한다.
+export interface AreaGroup {
+  value: string;
+  count: number;
+  relatedLabels: string[];
+}
+
+export interface AreaDistribution {
+  totalCount: number;
+  businessArea: AreaGroup[];
+  technologyArea: AreaGroup[];
+  product: AreaGroup[];
 }
 
 /**
@@ -42,6 +58,25 @@ export async function getLegalDashboardSummary(): Promise<LegalDashboardSummary>
     ).length,
     legalActionCompleted: patents.filter((patent) => patent.legalActionResult !== null).length,
   };
+}
+
+/**
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
+ * @relatedUI UI-LEGAL-01
+ * @description DASH-F3: 관리자 대시보드 영역별(사업/기술/제품) 분포를 서버 집계로 조회한다. mock 모드에서는
+ *     동일 규칙으로 클라이언트 집계한다. review-targets 와 같은 필터를 전달해 분포 카드와 목록을 정합시킨다.
+ */
+export async function getAreaDistribution(query: PatentListQuery = {}): Promise<AreaDistribution> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<AreaDistribution>>(
+      `/legal/dashboard/area-distribution${toQueryString({
+        reviewWorkflowStatus: query.reviewWorkflowStatus,
+      })}`,
+    );
+    return response.data ?? createEmptyAreaDistribution();
+  }
+
+  return computeAreaDistribution(patents);
 }
 
 /**
@@ -87,4 +122,47 @@ function createEmptyBusinessDashboardSummary(): BusinessDashboardSummary {
     maintained: 0,
     abandoned: 0,
   };
+}
+
+function createEmptyAreaDistribution(): AreaDistribution {
+  return { totalCount: 0, businessArea: [], technologyArea: [], product: [] };
+}
+
+// mock 모드용 클라이언트 집계 — BE DashboardSummaryService.getAreaDistribution 과 동일 규칙(보조 라벨 매핑·정규화).
+function computeAreaDistribution(patentList: PatentListItem[]): AreaDistribution {
+  return {
+    totalCount: patentList.length,
+    businessArea: groupArea(patentList, (patent) => patent.businessArea, (patent) => patent.departmentName),
+    technologyArea: groupArea(patentList, (patent) => patent.technologyArea, (patent) => patent.businessArea),
+    product: groupArea(patentList, (patent) => patent.productName, (patent) => patent.technologyArea),
+  };
+}
+
+function groupArea(
+  patentList: PatentListItem[],
+  primary: (patent: PatentListItem) => string,
+  secondary: (patent: PatentListItem) => string,
+): AreaGroup[] {
+  const groups = new Map<string, AreaGroup>();
+
+  patentList.forEach((patent) => {
+    const value = normalizeAreaValue(primary(patent));
+    const relatedLabel = normalizeAreaValue(secondary(patent));
+    const group = groups.get(value) ?? { value, count: 0, relatedLabels: [] };
+
+    group.count += 1;
+    if (!group.relatedLabels.includes(relatedLabel)) {
+      group.relatedLabels.push(relatedLabel);
+    }
+
+    groups.set(value, group);
+  });
+
+  return Array.from(groups.values());
+}
+
+// FE/BE 공통: 공백·"N/A"는 "미분류" 버킷으로 정규화한다(BusinessAreaReviewCards.getDisplayValue 와 동일).
+function normalizeAreaValue(value: string): string {
+  const normalized = value.trim();
+  return normalized && normalized !== "N/A" ? normalized : "미분류";
 }

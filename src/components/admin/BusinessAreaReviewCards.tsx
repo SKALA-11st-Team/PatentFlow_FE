@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { PaginationControls } from "../common/PaginationControls";
-import type { PatentListItem } from "../../types/patent";
+import type { AreaDistribution, AreaGroup } from "../../api/dashboard";
 
 interface BusinessAreaReviewCardsProps {
+  distribution: AreaDistribution;
   isLoading?: boolean;
   onSelectContext: (context: PatentContextSelection) => void;
-  patents: PatentListItem[];
 }
 
 interface PatentContextSelection {
@@ -19,8 +19,7 @@ interface PatentContextDimension {
   key: PatentContextDimensionKey;
   label: string;
   queryParam: PatentContextQueryParam;
-  getPrimaryValue: (patent: PatentListItem) => string;
-  getSecondaryValue: (patent: PatentListItem) => string;
+  selectGroups: (distribution: AreaDistribution) => AreaGroup[];
 }
 
 interface PatentContextSummary {
@@ -31,38 +30,34 @@ interface PatentContextSummary {
   value: string;
 }
 
-type PatentContextSummaryDraft = Omit<PatentContextSummary, "color">;
 type PatentContextDimensionKey = "BUSINESS_AREA" | "TECHNOLOGY_AREA" | "PRODUCT";
 type PatentContextQueryParam = "businessArea" | "technologyArea" | "productName";
 
 const businessAreaChartColors = ["#EA002C", "#009A93", "#F47725", "#5B5F97", "#2F80ED", "#8A5CF6", "#5A6B2F"];
 const contextCardPageSize = 8;
 
+// DASH-F3: 분포 데이터(value/count/relatedLabels)는 서버(또는 mock 집계)에서 받고, 여기서는 차원 선택만 한다.
 const patentContextDimensions: PatentContextDimension[] = [
   {
     description: "사업 기준으로 특허를 봅니다.",
-    getPrimaryValue: (patent) => patent.businessArea,
-    getSecondaryValue: (patent) => patent.departmentName,
     key: "BUSINESS_AREA",
     label: "관련 사업",
     queryParam: "businessArea",
+    selectGroups: (distribution) => distribution.businessArea,
   },
   {
     description: "기술 기준으로 특허를 봅니다.",
-    getPrimaryValue: (patent) => patent.technologyArea,
-    getSecondaryValue: (patent) => patent.businessArea,
     key: "TECHNOLOGY_AREA",
     label: "관련 기술",
     queryParam: "technologyArea",
-
+    selectGroups: (distribution) => distribution.technologyArea,
   },
   {
     description: "제품 기준으로 특허를 봅니다.",
-    getPrimaryValue: (patent) => patent.productName,
-    getSecondaryValue: (patent) => patent.technologyArea,
     key: "PRODUCT",
     label: "관련 제품",
     queryParam: "productName",
+    selectGroups: (distribution) => distribution.product,
   },
 ];
 
@@ -72,15 +67,15 @@ const patentContextDimensions: PatentContextDimension[] = [
  * @description 관리자 대시보드에서 관련 사업/기술/제품별 특허 검토 현황을 탭 카드로 요약한다.
  */
 export function BusinessAreaReviewCards({
+  distribution,
   isLoading = false,
   onSelectContext,
-  patents,
 }: BusinessAreaReviewCardsProps) {
   const [activeDimensionKey, setActiveDimensionKey] = useState<PatentContextDimensionKey>("BUSINESS_AREA");
   const [currentPage, setCurrentPage] = useState(1);
   const activeDimension =
     patentContextDimensions.find((dimension) => dimension.key === activeDimensionKey) ?? patentContextDimensions[0];
-  const summaries = getPatentContextSummaries(patents, activeDimension);
+  const summaries = toContextSummaries(activeDimension.selectGroups(distribution), distribution.totalCount);
   const shouldPaginateCards = summaries.length > contextCardPageSize;
   const totalPages = Math.max(1, Math.ceil(summaries.length / contextCardPageSize));
   const pagedSummaries = shouldPaginateCards
@@ -116,7 +111,7 @@ export function BusinessAreaReviewCards({
       <div aria-busy={isLoading} className="business-area-overview">
         <div className="context-summary-panel business-area-summary-panel">
           <div>
-            {isLoading ? <span className="dashboard-loading-number" /> : <strong>{patents.length}</strong>}
+            {isLoading ? <span className="dashboard-loading-number" /> : <strong>{distribution.totalCount}</strong>}
             <span>전체 특허</span>
           </div>
           <div>
@@ -170,38 +165,18 @@ export function BusinessAreaReviewCards({
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01
- * @description 선택된 특허 컨텍스트 기준별 특허 수와 연관 라벨을 집계한다.
+ * @description 서버 집계 분포 그룹에 표시용 색상·비율을 입히고 건수·이름 기준으로 정렬한다.
  */
-function getPatentContextSummaries(patentList: PatentListItem[], dimension: PatentContextDimension) {
-  const summaryMap = new Map<string, PatentContextSummaryDraft>();
-  const totalPatentCount = patentList.length || 1;
+function toContextSummaries(groups: AreaGroup[], totalCount: number): PatentContextSummary[] {
+  const denominator = totalCount || 1;
 
-  patentList.forEach((patent) => {
-    const value = getDisplayValue(dimension.getPrimaryValue(patent));
-    const relatedLabel = getDisplayValue(dimension.getSecondaryValue(patent));
-    const currentSummary =
-      summaryMap.get(value) ??
-      {
-        relatedLabels: [] as string[],
-        share: 0,
-        totalCount: 0,
-        value,
-      };
-
-    currentSummary.totalCount += 1;
-
-    if (!currentSummary.relatedLabels.includes(relatedLabel)) {
-      currentSummary.relatedLabels.push(relatedLabel);
-    }
-
-    summaryMap.set(value, currentSummary);
-  });
-
-  return Array.from(summaryMap.values())
-    .map((summary, index) => ({
-      ...summary,
+  return groups
+    .map((group, index) => ({
       color: businessAreaChartColors[index % businessAreaChartColors.length],
-      share: Number(((summary.totalCount / totalPatentCount) * 100).toFixed(2)),
+      relatedLabels: group.relatedLabels,
+      share: Number(((group.count / denominator) * 100).toFixed(2)),
+      totalCount: group.count,
+      value: group.value,
     }))
     .sort(compareBusinessAreaSummaries);
 }
@@ -230,15 +205,4 @@ function toPatentContextSelection(dimension: PatentContextDimension, value: stri
     queryParam: dimension.queryParam,
     value,
   };
-}
-
-/**
- * @relatedFR FR-LEGAL-01
- * @relatedUI UI-LEGAL-01
- * @description 특허 컨텍스트 분류값이 비어 있을 때 대시보드 표시용 문구를 반환한다.
- */
-function getDisplayValue(value: string) {
-  const normalizedValue = value.trim();
-
-  return normalizedValue && normalizedValue !== "N/A" ? normalizedValue : "미분류";
 }

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getLegalDashboardSummary, type LegalDashboardSummary } from "../../api/dashboard";
+import {
+  getAreaDistribution,
+  getLegalDashboardSummary,
+  type AreaDistribution,
+  type LegalDashboardSummary,
+} from "../../api/dashboard";
 import { getDepartments, type Department } from "../../api/departments";
 import { getApiErrorMessage } from "../../api/client";
 import { getActiveQuarter, type QuarterSetting } from "../../api/settings";
@@ -34,6 +39,13 @@ const sortLabels: Record<SortKey, string> = {
   TITLE_ASC: "특허명 가나다순",
 };
 
+const emptyAreaDistribution: AreaDistribution = {
+  totalCount: 0,
+  businessArea: [],
+  technologyArea: [],
+  product: [],
+};
+
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-15
  * @relatedUI UI-LEGAL-01
@@ -51,6 +63,8 @@ export function AdminDashboardPage() {
   const { errorMessage, isLoading, patents, setPatents } = usePatentList();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<LegalDashboardSummary | null>(null);
+  const [areaDistribution, setAreaDistribution] = useState<AreaDistribution>(emptyAreaDistribution);
+  const [areaDistributionLoading, setAreaDistributionLoading] = useState(true);
   const [activeQuarter, setActiveQuarter] = useState<QuarterSetting | null>(null);
   const [dashboardErrorMessage, setDashboardErrorMessage] = useState("");
   const [departmentErrorMessage, setDepartmentErrorMessage] = useState("");
@@ -100,6 +114,33 @@ export function AdminDashboardPage() {
         if (isMounted) {
           setDashboardSummary(null);
           setDashboardErrorMessage(getApiErrorMessage(error, "대시보드 요약을 불러오지 못했습니다."));
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // DASH-F3: 영역별 분포 카드는 전체 특허 배열을 클라이언트 집계하지 않고 서버 집계 결과를 사용한다.
+  useEffect(() => {
+    let isMounted = true;
+    setAreaDistributionLoading(true);
+
+    getAreaDistribution()
+      .then((distribution) => {
+        if (isMounted) {
+          setAreaDistribution(distribution);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setAreaDistribution(emptyAreaDistribution);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setAreaDistributionLoading(false);
         }
       });
 
@@ -235,11 +276,11 @@ export function AdminDashboardPage() {
       </div>
 
       <BusinessAreaReviewCards
-        isLoading={isLoading}
+        distribution={areaDistribution}
+        isLoading={areaDistributionLoading}
         onSelectContext={(context) =>
           navigate(`/admin/review-targets?${context.queryParam}=${encodeURIComponent(context.value)}`)
         }
-        patents={patents}
       />
 
       <section className="section">

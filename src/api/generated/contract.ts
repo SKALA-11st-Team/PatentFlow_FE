@@ -92,4 +92,10 @@ export interface ContractGuards {
     "id" | "category" | "title" | "description" | "options"
   >;
   businessChecklistScoreOption: AssertSchemaKeys<Schemas["BusinessChecklistScoreOptionResponse"], "score" | "label">;
+  // src/api/dashboard.ts — getAreaDistribution (DASH-F3)
+  areaDistribution: AssertSchemaKeys<
+    Schemas["AreaDistributionResponse"],
+    "totalCount" | "businessArea" | "technologyArea" | "product"
+  >;
+  areaGroup: AssertSchemaKeys<Schemas["AreaGroupResponse"], "value" | "count" | "relatedLabels">;
 }

@@ -740,6 +740,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/legal/dashboard/area-distribution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAreaDistribution"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/departments": {
         parameters: {
             query?: never;
@@ -1761,6 +1777,25 @@ export interface components {
             pendingFinalDecision?: number;
             /** Format: int32 */
             legalActionCompleted?: number;
+        };
+        ApiResponseAreaDistributionResponse: {
+            data?: components["schemas"]["AreaDistributionResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        AreaDistributionResponse: {
+            /** Format: int32 */
+            totalCount?: number;
+            businessArea?: components["schemas"]["AreaGroupResponse"][];
+            technologyArea?: components["schemas"]["AreaGroupResponse"][];
+            product?: components["schemas"]["AreaGroupResponse"][];
+        };
+        AreaGroupResponse: {
+            value?: string;
+            /** Format: int32 */
+            count?: number;
+            relatedLabels?: string[];
         };
         ApiResponseListDepartmentResponse: {
             data?: components["schemas"]["DepartmentResponse"][];
@@ -3220,6 +3255,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseLegalDashboardSummaryResponse"];
+                };
+            };
+        };
+    };
+    getAreaDistribution: {
+        parameters: {
+            query?: {
+                quarter?: string;
+                country?: string;
+                dateFrom?: string;
+                dateTo?: string;
+                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseAreaDistributionResponse"];
                 };
             };
         };
