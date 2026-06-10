@@ -54,11 +54,11 @@ export function LoginPage() {
       // 서버가 반환한 실제 역할을 우선 사용 — 탭 선택과 실제 역할이 다를 경우를 방어
       const nextRole = loginResult.user.role ?? role;
 
-      // 아이디 기억은 로그인 성공 후 확정된 역할 키(role)에만 저장/삭제한다
+      // AUTH-07: 아이디 기억은 탭 선택값(role)이 아니라 서버 확정 역할(nextRole) 키에 저장/삭제한다.
       if (rememberMe) {
-        storeRememberedEmail(role, email);
+        storeRememberedEmail(nextRole, email);
       } else {
-        clearRememberedEmail(role);
+        clearRememberedEmail(nextRole);
       }
 
       navigate(nextRole === "ADMIN" ? "/admin/dashboard" : "/business/dashboard");

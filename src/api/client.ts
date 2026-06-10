@@ -97,7 +97,7 @@ async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefr
 
   if (response.status === 401 && allowRefresh && path !== "/auth/login" && path !== "/auth/refresh") {
     try {
-      await requestJsonInternal<ApiEnvelope<unknown>>("/auth/refresh", { method: "POST" }, false);
+      await refreshAccessTokenOnce();
     } catch (refreshError) {
       // API-04: refresh마저 실패하면 세션이 만료된 것 — 강제 로그아웃 후 로그인 화면으로 이동
       clearAuthSession();
@@ -112,6 +112,22 @@ async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefr
   }
 
   return response.json() as Promise<T>;
+}
+
+// SEC-10/AUTH-05: 동시 401들이 각자 /auth/refresh를 호출하면, 회전형 리프레시 토큰(BE가 사용 즉시 폐기)에서
+// 한쪽이 이미 폐기된 토큰을 보내 재사용 탐지가 발동해 양쪽이 강제 로그아웃된다. single-flight로 직렬화 —
+// 진행 중 refresh가 있으면 그 프로미스를 공유하고, 끝나면 초기화한다.
+let inFlightRefresh: Promise<void> | null = null;
+
+function refreshAccessTokenOnce(): Promise<void> {
+  if (!inFlightRefresh) {
+    inFlightRefresh = requestJsonInternal<ApiEnvelope<unknown>>("/auth/refresh", { method: "POST" }, false)
+      .then(() => undefined)
+      .finally(() => {
+        inFlightRefresh = null;
+      });
+  }
+  return inFlightRefresh;
 }
 
 function redirectToLogin() {
