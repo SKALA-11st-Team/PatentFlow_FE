@@ -2,17 +2,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { submitBusinessChecklist } from "../../../api/businessChecklist";
 import { getLatestBusinessSubmission } from "../../../api/businessSubmissions";
-import { getDepartmentRecipientMappings, getMailingHistory } from "../../../api/mailing";
 import {
   getPatentDetail,
   getBusinessPatentDetail,
   getPatentAiReportStatus,
   getPatentHistory,
-  getPatents,
-  recordPatentFinalDecision,
   requestPatentAiReport,
-  sendBusinessReviewMails,
-  updatePatentFinalDecision,
 } from "../../../api/patents";
 // CONTRACT-02: 대표 점수 산식은 api/patents의 단일 정본을 재노출한다(기존 import 경로 호환).
 export { formatReportDisplayScore } from "../../../api/patents";
@@ -21,15 +16,11 @@ import {
   getBusinessChecklistTotal,
 } from "../../../utils/businessChecklist";
 import { useBusinessChecklistItems } from "../../../hooks/useBusinessChecklistItems";
-import { businessOpinionLabels, legalActionResultLabels } from "../../../constants/status";
+import { businessOpinionLabels } from "../../../constants/status";
 import type { BusinessChecklistSubmission } from "../../../types/businessChecklist";
-import type { DepartmentRecipientMapping, MailingHistoryItem } from "../../../types/mailing";
-import type { AiReportJob, LegalActionResult, PatentDetail, PatentHistoryItem, UserRole } from "../../../types/patent";
-import {
-  createGroupedBusinessReviewMailDrafts,
-  toBusinessReviewMailSendDraft,
-  type BusinessReviewMailDraft,
-} from "../../../utils/businessReviewMail";
+import type { AiReportJob, PatentDetail, PatentHistoryItem, UserRole } from "../../../types/patent";
+import { useFinalDecision } from "./useFinalDecision";
+import { useMailWorkflow } from "./useMailWorkflow";
 
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-05
@@ -128,7 +119,8 @@ export function isFinalDecisionRecordable(patent: PatentDetail) {
 /**
  * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-11, FR-LEGAL-15
  * @relatedUI UI-LEGAL-04, UI-BUS-03
- * @description 특허 상세 화면의 데이터 적재, 사업부 의견/체크리스트, 최종 판단, 메일 발송 상태 로직을 한 곳에서 관리한다.
+ * @description 특허 상세 화면의 데이터 적재와 사업부 의견/체크리스트 상태를 관리하고,
+ *     최종 판단(useFinalDecision)·메일 발송(useMailWorkflow) 클러스터를 합성해 기존 인터페이스를 유지한다.
  */
 export function usePatentDetail(role: UserRole) {
   const { patentId } = useParams();
@@ -141,19 +133,6 @@ export function usePatentDetail(role: UserRole) {
   const { items: businessChecklistItems } = useBusinessChecklistItems();
   const isAdmin = role === "ADMIN";
   const [hasSubmittedBusinessChecklist, setHasSubmittedBusinessChecklist] = useState(() => false);
-  const [isDecisionModalOpen, setIsDecisionModalOpen] = useState(false);
-  const [legalActionDraft, setLegalActionDraft] = useState<LegalActionResult>("MAINTAINED");
-  const [decisionReasonDraft, setDecisionReasonDraft] = useState("");
-  const [decisionMessage, setDecisionMessage] = useState("");
-  const [isApplyingDecision, setIsApplyingDecision] = useState(false);
-  const [mailDrafts, setMailDrafts] = useState<BusinessReviewMailDraft[]>([]);
-  const [recipientMappings, setRecipientMappings] = useState<DepartmentRecipientMapping[]>([]);
-  const [activeMailIndex, setActiveMailIndex] = useState(0);
-  const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
-  const [isSendingMail, setIsSendingMail] = useState(false);
-  const [mailingHistoryItems, setMailingHistoryItems] = useState<MailingHistoryItem[]>([]);
-  const [isMailHistoryOpen, setIsMailHistoryOpen] = useState(false);
-  const [mailHistoryMessage, setMailHistoryMessage] = useState("");
   const [patentHistoryItems, setPatentHistoryItems] = useState<PatentHistoryItem[]>([]);
   const [patentHistoryMessage, setPatentHistoryMessage] = useState("");
   const [isWorkflowActionProcessing, setIsWorkflowActionProcessing] = useState(false);
@@ -262,30 +241,6 @@ export function usePatentDetail(role: UserRole) {
     };
   }, [isAdmin, patentId]);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadRecipientMappings() {
-      try {
-        const nextMappings = await getDepartmentRecipientMappings();
-
-        if (isMounted) {
-          setRecipientMappings(nextMappings);
-        }
-      } catch {
-        if (isMounted) {
-          setRecipientMappings([]);
-        }
-      }
-    }
-
-    loadRecipientMappings();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   async function refreshPatentHistory(nextPatentId: string) {
     setPatentHistoryMessage("평가 및 판단 이력을 불러오는 중입니다.");
     try {
@@ -311,134 +266,14 @@ export function usePatentDetail(role: UserRole) {
     setIsChecklistOpen(false);
   }
 
-  async function handleOpenMailHistory() {
-    if (!patent) {
-      return;
-    }
-
-    setIsMailHistoryOpen(true);
-    setMailHistoryMessage("메일 발송 내역을 불러오는 중입니다.");
-
-    try {
-      const nextHistoryItems = await getMailingHistory({ patentId: patent.patentId });
-
-      setMailingHistoryItems(nextHistoryItems);
-      setMailHistoryMessage(nextHistoryItems.length === 0 ? "이 특허의 메일 발송 내역이 없습니다." : "");
-    } catch {
-      setMailingHistoryItems([]);
-      setMailHistoryMessage("메일 발송 내역을 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
-    }
-  }
-
-  async function handleOpenMailPreview() {
-    if (!patent || patent.reviewWorkflowStatus !== "MAIL_READY") {
-      setDecisionMessage("메일 발송 대기 상태의 특허만 발송할 수 있습니다.");
-      return;
-    }
-
-    try {
-      const allMailReady = await getPatents({ reviewWorkflowStatus: "MAIL_READY" });
-      const sameDeptPatents = allMailReady.filter((p) => p.departmentId === patent.departmentId);
-      const grouped = createGroupedBusinessReviewMailDrafts(
-        sameDeptPatents.length > 0 ? sameDeptPatents : [patent],
-        recipientMappings,
-      );
-      setMailDrafts(grouped);
-    } catch {
-      setMailDrafts(createGroupedBusinessReviewMailDrafts([patent], recipientMappings));
-    }
-
-    setActiveMailIndex(0);
-    setIsSendConfirmOpen(false);
-    setDecisionMessage("");
-  }
-
-  function handleCloseMailPreview() {
-    if (isSendingMail) {
-      return;
-    }
-
-    setMailDrafts([]);
-    setActiveMailIndex(0);
-    setIsSendConfirmOpen(false);
-  }
-
-  function handleUpdateMailDraft(nextDraft: BusinessReviewMailDraft) {
-    setMailDrafts((currentDrafts) =>
-      currentDrafts.map((draft, index) => (index === activeMailIndex ? nextDraft : draft)),
-    );
-  }
-
-  async function handleConfirmSendMails() {
-    if (!patent) {
-      return;
-    }
-
-    setIsSendingMail(true);
-    setDecisionMessage("");
-
-    try {
-      const result = await sendBusinessReviewMails(mailDrafts.map(toBusinessReviewMailSendDraft));
-      const nextPatent = await getPatentDetail(patent.patentId);
-
-      if (nextPatent) {
-        setPatent(nextPatent);
-        refreshPatentHistory(nextPatent.patentId);
-      }
-
-      setMailDrafts([]);
-      setActiveMailIndex(0);
-      setIsSendConfirmOpen(false);
-      setDecisionMessage(
-        result.updatedCount > 0 ? "사업부 검토 요청 메일을 발송했습니다." : "메일 발송 처리할 선택 건이 없습니다.",
-      );
-    } catch (error) {
-      setDecisionMessage(error instanceof Error ? error.message : "메일 발송 처리에 실패했습니다.");
-    } finally {
-      setIsSendingMail(false);
-    }
-  }
-
-  async function handleRecordFinalDecision() {
-    if (!patent) {
-      return;
-    }
-
-    const currentPatent = patent;
-    setIsApplyingDecision(true);
-    setDecisionMessage("");
-
-    try {
-      const trimmedReason = decisionReasonDraft.trim();
-
-      if (!trimmedReason) {
-        setDecisionMessage("최종 판단 사유를 입력해 주세요.");
-        setIsApplyingDecision(false);
-        return;
-      }
-
-      const saveFinalDecision = currentPatent.finalDecisionRecord.decisionId
-        ? updatePatentFinalDecision
-        : recordPatentFinalDecision;
-      const result = await saveFinalDecision(currentPatent.patentId, {
-        legalActionResult: legalActionDraft,
-        reason: trimmedReason,
-      });
-      const nextPatent = await getPatentDetail(currentPatent.patentId);
-
-      if (nextPatent) {
-        setPatent(nextPatent);
-        refreshPatentHistory(nextPatent.patentId);
-      }
-
-      setDecisionMessage(`${legalActionResultLabels[result.legalActionResult]} 결과를 저장했습니다.`);
-      setIsDecisionModalOpen(false);
-    } catch (error) {
-      setDecisionMessage(error instanceof Error ? error.message : "최종 처리 결과를 저장하지 못했습니다.");
-    } finally {
-      setIsApplyingDecision(false);
-    }
-  }
+  // 최종 판단/메일 발송 클러스터 — 순수 분리된 훅을 합성한다(외부 인터페이스 불변).
+  const finalDecision = useFinalDecision({ patent, setPatent, refreshPatentHistory });
+  const mailWorkflow = useMailWorkflow({
+    patent,
+    setPatent,
+    refreshPatentHistory,
+    setActionMessage: finalDecision.setDecisionMessage,
+  });
 
   async function handleRequestAiReport() {
     if (!patent) return;
@@ -471,14 +306,6 @@ export function usePatentDetail(role: UserRole) {
     }
   }
 
-  function openFinalDecisionModal(patentDetail: PatentDetail) {
-    const derived = patentDetail.businessOpinion.opinion === "ABANDON" ? "ABANDONED" : "MAINTAINED";
-    setLegalActionDraft(patentDetail.legalActionResult ?? derived);
-    setDecisionReasonDraft(patentDetail.finalDecisionRecord.reason ?? "");
-    setDecisionMessage("");
-    setIsDecisionModalOpen(true);
-  }
-
   return {
     patentId,
     isAdmin,
@@ -494,38 +321,38 @@ export function usePatentDetail(role: UserRole) {
     displayedBusinessOpinionComment,
     canRecordFinalDecision,
     canSendBusinessReviewMail,
-    isApplyingDecision,
+    isApplyingDecision: finalDecision.isApplyingDecision,
     isWorkflowActionProcessing,
-    decisionMessage,
+    decisionMessage: finalDecision.decisionMessage,
     workflowActionMessage,
-    legalActionDraft,
-    decisionReasonDraft,
-    setDecisionReasonDraft,
+    legalActionDraft: finalDecision.legalActionDraft,
+    decisionReasonDraft: finalDecision.decisionReasonDraft,
+    setDecisionReasonDraft: finalDecision.setDecisionReasonDraft,
     isChecklistOpen,
     setIsChecklistOpen,
-    isDecisionModalOpen,
-    setIsDecisionModalOpen,
-    mailDrafts,
-    activeMailIndex,
-    setActiveMailIndex,
-    isSendConfirmOpen,
-    setIsSendConfirmOpen,
-    isSendingMail,
-    mailingHistoryItems,
-    isMailHistoryOpen,
-    setIsMailHistoryOpen,
-    mailHistoryMessage,
+    isDecisionModalOpen: finalDecision.isDecisionModalOpen,
+    setIsDecisionModalOpen: finalDecision.setIsDecisionModalOpen,
+    mailDrafts: mailWorkflow.mailDrafts,
+    activeMailIndex: mailWorkflow.activeMailIndex,
+    setActiveMailIndex: mailWorkflow.setActiveMailIndex,
+    isSendConfirmOpen: mailWorkflow.isSendConfirmOpen,
+    setIsSendConfirmOpen: mailWorkflow.setIsSendConfirmOpen,
+    isSendingMail: mailWorkflow.isSendingMail,
+    mailingHistoryItems: mailWorkflow.mailingHistoryItems,
+    isMailHistoryOpen: mailWorkflow.isMailHistoryOpen,
+    setIsMailHistoryOpen: mailWorkflow.setIsMailHistoryOpen,
+    mailHistoryMessage: mailWorkflow.mailHistoryMessage,
     patentHistoryItems,
     patentHistoryMessage,
     refreshPatentHistory,
     handleSubmitChecklist,
-    handleOpenMailHistory,
-    handleOpenMailPreview,
-    handleCloseMailPreview,
-    handleUpdateMailDraft,
-    handleConfirmSendMails,
-    handleRecordFinalDecision,
+    handleOpenMailHistory: mailWorkflow.handleOpenMailHistory,
+    handleOpenMailPreview: mailWorkflow.handleOpenMailPreview,
+    handleCloseMailPreview: mailWorkflow.handleCloseMailPreview,
+    handleUpdateMailDraft: mailWorkflow.handleUpdateMailDraft,
+    handleConfirmSendMails: mailWorkflow.handleConfirmSendMails,
+    handleRecordFinalDecision: finalDecision.handleRecordFinalDecision,
     handleRequestAiReport,
-    openFinalDecisionModal,
+    openFinalDecisionModal: finalDecision.openFinalDecisionModal,
   };
 }
