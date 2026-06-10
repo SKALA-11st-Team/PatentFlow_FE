@@ -12,6 +12,54 @@
     }
   ],
   "paths" : {
+    "/api/v1/settings/valuation-criteria" : {
+      "get" : {
+        "tags" : [
+          "settings-controller"
+        ],
+        "operationId" : "getValuationCriteria",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseValuationCriteriaResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [
+          "settings-controller"
+        ],
+        "operationId" : "updateValuationCriteria",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ValuationCriteriaRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseValuationCriteriaResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/settings/review-quarters/{quarterKey}" : {
       "put" : {
         "tags" : [
@@ -1408,6 +1456,46 @@
         }
       }
     },
+    "/api/v1/patents/{patentId}/ai-report" : {
+      "patch" : {
+        "tags" : [
+          "patent-controller"
+        ],
+        "operationId" : "editAiReport",
+        "parameters" : [
+          {
+            "name" : "patentId",
+            "in" : "path",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AiReportEditRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseAiEvaluationReportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notifications/{notificationId}/read-state" : {
       "patch" : {
         "tags" : [
@@ -1597,6 +1685,26 @@
         }
       }
     },
+    "/api/v1/settings/valuation-criteria/history" : {
+      "get" : {
+        "tags" : [
+          "settings-controller"
+        ],
+        "operationId" : "getValuationCriteriaHistory",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListValuationCriteriaVersionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/settings/review-quarters" : {
       "get" : {
         "tags" : [
@@ -1762,6 +1870,36 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiResponseAiReportJobResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/patents/{patentId}/ai-report/original" : {
+      "get" : {
+        "tags" : [
+          "patent-controller"
+        ],
+        "operationId" : "getOriginalAiReport",
+        "parameters" : [
+          {
+            "name" : "patentId",
+            "in" : "path",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseAiEvaluationReportResponse"
                 }
               }
             }
@@ -2461,6 +2599,36 @@
         }
       }
     },
+    "/api/v1/patents/{patentId}/ai-report/edits" : {
+      "delete" : {
+        "tags" : [
+          "patent-controller"
+        ],
+        "operationId" : "revertAiReportEdits",
+        "parameters" : [
+          {
+            "name" : "patentId",
+            "in" : "path",
+            "required" : true,
+            "schema" : {
+              "type" : "string"
+            }
+          }
+        ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseAiEvaluationReportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/settings/mail/oauth2/google" : {
       "delete" : {
         "tags" : [
@@ -2484,6 +2652,79 @@
   },
   "components" : {
     "schemas" : {
+      "ValuationCriteriaRequest" : {
+        "type" : "object",
+        "properties" : {
+          "axisWeights" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "number",
+              "format" : "double"
+            }
+          },
+          "gradeCutoffs" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "number",
+              "format" : "double"
+            }
+          },
+          "maintainThreshold" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "subscoreWeights" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object",
+              "additionalProperties" : {
+                "type" : "integer",
+                "format" : "int32"
+              }
+            }
+          }
+        },
+        "required" : [
+          "axisWeights",
+          "gradeCutoffs",
+          "maintainThreshold",
+          "subscoreWeights"
+        ]
+      },
+      "ApiResponseValuationCriteriaResponse" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/ValuationCriteriaResponse"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "ValuationCriteriaResponse" : {
+        "type" : "object",
+        "properties" : {
+          "config" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          },
+          "isDefault" : {
+            "type" : "boolean"
+          },
+          "updatedBy" : {
+            "type" : "string"
+          },
+          "updatedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
       "QuarterSettingRequest" : {
         "type" : "object",
         "properties" : {
@@ -3877,6 +4118,27 @@
             "items" : {
               "$ref" : "#/components/schemas/SourceResponse"
             }
+          },
+          "edited" : {
+            "type" : "boolean"
+          },
+          "editedBy" : {
+            "type" : "string"
+          },
+          "editedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "editVersion" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "editStale" : {
+            "type" : "boolean"
+          },
+          "appliedCriteria" : {
+            "type" : "object",
+            "additionalProperties" : { }
           }
         }
       },
@@ -4111,6 +4373,110 @@
           }
         }
       },
+      "AiReportEditRequest" : {
+        "type" : "object",
+        "properties" : {
+          "baseReportId" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "expectedEditVersion" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "overrides" : {
+            "$ref" : "#/components/schemas/AiReportOverrides"
+          }
+        },
+        "required" : [
+          "baseReportId",
+          "expectedEditVersion",
+          "overrides"
+        ]
+      },
+      "AiReportOverrides" : {
+        "type" : "object",
+        "properties" : {
+          "recommendation" : {
+            "type" : "string",
+            "enum" : [
+              "MAINTAIN",
+              "REVIEW_AGAIN",
+              "ABANDON",
+              "HOLD"
+            ]
+          },
+          "recommendationText" : {
+            "type" : "string"
+          },
+          "keyEvidence" : {
+            "type" : "string"
+          },
+          "judgementGrounds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "businessCheckRequests" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "scores" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScoreOverride"
+            }
+          },
+          "rawMarkdown" : {
+            "type" : "string"
+          },
+          "empty" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "ScoreOverride" : {
+        "type" : "object",
+        "properties" : {
+          "category" : {
+            "type" : "string",
+            "enum" : [
+              "RIGHTS",
+              "TECHNOLOGY",
+              "MARKET",
+              "BUSINESS_ALIGNMENT"
+            ]
+          },
+          "score" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "grade" : {
+            "type" : "string"
+          },
+          "evidenceSummary" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ApiResponseAiEvaluationReportResponse" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "$ref" : "#/components/schemas/AiEvaluationReportResponse"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
       "NotificationReadStateRequest" : {
         "type" : "object",
         "properties" : {
@@ -4333,6 +4699,44 @@
           "timestamp" : {
             "type" : "string",
             "format" : "date-time"
+          }
+        }
+      },
+      "ApiResponseListValuationCriteriaVersionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ValuationCriteriaVersionResponse"
+            }
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "timestamp" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "ValuationCriteriaVersionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "version" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "createdBy" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "config" : {
+            "type" : "object",
+            "additionalProperties" : { }
           }
         }
       },
