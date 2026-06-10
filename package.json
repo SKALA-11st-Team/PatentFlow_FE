@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "openapi:sync": "node scripts/sync-openapi.mjs",
+    "openapi:gen": "openapi-typescript openapi/patentflow-openapi.json -o src/api/generated/openapi.ts",
+    "openapi:check": "npm run openapi:gen && git diff --exit-code -- src/api/generated/openapi.ts"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -24,6 +27,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.0.0",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.31.1",
     "vitest": "^4.1.6"

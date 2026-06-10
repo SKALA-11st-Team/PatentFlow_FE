@@ -2,10 +2,6 @@ import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
 import { businessChecklistItems } from "../mocks/businessChecklist.mock";
 import type { BusinessChecklistItem, BusinessChecklistSubmission } from "../types/businessChecklist";
 
-type BackendBusinessChecklistItem = BusinessChecklistItem & {
-  itemId?: string;
-};
-
 /**
  * @relatedFR FR-BUS-01, FR-BUS-04
  * @relatedUI UI-BUS-02, UI-BUS-03, UI-LEGAL-04
@@ -13,11 +9,11 @@ type BackendBusinessChecklistItem = BusinessChecklistItem & {
  */
 export async function getBusinessChecklistItems(): Promise<BusinessChecklistItem[]> {
   if (isBackendApiEnabled()) {
-    const response = await requestJson<ApiEnvelope<BackendBusinessChecklistItem[]>>("/business/checklist-items");
+    const response = await requestJson<ApiEnvelope<BusinessChecklistItem[]>>("/business/checklist-items");
 
     return (response.data ?? []).map((item) => ({
       ...item,
-      id: item.id ?? item.itemId ?? "",
+      id: item.id ?? "",
     }));
   }
 

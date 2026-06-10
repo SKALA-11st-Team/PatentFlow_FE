@@ -27,6 +27,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # CONTRACT-10: 커밋된 OpenAPI 스펙(openapi/patentflow-openapi.json)으로 타입을 재생성해
+      # 커밋된 생성물(src/api/generated/openapi.ts)과 일치하는지 검증한다. 스펙이 바뀌었는데
+      # 타입을 재생성하지 않았으면 여기서 실패한다. (BE 계약 자체와의 정합은 빌드의 컴파일 가드가 검증)
+      - name: OpenAPI contract drift check
+        run: npm run openapi:check
+
       - name: Lint
         run: npm run lint
 

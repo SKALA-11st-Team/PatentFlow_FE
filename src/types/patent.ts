@@ -56,6 +56,8 @@ export interface PatentSummary {
   coreTechnicalPoints: string[];
   claimsSummary: string;
   missingFields: string[];
+  // 데모 mock 데이터가 채우는 요약 원문 마크다운(선택). 실제 BE PatentSummaryResponse 는 이 필드를
+  // 내보내지 않으므로 wire 매핑(mapBackendSummary)에서는 읽지 않는다. — CONTRACT-10
   rawMarkdown?: string;
 }
 

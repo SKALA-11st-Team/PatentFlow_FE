@@ -117,7 +117,6 @@ interface BackendPatentDetail extends BackendPatentListItem {
     coreTechnicalPoints: string[];
     claimsSummary: string;
     missingFields: string[];
-    rawMarkdown?: string;
   };
   aiEvaluationReport: {
     reportId: string;
@@ -592,7 +591,6 @@ function mapBackendSummary(summary: BackendPatentDetail["summary"]): PatentSumma
     coreTechnicalPoints: summary.coreTechnicalPoints,
     claimsSummary: summary.claimsSummary,
     missingFields: summary.missingFields,
-    rawMarkdown: summary.rawMarkdown,
   };
 }
 
