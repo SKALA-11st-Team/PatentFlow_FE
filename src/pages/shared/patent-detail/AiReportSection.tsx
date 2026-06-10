@@ -1,7 +1,9 @@
 import { Badge } from "../../../components/common/Badge";
+import { MarkdownView } from "../../../components/common/MarkdownView";
 import { Section } from "../../../components/common/Section";
 import {
   evaluationCategoryLabels,
+  getGradeTone,
   getRecommendationTone,
   recommendationLabels,
 } from "../../../constants/status";
@@ -52,7 +54,7 @@ export function RawMarkdownBlock({ content, title }: { content: string; title: s
   return (
     <details className="raw-markdown-block" open>
       <summary>{title}</summary>
-      <pre>{content}</pre>
+      <MarkdownView content={content} />
     </details>
   );
 }
@@ -115,11 +117,4 @@ export function AiReportSection({ report }: { report: PatentDetail["aiEvaluation
       ) : null}
     </Section>
   );
-}
-
-function getGradeTone(grade: string) {
-  if (grade.startsWith("A")) return "success";
-  if (grade.startsWith("B")) return "primary";
-  if (grade.startsWith("C")) return "warning";
-  return "danger";
 }

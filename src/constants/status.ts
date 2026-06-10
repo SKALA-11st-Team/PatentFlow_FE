@@ -219,6 +219,17 @@ export const legalActionResultLabels: Record<LegalActionResult, string> = {
   ABANDONED: "포기 처리",
 };
 
+/**
+ * @relatedUI UI-LEGAL-04, UI-BUS-03
+ * @description 평가 등급(A/B/C/D)을 배지 tone으로 변환한다. AiReportSection에 있던 중복을 중앙화.
+ */
+export function getGradeTone(grade: string): StatusTone {
+  if (grade.startsWith("A")) return "success";
+  if (grade.startsWith("B")) return "primary";
+  if (grade.startsWith("C")) return "warning";
+  return "danger";
+}
+
 export const evaluationCategoryLabels: Record<EvaluationCategory, string> = {
   RIGHTS: "권리성",
   TECHNOLOGY: "기술성",

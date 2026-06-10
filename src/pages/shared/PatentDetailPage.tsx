@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
+import { Breadcrumbs } from "../../components/layout/Breadcrumbs";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
@@ -92,6 +93,13 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           : "특허 내용과 AI 특허 평가 레포트를 확인하고 사업부 의견을 검토합니다."
       }
     >
+      <Breadcrumbs
+        items={
+          isAdmin
+            ? [{ label: "특허관리", to: "/admin/patents" }, { label: patent.title }]
+            : [{ label: "대시보드", to: "/business/dashboard" }, { label: patent.title }]
+        }
+      />
       <section className={`detail-hero section ${getLifecycleHeroClassName(patent.lifecycleStatus)}`}>
         <div>
           <div className="detail-title-row">

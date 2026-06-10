@@ -6,6 +6,7 @@ import { getClassifications, type ClassificationGroup } from "../../api/settings
 import { Button } from "../../components/common/Button";
 import { Section } from "../../components/common/Section";
 import { AppLayout } from "../../components/layout/AppLayout";
+import { Breadcrumbs } from "../../components/layout/Breadcrumbs";
 import type { PatentListItem, PatentUpsertPayload } from "../../types/patent";
 
 type PatentFormState = PatentUpsertPayload;
@@ -165,6 +166,13 @@ export function AdminPatentEditPage() {
       title="특허 정보 수정"
       description="선택한 특허의 기본 정보와 회사 컨텍스트를 상세 수정합니다."
     >
+      <Breadcrumbs
+        items={[
+          { label: "특허관리", to: "/admin/patents" },
+          { label: patent.title, to: `/admin/patents/${patentId}` },
+          { label: "정보 수정" },
+        ]}
+      />
       <Section
         title={patent.title}
         description="테이블 row에서 선택한 특허입니다. 수정 후 저장하면 특허관리 목록에 반영됩니다."

@@ -3284,3 +3284,167 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── NAV-01: 사이드바 내비게이션 그룹 ───────────────────────── */
+
+.nav-group {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.nav-group + .nav-group {
+  margin-top: var(--spacing-lg);
+}
+
+.nav-group-label {
+  color: var(--color-text-light);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  margin: 0;
+  padding: 0 var(--spacing-md);
+  text-transform: uppercase;
+}
+
+/* ── 브레드크럼 ────────────────────────────────────────────── */
+
+.breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  list-style: none;
+  margin: 0 0 var(--spacing-sm);
+  padding: 0;
+}
+
+.breadcrumbs li {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: 0.85rem;
+  gap: var(--spacing-xs);
+}
+
+.breadcrumbs li + li::before {
+  color: var(--color-text-light);
+  content: "/";
+}
+
+.breadcrumbs a {
+  color: var(--color-text-muted);
+}
+
+.breadcrumbs a:hover {
+  color: var(--color-primary);
+}
+
+.breadcrumbs li[aria-current="page"] span {
+  color: var(--color-text-dark);
+  font-weight: 600;
+}
+
+/* ── 빈 상태(카드형 — 인라인 .empty-state와 구분) ───────────── */
+
+.empty-state-card {
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  display: grid;
+  gap: var(--spacing-sm);
+  justify-items: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  text-align: center;
+}
+
+.empty-state-card strong {
+  color: var(--color-text-dark);
+}
+
+.empty-state-card p {
+  margin: 0;
+}
+
+/* ── markdown 본문(레포트) ─────────────────────────────────── */
+
+.markdown-body {
+  color: var(--color-text-dark);
+  display: grid;
+  gap: var(--spacing-md);
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin: var(--spacing-sm) 0 0;
+}
+
+.markdown-body h1 {
+  font-size: 1.3rem;
+}
+
+.markdown-body h2 {
+  font-size: 1.15rem;
+}
+
+.markdown-body h3 {
+  font-size: 1rem;
+}
+
+.markdown-body p,
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  display: grid;
+  gap: var(--spacing-xs);
+  padding-left: 1.25rem;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-sm) var(--spacing-md);
+  text-align: left;
+}
+
+.markdown-body th {
+  background: var(--color-bg-secondary);
+}
+
+.markdown-body code {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.875em;
+  padding: 0.1em 0.35em;
+}
+
+.markdown-body pre {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  padding: var(--spacing-md);
+}
+
+.markdown-body pre code {
+  background: none;
+  padding: 0;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid var(--color-border);
+  color: var(--color-text-muted);
+  margin: 0;
+  padding-left: var(--spacing-md);
+}

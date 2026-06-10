@@ -49,18 +49,39 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
       window.clearInterval(intervalId);
     };
   }, [role]);
-  const navItems = isAdmin
+  // NAV-01: 업무 흐름(검토 업무)과 운영(계정/설정)을 그룹으로 분리하고, 라우트만 있고
+  // 사이드바에서 빠져 있던 검토 대상(/admin/review-targets) 링크를 추가한다.
+  const navGroups = isAdmin
     ? [
-        { label: "대시보드", to: "/admin/dashboard" },
-        { label: "특허관리", to: "/admin/patents" },
-        { label: "AI 레포트 메일 발송", to: "/admin/mailing" },
-        { label: "사업부/계정 관리", to: "/admin/users" },
-        { label: "설정", to: "/admin/settings" },
+        {
+          label: "검토 업무",
+          items: [
+            { label: "대시보드", to: "/admin/dashboard" },
+            { label: "검토 대상", to: "/admin/review-targets" },
+            { label: "특허관리", to: "/admin/patents" },
+            { label: "AI 레포트 메일 발송", to: "/admin/mailing" },
+          ],
+        },
+        {
+          label: "운영",
+          items: [
+            { label: "사업부/계정 관리", to: "/admin/users" },
+            { label: "설정", to: "/admin/settings" },
+          ],
+        },
       ]
     : [
-        { label: "대시보드", to: "/business/dashboard" },
-        { label: "제출 이력", to: "/business/submissions" },
-        { label: "설정", to: "/business/settings" },
+        {
+          label: "검토 업무",
+          items: [
+            { label: "대시보드", to: "/business/dashboard" },
+            { label: "제출 이력", to: "/business/submissions" },
+          ],
+        },
+        {
+          label: "운영",
+          items: [{ label: "설정", to: "/business/settings" }],
+        },
       ];
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   useEffect(() => {
@@ -105,10 +126,15 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
           </span>
         </Link>
         <nav className="nav-list">
-          {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to}>
-              {item.label}
-            </NavLink>
+          {navGroups.map((group) => (
+            <div className="nav-group" key={group.label}>
+              <p className="nav-group-label">{group.label}</p>
+              {group.items.map((item) => (
+                <NavLink key={item.to} to={item.to}>
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="sidebar-note">
