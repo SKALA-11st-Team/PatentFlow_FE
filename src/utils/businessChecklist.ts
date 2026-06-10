@@ -15,7 +15,8 @@ export function createBusinessChecklistDraft(patent: PatentDetail): BusinessChec
   return {
     patentId: patent.patentId,
     evaluatorName: patent.departmentName,
-    evaluatedAt: "2026-05-03",
+    // BIZ-09: 하드코딩 날짜 대신 오늘 날짜. 실제 제출 시각은 서버(submittedAt)가 정본이며 evaluatedAt은 표시용.
+    evaluatedAt: new Date().toISOString().slice(0, 10),
     responses: businessChecklistItems.map((item) => {
       const aiSuggestedScore = getAiSuggestedScore(patent, item.id);
 

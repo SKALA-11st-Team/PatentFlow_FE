@@ -388,7 +388,8 @@ function BusinessOpinionModal({
     setSubmitMessage("");
 
     try {
-      await onSubmit({ ...draft, evaluatedAt: "2026-05-04" });
+      // BIZ-09: 하드코딩 evaluatedAt 제거 — draft의 오늘 날짜 사용(실제 제출 시각은 서버 submittedAt 정본).
+      await onSubmit(draft);
     } catch (error) {
       setSubmitMessage(error instanceof Error ? error.message : "사업부 의견 제출에 실패했습니다.");
     } finally {

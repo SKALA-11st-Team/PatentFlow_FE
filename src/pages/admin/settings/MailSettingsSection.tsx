@@ -148,7 +148,8 @@ export function MailSettingsSection({
         <div className="section-header">
           <div>
             <h2>검토 요청 메일 발송 기준</h2>
-            <p>분기 시작일 N개월 전에 스케줄러가 자동으로 분기를 활성화하고 검토 요청 메일을 발송합니다.</p>
+            {/* MAIL-09: 스케줄러는 분기 '활성화'만 자동 처리한다 — 검토 요청 메일은 관리자가 수동 발송한다(거짓 카피 정정). */}
+            <p>분기 시작일 N개월 전에 스케줄러가 자동으로 분기를 활성화합니다. 검토 요청 메일은 관리자가 검토 대상 화면에서 수동으로 발송합니다.</p>
           </div>
         </div>
         <form className="settings-card settings-form" onSubmit={onSaveMailLeadMonths}>
