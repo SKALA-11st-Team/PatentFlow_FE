@@ -16,6 +16,8 @@ import {
   AiReportStructuredContent,
   RawMarkdownBlock,
 } from "./patent-detail/AiReportSection";
+import { AiReportEditModal } from "./patent-detail/AiReportEditModal";
+import { useAiReportEditing } from "./patent-detail/useAiReportEditing";
 import { FinalDecisionModal, FinalDecisionSection } from "./patent-detail/FinalDecisionSection";
 import { BusinessChecklistModal, BusinessOpinionSection } from "./patent-detail/BusinessChecklistSection";
 
@@ -29,7 +31,9 @@ type BadgeTone = "neutral" | "primary" | "success" | "warning" | "danger";
 export function PatentDetailPage({ role }: { role: UserRole }) {
   const {
     isAdmin,
+    patentId,
     patent,
+    setPatent,
     loadMessage,
     businessChecklistItems,
     businessChecklistSubmission,
@@ -72,6 +76,15 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     handleRequestAiReport,
     openFinalDecisionModal,
   } = usePatentDetail(role);
+
+  // FR-LEGAL-09: 레포트 편집은 별도 훅으로 관리한다(usePatentDetail 비대화 방지).
+  const aiReportEditing = useAiReportEditing(patentId, patent?.aiEvaluationReport ?? null, (updatedReport) => {
+    setPatent((current) =>
+      current
+        ? { ...current, aiEvaluationReport: updatedReport, currentRecommendation: updatedReport.recommendation }
+        : current,
+    );
+  });
 
   if (!patent) {
     return (
@@ -198,7 +211,26 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
       </div>
 
       <div className="detail-main">
-        <AiReportSection report={patent.aiEvaluationReport} />
+        <AiReportSection
+          report={
+            aiReportEditing.isShowingOriginal && aiReportEditing.originalReport
+              ? aiReportEditing.originalReport
+              : patent.aiEvaluationReport
+          }
+          editControls={
+            isAdmin
+              ? {
+                  canEdit: !patent.finalDecisionRecord.decisionId,
+                  isShowingOriginal: aiReportEditing.isShowingOriginal,
+                  isSavingEdit: aiReportEditing.isSavingEdit,
+                  editMessage: aiReportEditing.isEditModalOpen ? "" : aiReportEditing.editMessage,
+                  onOpenEditModal: () => aiReportEditing.setIsEditModalOpen(true),
+                  onToggleOriginal: aiReportEditing.handleToggleOriginal,
+                  onRevertEdit: aiReportEditing.handleRevertEdit,
+                }
+              : undefined
+          }
+        />
 
         <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
             <div className="summary-stack">
@@ -227,6 +259,17 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           대시보드로 돌아가기
         </Link>
       </div>
+
+      {isAdmin && aiReportEditing.isEditModalOpen ? (
+        <AiReportEditModal
+          report={patent.aiEvaluationReport}
+          hasBusinessResponse={Boolean(patent.businessOpinion.submittedAt)}
+          isSaving={aiReportEditing.isSavingEdit}
+          errorMessage={aiReportEditing.editMessage}
+          onSave={aiReportEditing.handleSaveEdit}
+          onClose={() => aiReportEditing.setIsEditModalOpen(false)}
+        />
+      ) : null}
 
       {isChecklistOpen ? (
         <BusinessChecklistModal

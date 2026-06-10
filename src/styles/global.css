@@ -3448,3 +3448,118 @@ tbody tr:hover {
   margin: 0;
   padding-left: var(--spacing-md);
 }
+
+/* ── FR-LEGAL-09: AI 레포트 법무 편집 ──────────────────────── */
+
+.ai-report-edit-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+  margin-bottom: var(--spacing-md);
+}
+
+.ai-report-edit-message {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin-right: auto;
+}
+
+.ai-report-edit-modal {
+  max-height: min(86vh, 920px);
+  overflow-y: auto;
+  width: min(720px, calc(100vw - 2 * var(--spacing-lg)));
+}
+
+.ai-report-edit-form {
+  display: grid;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.ai-report-edit-form .field-label {
+  display: grid;
+  font-weight: 600;
+  gap: var(--spacing-xs);
+}
+
+.ai-report-edit-form select,
+.ai-report-edit-form textarea,
+.ai-report-edit-form input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-weight: 400;
+  padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.ai-report-edit-scores {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.ai-report-edit-scores h3,
+.ai-report-edit-markdown h3 {
+  margin: 0;
+}
+
+.ai-report-edit-score-row {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+}
+
+.ai-report-edit-score-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ai-report-edit-score-input {
+  align-items: center;
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.ai-report-edit-score-input input {
+  width: 5rem;
+}
+
+.ai-report-edit-score-input span {
+  color: var(--color-text-light);
+  font-size: 0.85rem;
+}
+
+.field-error {
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.ai-report-edit-markdown {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.ai-report-edit-markdown-head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ai-report-edit-markdown textarea {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.ai-report-edit-markdown-preview {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  max-height: 340px;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+}

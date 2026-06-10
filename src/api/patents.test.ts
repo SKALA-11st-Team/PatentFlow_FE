@@ -101,6 +101,36 @@ describe("patents API Utils", () => {
       expect(report.degraded).toBe(true);
       expect(report.failureReason).toBe("외부 근거 일부 누락");
       expect(report.scores[0].grade).toBe("D");
+      // 편집 메타 미제공(구 BE 응답) 시 안전한 기본값으로 매핑된다.
+      expect(report.edited).toBe(false);
+      expect(report.editVersion).toBe(0);
+      expect(report.editStale).toBe(false);
+    });
+
+    it("법무 편집 메타(FR-LEGAL-09)를 화면 모델에 보존한다", () => {
+      const report = mapBackendAiEvaluationReport({
+        reportId: "R-2",
+        createdAt: "2026-06-08T00:00:00Z",
+        recommendation: "MAINTAIN",
+        recommendationReason: "법무 검토 결과 유지가 타당합니다.",
+        totalScore: 280,
+        averageScore: 70,
+        scores: [{ category: "RIGHTS", score: 72, grade: "B", evidence: "법무 수정 근거" }],
+        missingInformation: [],
+        edited: true,
+        editedBy: "legal01",
+        editedAt: "2026-06-11T09:00:00Z",
+        editVersion: 3,
+        editStale: true,
+        appliedCriteria: { version: 2 },
+      });
+
+      expect(report.edited).toBe(true);
+      expect(report.editedBy).toBe("legal01");
+      expect(report.editedAt).toBe("2026-06-11T09:00:00Z");
+      expect(report.editVersion).toBe(3);
+      expect(report.editStale).toBe(true);
+      expect(report.appliedCriteria).toEqual({ version: 2 });
     });
   });
 });

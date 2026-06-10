@@ -5,6 +5,7 @@ import { skaxPatentRows } from "../mocks/skaxPatents.raw";
 import type { BusinessReviewMailSendDraft } from "../types/mailing";
 import type {
   AiEvaluationReport,
+  AiReportEditPayload,
   LegalActionResult,
   PatentBibliographicInfo,
   PatentDetail,
@@ -24,6 +25,94 @@ import type {
 
 export function getMockPatentDetail(patentId: string): PatentDetail | undefined {
   return patentDetails.find((patent) => patent.patentId === patentId);
+}
+
+// FR-LEGAL-09: 데모 모드용 법무 편집 — AI 원본을 특허별로 보관하고 편집은 유효본에만 반영한다.
+const mockOriginalAiReports = new Map<string, AiEvaluationReport>();
+
+export function updateMockPatentAiReport(
+  patentId: string,
+  payload: AiReportEditPayload,
+): AiEvaluationReport | undefined {
+  const detailItem = patentDetails.find((patent) => patent.patentId === patentId);
+  if (!detailItem) {
+    return undefined;
+  }
+  const current = detailItem.aiEvaluationReport;
+  if (!mockOriginalAiReports.has(patentId)) {
+    mockOriginalAiReports.set(patentId, structuredClone(current));
+  }
+  const overrides = payload.overrides;
+  const edited: AiEvaluationReport = {
+    ...current,
+    recommendation: overrides.recommendation ?? current.recommendation,
+    recommendationText: overrides.recommendationText ?? current.recommendationText,
+    keyEvidence: overrides.keyEvidence ?? current.keyEvidence,
+    judgementGrounds: overrides.judgementGrounds ?? current.judgementGrounds,
+    businessCheckRequests: overrides.businessCheckRequests ?? current.businessCheckRequests,
+    rawMarkdown: overrides.rawMarkdown ?? current.rawMarkdown,
+    scores: current.scores.map((score) => {
+      const override = overrides.scores?.find((item) => item.category === score.category);
+      if (!override) {
+        return score;
+      }
+      return {
+        ...score,
+        score: override.score ?? score.score,
+        grade: override.grade ?? score.grade,
+        evidenceSummary: override.evidenceSummary ?? score.evidenceSummary,
+      };
+    }),
+    edited: true,
+    editedBy: "데모 관리자",
+    editedAt: new Date().toISOString(),
+    editVersion: (current.editVersion ?? 0) + 1,
+    editStale: false,
+  };
+  detailItem.aiEvaluationReport = edited;
+  if (overrides.recommendation) {
+    detailItem.currentRecommendation = overrides.recommendation;
+    const listItem = patents.find((patent) => patent.patentId === patentId);
+    if (listItem) {
+      listItem.currentRecommendation = overrides.recommendation;
+    }
+  }
+  return edited;
+}
+
+export function revertMockPatentAiReport(patentId: string): AiEvaluationReport | undefined {
+  const detailItem = patentDetails.find((patent) => patent.patentId === patentId);
+  const original = mockOriginalAiReports.get(patentId);
+  if (!detailItem) {
+    return undefined;
+  }
+  if (!original) {
+    return detailItem.aiEvaluationReport;
+  }
+  const reverted: AiEvaluationReport = {
+    ...structuredClone(original),
+    edited: false,
+    editedBy: null,
+    editedAt: null,
+    editVersion: (detailItem.aiEvaluationReport.editVersion ?? 0) + 1,
+    editStale: false,
+  };
+  detailItem.aiEvaluationReport = reverted;
+  detailItem.currentRecommendation = reverted.recommendation;
+  const listItem = patents.find((patent) => patent.patentId === patentId);
+  if (listItem) {
+    listItem.currentRecommendation = reverted.recommendation;
+  }
+  mockOriginalAiReports.delete(patentId);
+  return reverted;
+}
+
+export function getMockPatentAiReportOriginal(patentId: string): AiEvaluationReport | undefined {
+  const original = mockOriginalAiReports.get(patentId);
+  if (original) {
+    return structuredClone(original);
+  }
+  return patentDetails.find((patent) => patent.patentId === patentId)?.aiEvaluationReport;
 }
 
 export function updateMockPatent(patentId: string, payload: PatentUpsertPayload) {

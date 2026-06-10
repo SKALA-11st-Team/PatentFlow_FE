@@ -101,6 +101,40 @@ export interface AiEvaluationReport {
   }[];
   rawMarkdown?: string;
   markdownFilePath?: string;
+  // ── 법무 편집 메타(FR-LEGAL-09). 값 필드들은 편집이 반영된 '유효' 값이다. ──
+  edited?: boolean;
+  editedBy?: string | null;
+  editedAt?: string | null;
+  // 낙관적 락 토큰 — 편집 PATCH의 expectedEditVersion으로 그대로 돌려보낸다(미편집 시 0).
+  editVersion?: number;
+  // 편집 이후 레포트가 재생성되어 편집 기준이 낡았는지(경고 표시용).
+  editStale?: boolean;
+  // 이 레포트 생성에 적용된 가치평가 기준(valuationConfig) 스냅샷.
+  appliedCriteria?: Record<string, unknown> | null;
+}
+
+/** 법무 편집 오버라이드 — 수정한 필드만 담는다(없는 필드는 AI 원본 유지). */
+export interface AiReportScoreOverridePayload {
+  category: EvaluationCategory;
+  score?: number | null;
+  grade?: string | null;
+  evidenceSummary?: string | null;
+}
+
+export interface AiReportOverridesPayload {
+  recommendation?: Recommendation;
+  recommendationText?: string;
+  keyEvidence?: string;
+  judgementGrounds?: string[];
+  businessCheckRequests?: string[];
+  scores?: AiReportScoreOverridePayload[];
+  rawMarkdown?: string;
+}
+
+export interface AiReportEditPayload {
+  baseReportId: string;
+  expectedEditVersion: number;
+  overrides: AiReportOverridesPayload;
 }
 
 export type AiReportJobStatus = "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "DEGRADED";

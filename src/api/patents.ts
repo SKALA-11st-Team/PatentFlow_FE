@@ -11,17 +11,21 @@ import {
   assignMockPatentDepartment,
   createFallbackFinalDecisionResult,
   getFilteredMockPatents,
+  getMockPatentAiReportOriginal,
   getMockPatentDetail,
   getMockPatentPage,
   lookupMockPatentBibliographicInfo,
   recordMockPatentFinalDecision,
   requestMockPatentAiReport,
+  revertMockPatentAiReport,
   sendMockBusinessReviewMails,
   suggestMockPatentContextFields,
   updateMockPatent,
+  updateMockPatentAiReport,
 } from "./patents.mockApi";
 import type {
   AiEvaluationReport,
+  AiReportEditPayload,
   BusinessOpinion,
   PatentBibliographicInfo,
   PatentDetail,
@@ -165,6 +169,13 @@ interface BackendPatentDetail extends BackendPatentListItem {
     externalSources?: Array<{ title?: string | null; url?: string | null }> | null;
     rawMarkdown?: string;
     markdownFilePath?: string;
+    // FR-LEGAL-09: 법무 편집 메타. 값 필드들은 편집이 반영된 '유효' 값이다.
+    edited?: boolean | null;
+    editedBy?: string | null;
+    editedAt?: string | null;
+    editVersion?: number | null;
+    editStale?: boolean | null;
+    appliedCriteria?: Record<string, unknown> | null;
   };
   finalDecisionRecord: {
     decisionId: string | null;
@@ -474,6 +485,49 @@ export async function requestPatentAiReport(patentId: string): Promise<AiReportJ
   };
 }
 
+/**
+ * @relatedFR FR-LEGAL-09
+ * @relatedUI UI-LEGAL-04
+ * @description 법무팀이 AI 평가 레포트를 편집한다(부분 PATCH 누적). AI 원본은 BE에서 불변 보존되고
+ *     편집은 오버라이드로 분리 저장되며, 응답은 편집이 반영된 '유효 레포트'다.
+ */
+export async function updatePatentAiReport(
+  patentId: string,
+  payload: AiReportEditPayload,
+): Promise<AiEvaluationReport | undefined> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<BackendPatentDetail["aiEvaluationReport"]>>(
+      `/patents/${patentId}/ai-report`,
+      { method: "PATCH", body: JSON.stringify(payload) },
+    );
+    return response.data ? mapBackendAiEvaluationReport(response.data) : undefined;
+  }
+  return updateMockPatentAiReport(patentId, payload);
+}
+
+/** 법무 편집을 모두 폐기하고 AI 원본 레포트로 되돌린다. */
+export async function revertPatentAiReport(patentId: string): Promise<AiEvaluationReport | undefined> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<BackendPatentDetail["aiEvaluationReport"]>>(
+      `/patents/${patentId}/ai-report/edits`,
+      { method: "DELETE" },
+    );
+    return response.data ? mapBackendAiEvaluationReport(response.data) : undefined;
+  }
+  return revertMockPatentAiReport(patentId);
+}
+
+/** 'AI 원본 보기' — 법무 편집을 반영하지 않은 순수 AI 레포트를 조회한다. */
+export async function getPatentAiReportOriginal(patentId: string): Promise<AiEvaluationReport | undefined> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<BackendPatentDetail["aiEvaluationReport"]>>(
+      `/patents/${patentId}/ai-report/original`,
+    );
+    return response.data ? mapBackendAiEvaluationReport(response.data) : undefined;
+  }
+  return getMockPatentAiReportOriginal(patentId);
+}
+
 export async function getPatentAiReportStatus(patentId: string): Promise<AiReportJob | undefined> {
   if (isBackendApiEnabled()) {
     const response = await requestJson<ApiEnvelope<AiReportJob>>(`/patents/${patentId}/ai-report/status`);
@@ -678,6 +732,13 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
     externalSources: mapBackendExternalSources(report.externalSources),
     rawMarkdown: report.rawMarkdown,
     markdownFilePath: report.markdownFilePath,
+    // FR-LEGAL-09: 법무 편집 메타(배지/낙관적 락/원본 보기 토글에 사용).
+    edited: Boolean(report.edited),
+    editedBy: report.editedBy ?? null,
+    editedAt: report.editedAt ?? null,
+    editVersion: report.editVersion ?? 0,
+    editStale: Boolean(report.editStale),
+    appliedCriteria: report.appliedCriteria ?? null,
   };
 }
 
