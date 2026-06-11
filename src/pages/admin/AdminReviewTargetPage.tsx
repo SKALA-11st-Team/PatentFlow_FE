@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { getDepartmentRecipientMappings } from "../../api/mailing";
+import { getDepartmentRecipientMappings, getPatentPdfLinks } from "../../api/mailing";
 import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { getDepartments, type Department } from "../../api/departments";
 import { Button } from "../../components/common/Button";
@@ -198,12 +198,14 @@ export function AdminReviewTargetPage() {
     setContextFilterValue("ALL");
   }
 
-  function handleOpenMailPreview() {
+  async function handleOpenMailPreview() {
     const selectedPatents = selectedPatentIds
       .map((patentId) => patentList.find((patent) => patent.patentId === patentId))
       .filter((patent): patent is PatentListItem => Boolean(patent))
       .filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
-    const selectedDrafts = createGroupedBusinessReviewMailDrafts(selectedPatents, recipientMappings);
+    // MAIL-12: PDF 링크 해석 실패는 빈 목록으로 진행 — 미리보기를 막지 않는다.
+    const pdfLinks = await getPatentPdfLinks(selectedPatents.map((patent) => patent.patentId));
+    const selectedDrafts = createGroupedBusinessReviewMailDrafts(selectedPatents, recipientMappings, pdfLinks);
 
     setMailDrafts(selectedDrafts);
     setActiveMailIndex(0);

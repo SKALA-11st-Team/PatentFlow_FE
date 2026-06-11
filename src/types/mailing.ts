@@ -17,6 +17,19 @@ export interface BusinessReviewMailPatentSummary {
   managementNumber: string;
   originalPatentUrl?: string | null;
   title: string;
+  // MAIL-12: KR 특허 공개전문 PDF의 presigned 다운로드 링크(만료 있음). 비KR/실패 시 없음.
+  pdfDownloadUrl?: string | null;
+}
+
+/**
+ * @relatedFR FR-LEGAL-13
+ * MAIL-12: 특허별 PDF 다운로드 링크 해석 결과 — KIPRIS_S3는 presigned 링크, ORIGINAL_URL은 원문 폴백.
+ */
+export interface PatentPdfLink {
+  patentId: string;
+  pdfUrl: string | null;
+  source: "KIPRIS_S3" | "ORIGINAL_URL";
+  expiresAt: string | null;
 }
 
 export interface BusinessReviewMailSendDraft {

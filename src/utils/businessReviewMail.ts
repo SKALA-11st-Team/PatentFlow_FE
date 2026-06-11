@@ -1,10 +1,12 @@
 import type { PatentListItem } from "../types/patent";
-import type { BusinessReviewMailSendDraft, DepartmentRecipientMapping } from "../types/mailing";
+import type { BusinessReviewMailSendDraft, DepartmentRecipientMapping, PatentPdfLink } from "../types/mailing";
 
 export interface BusinessReviewMailDraft {
   body: string;
   ccEmails: string[];
   patents: PatentListItem[];
+  // MAIL-12: 특허별 PDF 다운로드 링크(있을 때만). 발송 payload와 이력에 보존된다.
+  pdfLinkByPatentId: Map<string, PatentPdfLink>;
   recipientEmail: string;
   recipientName: string;
   subject: string;
@@ -18,8 +20,9 @@ export interface BusinessReviewMailDraft {
 export function createBusinessReviewMailDraft(
   patent: PatentListItem,
   recipientMappings: DepartmentRecipientMapping[] = [],
+  pdfLinks: PatentPdfLink[] = [],
 ): BusinessReviewMailDraft {
-  return createBusinessReviewMailDraftFromPatents([patent], recipientMappings);
+  return createBusinessReviewMailDraftFromPatents([patent], recipientMappings, pdfLinks);
 }
 
 /**
@@ -30,6 +33,7 @@ export function createBusinessReviewMailDraft(
 export function createBusinessReviewMailDraftFromPatents(
   patents: PatentListItem[],
   recipientMappings: DepartmentRecipientMapping[] = [],
+  pdfLinks: PatentPdfLink[] = [],
 ): BusinessReviewMailDraft {
   const [firstPatent] = patents;
 
@@ -37,6 +41,10 @@ export function createBusinessReviewMailDraftFromPatents(
     throw new Error("메일 초안을 만들 특허가 없습니다.");
   }
 
+  // MAIL-12: KIPRIS_S3 링크만 본문에 PDF 라인을 추가한다(ORIGINAL_URL 폴백은 기존 원문 라인으로 충분).
+  const pdfLinkByPatentId = new Map(
+    pdfLinks.filter((link) => link.source === "KIPRIS_S3" && link.pdfUrl).map((link) => [link.patentId, link]),
+  );
   const recipient = getDepartmentRecipient(firstPatent, recipientMappings);
   const patentLines = patents.flatMap((patent, index) => [
     `${index + 1}. ${patent.managementNumber} · ${patent.title}`,
@@ -44,6 +52,9 @@ export function createBusinessReviewMailDraftFromPatents(
     `   - 관련 기술: ${getDisplayValue(patent.technologyArea)}`,
     `   - 연차료 납부 예정일: ${patent.feeDueDate}`,
     `   - 특허 원문: ${getOriginalPatentUrl(patent)}`,
+    ...(pdfLinkByPatentId.has(patent.patentId)
+      ? [`   - 특허 PDF 다운로드: ${pdfLinkByPatentId.get(patent.patentId)!.pdfUrl} (7일간 유효)`]
+      : []),
   ]);
 
   // MAIL-10: placeholder(patentflow.example.com) 대신 실제 앱 URL — VITE_APP_URL 우선, 없으면 현재 origin,
@@ -65,6 +76,7 @@ export function createBusinessReviewMailDraftFromPatents(
     ].join("\n"),
     ccEmails: recipient.ccEmails,
     patents,
+    pdfLinkByPatentId,
     recipientEmail: recipient.email,
     recipientName: recipient.name,
     subject:
@@ -82,6 +94,7 @@ export function createBusinessReviewMailDraftFromPatents(
 export function createGroupedBusinessReviewMailDrafts(
   patents: PatentListItem[],
   recipientMappings: DepartmentRecipientMapping[] = [],
+  pdfLinks: PatentPdfLink[] = [],
 ) {
   const groupedPatents = new Map<string, PatentListItem[]>();
 
@@ -93,7 +106,7 @@ export function createGroupedBusinessReviewMailDrafts(
   });
 
   return Array.from(groupedPatents.values()).map((groupedPatentList) =>
-    createBusinessReviewMailDraftFromPatents(groupedPatentList, recipientMappings),
+    createBusinessReviewMailDraftFromPatents(groupedPatentList, recipientMappings, pdfLinks),
   );
 }
 
@@ -137,6 +150,7 @@ export function toBusinessReviewMailSendDraft(draft: BusinessReviewMailDraft): B
       originalPatentUrl: getOriginalPatentUrl(patent),
       patentId: patent.patentId,
       title: patent.title,
+      pdfDownloadUrl: draft.pdfLinkByPatentId.get(patent.patentId)?.pdfUrl ?? null,
     })),
     recipientEmail: draft.recipientEmail,
     recipientName: draft.recipientName,

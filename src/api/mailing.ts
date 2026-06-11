@@ -4,7 +4,7 @@ import {
   getMockMailingHistory,
   updateMockDepartmentRecipientMapping,
 } from "../mocks/mailing.mock";
-import type { DepartmentRecipientMapping, MailingHistoryItem } from "../types/mailing";
+import type { DepartmentRecipientMapping, MailingHistoryItem, PatentPdfLink } from "../types/mailing";
 
 export interface MailingHistoryQuery {
   patentId?: string;
@@ -26,6 +26,36 @@ export async function getDepartmentRecipientMappings(): Promise<DepartmentRecipi
   }
 
   return getMockDepartmentRecipientMappings();
+}
+
+/**
+ * @relatedFR FR-LEGAL-13
+ * @relatedUI UI-LEGAL-05
+ * @description MAIL-12: 메일 초안에 실을 특허 PDF 다운로드 링크를 일괄 해석한다.
+ * 실패하면 빈 목록을 돌려 초안 생성을 막지 않는다(원문 URL 라인은 항상 존재).
+ */
+export async function getPatentPdfLinks(patentIds: string[]): Promise<PatentPdfLink[]> {
+  if (patentIds.length === 0) {
+    return [];
+  }
+  if (isBackendApiEnabled()) {
+    try {
+      const response = await requestJson<ApiEnvelope<PatentPdfLink[]>>("/mailings/patent-pdf-links", {
+        method: "POST",
+        body: JSON.stringify({ patentIds }),
+      });
+      return response.data ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  return patentIds.map((patentId) => ({
+    patentId,
+    pdfUrl: null,
+    source: "ORIGINAL_URL",
+    expiresAt: null,
+  }));
 }
 
 /**
