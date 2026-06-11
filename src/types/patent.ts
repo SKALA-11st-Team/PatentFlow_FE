@@ -5,6 +5,7 @@
  */
 import type {
   BusinessOpinionDecision,
+  CoApplicantConsentStatus,
   EvaluationCategory,
   LegalActionResult,
   PatentLifecycleStatus,
@@ -162,11 +163,23 @@ export interface BusinessOpinion {
   submittedAt: string | null;
 }
 
+// 공동출원 특허는 연차료 유지/포기 최종 판단 전 공동출원인 합의(AGREED)가 필요하다.
+// CoApplicantConsentStatus 는 constants/status 에 정의(다른 상태 enum과 동일 패턴).
+export interface CoApplicantConsent {
+  status: CoApplicantConsentStatus;
+  reason: string | null;
+  decidedAt: string | null;
+  decidedBy: string | null;
+}
+
 export interface PatentDetail extends PatentListItem {
   summary: PatentSummary;
   aiEvaluationReport: AiEvaluationReport;
   finalDecisionRecord: FinalDecisionRecord;
   businessOpinion: BusinessOpinion;
+  // 공동출원 합의 게이트: jointApplication 이면 최종 판단 전 coApplicantConsent(AGREED) 필요.
+  jointApplication?: boolean;
+  coApplicantConsent?: CoApplicantConsent | null;
 }
 
 export interface PatentHistoryItem {

@@ -18,7 +18,11 @@ import {
 } from "./patent-detail/AiReportSection";
 import { AiReportEditModal } from "./patent-detail/AiReportEditModal";
 import { useAiReportEditing } from "./patent-detail/useAiReportEditing";
-import { FinalDecisionModal, FinalDecisionSection } from "./patent-detail/FinalDecisionSection";
+import {
+  CoApplicantConsentModal,
+  FinalDecisionModal,
+  FinalDecisionSection,
+} from "./patent-detail/FinalDecisionSection";
 import { BusinessChecklistModal, BusinessOpinionSection } from "./patent-detail/BusinessChecklistSection";
 
 type BadgeTone = "neutral" | "primary" | "success" | "warning" | "danger";
@@ -75,6 +79,16 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     handleRecordFinalDecision,
     handleRequestAiReport,
     openFinalDecisionModal,
+    coApplicantConsentMessage,
+    isApplyingCoApplicantConsent,
+    isConsentModalOpen,
+    consentStatusDraft,
+    setConsentStatusDraft,
+    consentReasonDraft,
+    setConsentReasonDraft,
+    handleRecordCoApplicantConsent,
+    openCoApplicantConsentModal,
+    setIsConsentModalOpen,
   } = usePatentDetail(role);
 
   // FR-LEGAL-09: 레포트 편집은 별도 훅으로 관리한다(usePatentDetail 비대화 방지).
@@ -135,6 +149,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta label="관리번호" value={patent.managementNumber} />
           <Meta label="출원번호" value={patent.applicationNumber} />
           <Meta label="등록번호" value={patent.registrationNumber ?? "N/A"} />
+          <Meta label="공동출원인" value={patent.coApplicants} />
           <Meta label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} />
           <Meta label="관련사업 분야" value={patent.businessArea} />
           <Meta label="관련기술 분야" value={patent.technologyArea} />
@@ -165,10 +180,13 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
               canSendBusinessReviewMail={canSendBusinessReviewMail}
               isApplyingDecision={isApplyingDecision}
               isWorkflowActionProcessing={isWorkflowActionProcessing}
+              coApplicantConsentMessage={coApplicantConsentMessage}
+              isApplyingCoApplicantConsent={isApplyingCoApplicantConsent}
               onRequestAiReport={handleRequestAiReport}
               onOpenMailPreview={handleOpenMailPreview}
               onOpenMailHistory={handleOpenMailHistory}
               onOpenFinalDecisionModal={openFinalDecisionModal}
+              onOpenCoApplicantConsentModal={openCoApplicantConsentModal}
             />
           </>
         ) : (
@@ -289,6 +307,19 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           onReasonChange={setDecisionReasonDraft}
           onClose={() => setIsDecisionModalOpen(false)}
           onSubmit={handleRecordFinalDecision}
+          patentTitle={patent.title}
+        />
+      ) : null}
+
+      {isConsentModalOpen ? (
+        <CoApplicantConsentModal
+          status={consentStatusDraft}
+          reason={consentReasonDraft}
+          isSubmitting={isApplyingCoApplicantConsent}
+          onStatusChange={setConsentStatusDraft}
+          onReasonChange={setConsentReasonDraft}
+          onClose={() => setIsConsentModalOpen(false)}
+          onSubmit={handleRecordCoApplicantConsent}
           patentTitle={patent.title}
         />
       ) : null}

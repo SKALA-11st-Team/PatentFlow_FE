@@ -19,6 +19,7 @@ import { useBusinessChecklistItems } from "../../../hooks/useBusinessChecklistIt
 import { businessOpinionLabels } from "../../../constants/status";
 import type { BusinessChecklistSubmission } from "../../../types/businessChecklist";
 import type { AiReportJob, PatentDetail, PatentHistoryItem, UserRole } from "../../../types/patent";
+import { useCoApplicantConsent } from "./useCoApplicantConsent";
 import { useFinalDecision } from "./useFinalDecision";
 import { useMailWorkflow } from "./useMailWorkflow";
 
@@ -296,6 +297,8 @@ export function usePatentDetail(role: UserRole) {
 
   // 최종 판단/메일 발송 클러스터 — 순수 분리된 훅을 합성한다(외부 인터페이스 불변).
   const finalDecision = useFinalDecision({ patent, setPatent, refreshPatentHistory });
+  // 공동출원 합의 게이트 클러스터.
+  const coApplicantConsent = useCoApplicantConsent({ patent, setPatent, refreshPatentHistory });
   const mailWorkflow = useMailWorkflow({
     patent,
     setPatent,
@@ -360,6 +363,17 @@ export function usePatentDetail(role: UserRole) {
     setIsChecklistOpen,
     isDecisionModalOpen: finalDecision.isDecisionModalOpen,
     setIsDecisionModalOpen: finalDecision.setIsDecisionModalOpen,
+    // 공동출원 합의 게이트
+    coApplicantConsentMessage: coApplicantConsent.consentMessage,
+    isApplyingCoApplicantConsent: coApplicantConsent.isApplyingConsent,
+    isConsentModalOpen: coApplicantConsent.isConsentModalOpen,
+    consentStatusDraft: coApplicantConsent.consentStatusDraft,
+    setConsentStatusDraft: coApplicantConsent.setConsentStatusDraft,
+    consentReasonDraft: coApplicantConsent.consentReasonDraft,
+    setConsentReasonDraft: coApplicantConsent.setConsentReasonDraft,
+    handleRecordCoApplicantConsent: coApplicantConsent.handleRecordConsent,
+    openCoApplicantConsentModal: coApplicantConsent.openConsentModal,
+    setIsConsentModalOpen: coApplicantConsent.setIsConsentModalOpen,
     mailDrafts: mailWorkflow.mailDrafts,
     activeMailIndex: mailWorkflow.activeMailIndex,
     setActiveMailIndex: mailWorkflow.setActiveMailIndex,

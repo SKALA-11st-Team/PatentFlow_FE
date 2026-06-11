@@ -38,6 +38,12 @@ export interface ContractGuards {
   patentDetail: AssertSchemaKeys<
     Schemas["PatentDetailResponse"],
     | "patentId" | "summary" | "aiEvaluationReport" | "finalDecisionRecord" | "businessOpinion" | "inReview"
+    | "jointApplication" | "coApplicantConsent"
+  >;
+  // src/api/patents.ts — mapBackendCoApplicantConsent (공동출원 합의 게이트)
+  coApplicantConsent: AssertSchemaKeys<
+    Schemas["CoApplicantConsentResponse"],
+    "status" | "reason" | "decidedAt" | "decidedBy"
   >;
   // src/api/patents.ts — mapBackendSummary(588). 주의: rawMarkdown 은 BE PatentSummaryResponse 에 없어
   // 매핑/가드 모두에서 제외(드리프트 정리 완료).

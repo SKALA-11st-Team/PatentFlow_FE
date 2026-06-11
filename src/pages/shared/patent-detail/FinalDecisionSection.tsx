@@ -2,8 +2,13 @@ import { Badge } from "../../../components/common/Badge";
 import { Button } from "../../../components/common/Button";
 import { Modal } from "../../../components/common/Modal";
 import { Section } from "../../../components/common/Section";
-import { legalActionResultLabels } from "../../../constants/status";
-import type { LegalActionResult, PatentDetail, ReviewWorkflowStatus } from "../../../types/patent";
+import {
+  coApplicantConsentStatusLabels,
+  coApplicantConsentStatusTone,
+  legalActionResultLabels,
+  type CoApplicantConsentStatus,
+} from "../../../constants/status";
+import type { CoApplicantConsent, LegalActionResult, PatentDetail, ReviewWorkflowStatus } from "../../../types/patent";
 
 /**
  * @relatedFR FR-LEGAL-10
@@ -60,10 +65,13 @@ interface FinalDecisionSectionProps {
   canSendBusinessReviewMail: boolean;
   isApplyingDecision: boolean;
   isWorkflowActionProcessing: boolean;
+  coApplicantConsentMessage: string;
+  isApplyingCoApplicantConsent: boolean;
   onRequestAiReport: () => void;
   onOpenMailPreview: () => void;
   onOpenMailHistory: () => void;
   onOpenFinalDecisionModal: (patentDetail: PatentDetail) => void;
+  onOpenCoApplicantConsentModal: () => void;
 }
 
 /**
@@ -79,12 +87,19 @@ export function FinalDecisionSection({
   canSendBusinessReviewMail,
   isApplyingDecision,
   isWorkflowActionProcessing,
+  coApplicantConsentMessage,
+  isApplyingCoApplicantConsent,
   onRequestAiReport,
   onOpenMailPreview,
   onOpenMailHistory,
   onOpenFinalDecisionModal,
+  onOpenCoApplicantConsentModal,
 }: FinalDecisionSectionProps) {
   const canViewMailHistory = patentDetail.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE";
+  // 공동출원 게이트: jointApplication 이면 합의(AGREED) 전까지 유지/포기 처리를 막는다.
+  const isJointApplication = patentDetail.jointApplication ?? false;
+  const isCoApplicantAgreed = patentDetail.coApplicantConsent?.status === "AGREED";
+  const isFinalDecisionBlocked = isApplyingDecision || (isJointApplication && !isCoApplicantAgreed);
 
   return (
     <Section title="최종 판단" description="AI 권고와 사업부 의견을 검토한 뒤 관리자 결론과 실제 법무 처리 결과를 기록합니다.">
@@ -122,23 +137,31 @@ export function FinalDecisionSection({
           ) : (
             <div className="inline-action-group">
               {patentDetail.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED" ? (
-                patentDetail.businessOpinion.opinion === "ABANDON" ? (
+                <>
+                  {isJointApplication ? (
+                    <CoApplicantConsentPanel
+                      coApplicants={patentDetail.coApplicants}
+                      consent={patentDetail.coApplicantConsent ?? null}
+                      message={coApplicantConsentMessage}
+                      isSubmitting={isApplyingCoApplicantConsent}
+                      onOpenModal={onOpenCoApplicantConsentModal}
+                    />
+                  ) : null}
                   <Button
-                    disabled={isApplyingDecision}
+                    disabled={isFinalDecisionBlocked}
                     onClick={() => onOpenFinalDecisionModal(patentDetail)}
                     type="button"
                   >
-                    {isApplyingDecision ? "처리 중..." : "포기 처리"}
+                    {isApplyingDecision
+                      ? "처리 중..."
+                      : patentDetail.businessOpinion.opinion === "ABANDON"
+                        ? "포기 처리"
+                        : "납부 완료"}
                   </Button>
-                ) : (
-                  <Button
-                    disabled={isApplyingDecision}
-                    onClick={() => onOpenFinalDecisionModal(patentDetail)}
-                    type="button"
-                  >
-                    {isApplyingDecision ? "처리 중..." : "납부 완료"}
-                  </Button>
-                )
+                  {isJointApplication && !isCoApplicantAgreed ? (
+                    <p className="notice">공동출원인 합의(합의 완료) 후 유지/포기 처리를 진행할 수 있습니다.</p>
+                  ) : null}
+                </>
               ) : (
                 <Button
                   disabled={!canSendBusinessReviewMail && !canViewMailHistory}
@@ -213,6 +236,106 @@ export function FinalDecisionModal({
         </Button>
         <Button disabled={isSubmitting} onClick={onSubmit} type="button">
           {isSubmitting ? "처리 중..." : legalActionResult === "ABANDONED" ? "포기 처리" : "납부 완료"}
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+/**
+ * @relatedFR FR-LEGAL-09, FR-LEGAL-10
+ * @relatedUI UI-LEGAL-04
+ * @description 공동출원 특허의 합의 상태를 표시하고 합의 기록 모달을 여는 패널. 합의 전까지 최종 판단을 막는다.
+ */
+function CoApplicantConsentPanel({
+  coApplicants,
+  consent,
+  message,
+  isSubmitting,
+  onOpenModal,
+}: {
+  coApplicants: string;
+  consent: CoApplicantConsent | null;
+  message: string;
+  isSubmitting: boolean;
+  onOpenModal: () => void;
+}) {
+  const status = consent?.status ?? "PENDING";
+  return (
+    <div className="co-applicant-consent-panel">
+      <Badge tone={coApplicantConsentStatusTone[status]}>{coApplicantConsentStatusLabels[status]}</Badge>
+      <p>공동출원 특허입니다. 연차료 유지/포기 결정 전 공동출원인과 합의가 필요합니다.</p>
+      <div className="decision-result-row">
+        <span>공동출원인</span>
+        <strong>{coApplicants}</strong>
+      </div>
+      {consent?.reason ? <small>합의 사유: {consent.reason}</small> : null}
+      {message ? <p className="notice">{message}</p> : null}
+      <Button disabled={isSubmitting} onClick={onOpenModal} type="button" variant="secondary">
+        {isSubmitting ? "기록 중..." : "공동출원인 합의 기록"}
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * @relatedFR FR-LEGAL-09, FR-LEGAL-10
+ * @relatedUI UI-LEGAL-04
+ * @description 공동출원인 합의 상태(합의 완료/불성립)와 사유를 입력하는 모달.
+ */
+export function CoApplicantConsentModal({
+  status,
+  reason,
+  isSubmitting,
+  onStatusChange,
+  onReasonChange,
+  onClose,
+  onSubmit,
+  patentTitle,
+}: {
+  status: CoApplicantConsentStatus;
+  reason: string;
+  isSubmitting: boolean;
+  onStatusChange: (status: CoApplicantConsentStatus) => void;
+  onReasonChange: (reason: string) => void;
+  onClose: () => void;
+  onSubmit: () => void | Promise<void>;
+  patentTitle: string;
+}) {
+  return (
+    <Modal ariaLabel="공동출원인 합의 기록" className="business-checklist-modal" onClose={onClose}>
+      <div className="modal-header">
+        <div>
+          <p className="eyebrow">공동출원인 합의</p>
+          <h2>공동출원인 합의 기록</h2>
+          <p>{patentTitle}</p>
+        </div>
+        <button aria-label="공동출원인 합의 닫기" className="modal-close-button" onClick={onClose} type="button">
+          ×
+        </button>
+      </div>
+      <label className="checklist-memo-label">
+        <span>합의 상태</span>
+        <select onChange={(event) => onStatusChange(event.target.value as CoApplicantConsentStatus)} value={status}>
+          <option value="AGREED">합의 완료</option>
+          <option value="DISAGREED">합의 불성립</option>
+        </select>
+      </label>
+      <label className="checklist-memo-label">
+        <span>합의 내용/사유</span>
+        <textarea
+          onChange={(event) => onReasonChange(event.target.value)}
+          placeholder="공동출원인과의 합의 내용(연차료 분담 등) 또는 불성립 사유를 입력하세요."
+          value={reason}
+        />
+      </label>
+
+      <div className="modal-actions">
+        <Button onClick={onClose} type="button" variant="secondary">
+          취소
+        </Button>
+        <Button disabled={isSubmitting} onClick={onSubmit} type="button">
+          {isSubmitting ? "기록 중..." : "합의 기록"}
         </Button>
       </div>
     </Modal>

@@ -32,6 +32,9 @@ export const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED"] as const;
 
 export type LegalActionResult = (typeof LEGAL_ACTION_RESULTS)[number];
 
+export const CO_APPLICANT_CONSENT_STATUSES = ["PENDING", "AGREED", "DISAGREED"] as const;
+export type CoApplicantConsentStatus = (typeof CO_APPLICANT_CONSENT_STATUSES)[number];
+
 export const EVALUATION_CATEGORIES = [
   "RIGHTS",
   "TECHNOLOGY",
@@ -217,6 +220,19 @@ export function getBusinessOpinionTone(opinion: BusinessOpinionDecision) {
 export const legalActionResultLabels: Record<LegalActionResult, string> = {
   MAINTAINED: "유지 처리",
   ABANDONED: "포기 처리",
+};
+
+// 공동출원 합의 상태 라벨/배지 tone.
+export const coApplicantConsentStatusLabels: Record<CoApplicantConsentStatus, string> = {
+  PENDING: "합의 대기",
+  AGREED: "합의 완료",
+  DISAGREED: "합의 불성립",
+};
+
+export const coApplicantConsentStatusTone: Record<CoApplicantConsentStatus, StatusTone> = {
+  PENDING: "warning",
+  AGREED: "success",
+  DISAGREED: "danger",
 };
 
 /**

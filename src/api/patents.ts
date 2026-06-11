@@ -6,7 +6,7 @@ import {
   type PageMeta,
   type PaginatedApiEnvelope,
 } from "./client";
-import { EVALUATION_CATEGORIES } from "../constants/status";
+import { EVALUATION_CATEGORIES, type CoApplicantConsentStatus } from "../constants/status";
 import {
   assignMockPatentDepartment,
   createFallbackFinalDecisionResult,
@@ -15,6 +15,7 @@ import {
   getMockPatentDetail,
   getMockPatentPage,
   lookupMockPatentBibliographicInfo,
+  recordMockCoApplicantConsent,
   recordMockPatentFinalDecision,
   requestMockPatentAiReport,
   revertMockPatentAiReport,
@@ -27,6 +28,7 @@ import type {
   AiEvaluationReport,
   AiReportEditPayload,
   BusinessOpinion,
+  CoApplicantConsent,
   PatentBibliographicInfo,
   PatentDetail,
   AiReportJob,
@@ -187,6 +189,14 @@ interface BackendPatentDetail extends BackendPatentListItem {
     reason: string | null;
     submittedAt: string | null;
   };
+  // 공동출원 합의 게이트.
+  jointApplication?: boolean;
+  coApplicantConsent?: {
+    status?: CoApplicantConsentStatus | null;
+    reason?: string | null;
+    decidedAt?: string | null;
+    decidedBy?: string | null;
+  } | null;
 }
 
 type BackendPatentBibliographicInfo = Omit<
@@ -461,6 +471,31 @@ async function savePatentFinalDecision(
   return recordMockPatentFinalDecision(patentId, payload);
 }
 
+export interface CoApplicantConsentPayload {
+  status: CoApplicantConsentStatus;
+  reason: string;
+}
+
+/**
+ * @relatedFR FR-LEGAL-09, FR-LEGAL-10
+ * @relatedUI UI-LEGAL-04
+ * @description 공동출원 특허의 공동출원인 합의를 기록한다(연차료 유지/포기 최종 판단의 전제 게이트).
+ */
+export async function recordCoApplicantConsent(
+  patentId: string,
+  payload: CoApplicantConsentPayload,
+): Promise<PatentDetail | undefined> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<BackendPatentDetail>>(
+      `/patents/${patentId}/co-applicant-consent`,
+      { body: JSON.stringify(payload), method: "POST" },
+    );
+    return response.data ? mapBackendPatentDetail(response.data) : undefined;
+  }
+
+  return recordMockCoApplicantConsent(patentId, payload);
+}
+
 /**
  * @description 단건 특허에 대해 AI 평가 레포트 생성을 비동기 잡으로 요청한다.
  */
@@ -690,6 +725,22 @@ function mapBackendPatentDetail(patent: BackendPatentDetail): PatentDetail {
     aiEvaluationReport: mapBackendAiEvaluationReport(patent.aiEvaluationReport),
     finalDecisionRecord: mapBackendFinalDecisionRecord(patent.finalDecisionRecord),
     businessOpinion: mapBackendBusinessOpinion(patent.businessOpinion),
+    jointApplication: Boolean(patent.jointApplication),
+    coApplicantConsent: mapBackendCoApplicantConsent(patent.coApplicantConsent),
+  };
+}
+
+function mapBackendCoApplicantConsent(
+  consent: BackendPatentDetail["coApplicantConsent"],
+): CoApplicantConsent | null {
+  if (!consent || !consent.status) {
+    return null;
+  }
+  return {
+    status: consent.status,
+    reason: consent.reason ?? null,
+    decidedAt: consent.decidedAt ?? null,
+    decidedBy: consent.decidedBy ?? null,
   };
 }
 

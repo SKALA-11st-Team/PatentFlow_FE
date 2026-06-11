@@ -6,6 +6,7 @@ import type { BusinessReviewMailSendDraft } from "../types/mailing";
 import type {
   AiEvaluationReport,
   AiReportEditPayload,
+  CoApplicantConsent,
   LegalActionResult,
   PatentBibliographicInfo,
   PatentDetail,
@@ -16,6 +17,7 @@ import type {
 } from "../types/patent";
 import type {
   BulkMailingResult,
+  CoApplicantConsentPayload,
   FinalDecisionPayload,
   FinalDecisionResult,
   PatentContextSuggestion,
@@ -23,8 +25,42 @@ import type {
   PatentListQuery,
 } from "./patents";
 
+// 공동출원 합의 게이트(데모) — 특허별 합의 기록을 인메모리로 보관한다.
+const mockCoApplicantConsents = new Map<string, CoApplicantConsent>();
+
+function isMockJointApplication(detail: PatentDetail): boolean {
+  const co = detail.coApplicants?.trim();
+  return Boolean(co) && co !== "없음" && co !== "정보 부족 있음";
+}
+
 export function getMockPatentDetail(patentId: string): PatentDetail | undefined {
-  return patentDetails.find((patent) => patent.patentId === patentId);
+  const detail = patentDetails.find((patent) => patent.patentId === patentId);
+  if (!detail) {
+    return undefined;
+  }
+  // 공동출원 여부는 coApplicants 로 파생하고, 합의 기록은 인메모리 맵에서 덧입힌다.
+  return {
+    ...detail,
+    jointApplication: isMockJointApplication(detail),
+    coApplicantConsent: mockCoApplicantConsents.get(patentId) ?? null,
+  };
+}
+
+export function recordMockCoApplicantConsent(
+  patentId: string,
+  payload: CoApplicantConsentPayload,
+): PatentDetail | undefined {
+  const detail = patentDetails.find((patent) => patent.patentId === patentId);
+  if (!detail) {
+    return undefined;
+  }
+  mockCoApplicantConsents.set(patentId, {
+    status: payload.status,
+    reason: payload.reason,
+    decidedAt: new Date().toISOString(),
+    decidedBy: "데모 관리자",
+  });
+  return getMockPatentDetail(patentId);
 }
 
 // FR-LEGAL-09: 데모 모드용 법무 편집 — AI 원본을 특허별로 보관하고 편집은 유효본에만 반영한다.
