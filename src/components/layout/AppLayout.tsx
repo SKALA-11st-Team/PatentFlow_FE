@@ -51,6 +51,8 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
   }, [role]);
   // NAV-01: 업무 흐름(검토 업무)과 운영(계정/설정)을 그룹으로 분리하고, 라우트만 있고
   // 사이드바에서 빠져 있던 검토 대상(/admin/review-targets) 링크를 추가한다.
+  // I3: LEGAL은 검토 업무는 관리자와 동일하되 운영(계정·설정) 메뉴가 숨겨진다.
+  const isLegalRole = currentUser?.role === "LEGAL";
   const navGroups = isAdmin
     ? [
         {
@@ -60,15 +62,20 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
             { label: "검토 대상", to: "/admin/review-targets" },
             { label: "특허관리", to: "/admin/patents" },
             { label: "AI 레포트 메일 발송", to: "/admin/mailing" },
+            { label: "감사 로그", to: "/admin/audit-logs" },
           ],
         },
-        {
-          label: "운영",
-          items: [
-            { label: "사업부/계정 관리", to: "/admin/users" },
-            { label: "설정", to: "/admin/settings" },
-          ],
-        },
+        ...(isLegalRole
+          ? []
+          : [
+              {
+                label: "운영",
+                items: [
+                  { label: "사업부/계정 관리", to: "/admin/users" },
+                  { label: "설정", to: "/admin/settings" },
+                ],
+              },
+            ]),
       ]
     : [
         {

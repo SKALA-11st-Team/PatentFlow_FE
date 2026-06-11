@@ -477,6 +477,42 @@ export async function downloadPatentPdf(
 }
 
 /**
+ * @relatedFR FR-LEGAL-05
+ * @description F6: 특허 패밀리(같은 관리번호 계열의 국가별 출원) 조회 — 자신은 제외된다.
+ */
+export async function getPatentFamily(
+  patentId: string,
+  options: { business?: boolean } = {},
+): Promise<PatentListItem[]> {
+  if (isBackendApiEnabled()) {
+    const basePath = options.business ? "/business/patents" : "/patents";
+    const response = await requestJson<ApiEnvelope<BackendPatentListItem[]>>(`${basePath}/${patentId}/family`);
+    return (response.data ?? []).map(mapBackendPatentListItem);
+  }
+
+  return [];
+}
+
+/**
+ * @relatedFR FR-LEGAL-02
+ * @description F5: 특허 다건 부서 일괄 배정 — 건별 실패는 격리되고 성공/실패 ID 목록을 받는다.
+ */
+export async function bulkAssignDepartment(
+  patentIds: string[],
+  departmentId: string,
+): Promise<{ assignedPatentIds: string[]; failedPatentIds: string[] }> {
+  if (isBackendApiEnabled()) {
+    const response = await requestJson<ApiEnvelope<{ assignedPatentIds: string[]; failedPatentIds: string[] }>>(
+      "/patents/bulk/department",
+      { method: "PATCH", body: JSON.stringify({ patentIds, departmentId }) },
+    );
+    return response.data ?? { assignedPatentIds: [], failedPatentIds: patentIds };
+  }
+
+  return { assignedPatentIds: patentIds, failedPatentIds: [] };
+}
+
+/**
  * @relatedFR FR-LEGAL-24
  * @relatedUI UI-LEGAL-04, UI-BUS-02
  * @description FEE-06: 특허 상세 연차료 일정 조회 — 국가 규칙 기반 도래일·검토 시작일·수신처를

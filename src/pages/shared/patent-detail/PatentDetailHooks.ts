@@ -35,7 +35,9 @@ export function formatDate(dateText: string) {
 const AI_REPORT_POLL_INTERVAL_MS = 3000;
 const AI_REPORT_POLL_TIMEOUT_MS = 20 * 60 * 1000;
 
-async function waitForAiReportJob(patentId: string, initialJob?: AiReportJob): Promise<AiReportJob | undefined> {
+async function waitForAiReportJob(patentId: string, initialJob?: AiReportJob,
+  onProgress?: (stageLabel: string | null) => void,
+): Promise<AiReportJob | undefined> {
   if (initialJob && isAiReportTerminalStatus(initialJob.status)) {
     return initialJob;
   }
@@ -48,6 +50,10 @@ async function waitForAiReportJob(patentId: string, initialJob?: AiReportJob): P
     latestJob = await getPatentAiReportStatus(patentId);
     if (latestJob && isAiReportTerminalStatus(latestJob.status)) {
       return latestJob;
+    }
+    // W1: RUNNING 중에는 agent 진행 단계(근거 수집/압축/4축 평가/레포트 작성)를 화면에 중계한다.
+    if (latestJob?.status === "RUNNING" && onProgress) {
+      onProgress(latestJob.progressStageLabel ?? null);
     }
   }
 
@@ -313,10 +319,16 @@ export function usePatentDetail(role: UserRole) {
     try {
       const job = await requestPatentAiReport(patent.patentId);
       setWorkflowActionMessage(job?.message ?? "AI 레포트 생성을 시작했습니다.");
-      const completedJob = await waitForAiReportJob(patent.patentId, job);
+      const completedJob = await waitForAiReportJob(patent.patentId, job, (stageLabel) => {
+        // W1: 진행 단계 중계 — 단계 정보가 없으면 일반 진행 문구를 유지한다.
+        setWorkflowActionMessage(stageLabel ? `AI 레포트 생성 중 · ${stageLabel}` : "AI 레포트 생성 중입니다.");
+      });
 
       if (completedJob?.status === "FAILED") {
-        setWorkflowActionMessage(completedJob.message ?? "AI 레포트 생성에 실패했습니다.");
+        // I2: 실패 사유를 그대로 보여주고 같은 버튼으로 재시도할 수 있음을 안내한다.
+        setWorkflowActionMessage(
+          `${completedJob.message ?? "AI 레포트 생성에 실패했습니다."} — 같은 버튼으로 다시 시도할 수 있습니다.`,
+        );
         return;
       }
 

@@ -601,6 +601,8 @@ export function getMockPatentFeeSchedule(patentId: string): PatentFeeSchedule | 
       reviewStartDate: toIso(reviewStartDate),
       status: past ? "PAST" : isNext ? "NEXT" : "FUTURE",
       adjusted: false,
+      estimatedAmount: null,
+      currency: null,
     };
   });
 

@@ -8,11 +8,14 @@ import type { UserRole } from "../types/patent";
 // 역할별로 분리 저장 — 관리자와 사업부서 아이디가 서로 달라 독립 관리
 const REMEMBER_KEY: Record<UserRole, string> = {
   ADMIN: "patentflow.remembered.admin",
+  // I3: LEGAL은 관리자 워크스페이스 사용자 — 저장 키만 분리한다.
+  LEGAL: "patentflow.remembered.legal",
   BUSINESS: "patentflow.remembered.business",
 };
 
 const LEGACY_REMEMBER_KEY: Record<UserRole, string> = {
   ADMIN: "patentflow_remembered_admin",
+  LEGAL: "patentflow_remembered_legal",
   BUSINESS: "patentflow_remembered_business",
 };
 
@@ -61,7 +64,8 @@ export function LoginPage() {
         clearRememberedEmail(nextRole);
       }
 
-      navigate(nextRole === "ADMIN" ? "/admin/dashboard" : "/business/dashboard");
+      // I3: LEGAL도 관리자 워크스페이스로 진입한다(운영 메뉴만 숨김).
+      navigate(nextRole === "BUSINESS" ? "/business/dashboard" : "/admin/dashboard");
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error, "로그인에 실패했습니다. 계정 정보를 확인해 주세요."));
     } finally {

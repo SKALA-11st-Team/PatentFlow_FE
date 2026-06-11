@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { getDepartmentRecipientMappings, getPatentPdfLinks } from "../../api/mailing";
 import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { getDepartments, type Department } from "../../api/departments";
+import { bulkAssignDepartment } from "../../api/patents";
 import { Button } from "../../components/common/Button";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
@@ -84,6 +85,8 @@ export function AdminReviewTargetPage() {
   const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [selectedPatentIds, setSelectedPatentIds] = useState<string[]>([]);
   const [actionMessage, setActionMessage] = useState("");
+  // F5: 일괄 부서 배정 대상 부서 선택값.
+  const [bulkDepartmentId, setBulkDepartmentId] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [mailDrafts, setMailDrafts] = useState<BusinessReviewMailDraft[]>([]);
   const [recipientMappings, setRecipientMappings] = useState<DepartmentRecipientMapping[]>([]);
@@ -198,6 +201,39 @@ export function AdminReviewTargetPage() {
     setContextFilterValue("ALL");
   }
 
+  /**
+   * @relatedFR FR-LEGAL-02
+   * @description F5: 선택 특허 다건에 부서를 일괄 배정한다 — 건별 실패는 격리되고 결과 건수를 안내한다.
+   */
+  async function handleBulkAssignDepartment() {
+    if (selectedPatentIds.length === 0 || !bulkDepartmentId) {
+      return;
+    }
+    setIsProcessing(true);
+    setActionMessage("");
+    try {
+      const result = await bulkAssignDepartment(selectedPatentIds, bulkDepartmentId);
+      const departmentName = departments.find((dept) => dept.departmentId === bulkDepartmentId)?.departmentName
+        ?? bulkDepartmentId;
+      setActionMessage(
+        `${departmentName} 일괄 배정 — 성공 ${result.assignedPatentIds.length}건` +
+          (result.failedPatentIds.length > 0 ? `, 실패 ${result.failedPatentIds.length}건` : ""),
+      );
+      setPatentList((current) =>
+        current.map((patent) =>
+          result.assignedPatentIds.includes(patent.patentId)
+            ? { ...patent, departmentId: bulkDepartmentId, departmentName }
+            : patent,
+        ),
+      );
+      setSelectedPatentIds([]);
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : "일괄 배정에 실패했습니다.");
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
   async function handleOpenMailPreview() {
     const selectedPatents = selectedPatentIds
       .map((patentId) => patentList.find((patent) => patent.patentId === patentId))
@@ -271,6 +307,26 @@ export function AdminReviewTargetPage() {
             <div className="section-actions">
               <div className="inline-action-group">
                 <span className="selection-count">선택 {selectedPatentIds.length}건</span>
+                <select
+                  aria-label="일괄 배정할 사업부 선택"
+                  onChange={(event) => setBulkDepartmentId(event.target.value)}
+                  value={bulkDepartmentId}
+                >
+                  <option value="">부서 선택</option>
+                  {departments.map((dept) => (
+                    <option key={dept.departmentId} value={dept.departmentId}>
+                      {dept.departmentName}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  disabled={selectedPatentIds.length === 0 || !bulkDepartmentId || isProcessing}
+                  onClick={handleBulkAssignDepartment}
+                  type="button"
+                  variant="secondary"
+                >
+                  일괄 배정
+                </Button>
                 {isActionableMailList ? (
                   <Button disabled={selectedPatentIds.length === 0 || isProcessing} onClick={handleOpenMailPreview} type="button">
                     메일 발송

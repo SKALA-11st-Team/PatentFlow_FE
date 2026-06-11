@@ -4,6 +4,7 @@ import { getCurrentUser } from "./api/auth";
 import { isBackendApiEnabled, isMockApiEnabled } from "./api/client";
 import { clearAuthSession, getStoredAuthUser, hasStoredAuthSession } from "./api/authStorage";
 import { AdminDashboardPage } from "./pages/admin/AdminDashboardPage";
+import { AdminAuditLogPage } from "./pages/admin/AdminAuditLogPage";
 import { AdminMailingPage } from "./pages/admin/AdminMailingPage";
 import { AdminPatentDetailPage } from "./pages/admin/AdminPatentDetailPage";
 import { AdminPatentEditPage } from "./pages/admin/AdminPatentEditPage";
@@ -18,9 +19,27 @@ import { BusinessSettingsPage } from "./pages/business/BusinessSettingsPage";
 import { BusinessSubmissionHistoryPage } from "./pages/business/BusinessSubmissionHistoryPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ToastProvider } from "./components/common/ToastProvider";
-import type { UserRole } from "./types/patent";
+import { isAdminLikeRole, type UserRole } from "./types/patent";
 
-function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; children: React.ReactNode }) {
+// I3: adminOnly — LEGAL은 검토 업무(관리자 라우트)는 접근하지만 운영(계정·설정) 라우트는 차단된다.
+function roleAllowed(role: string | null | undefined, allowedRole: UserRole, adminOnly: boolean): boolean {
+  if (!role) {
+    return false;
+  }
+  if (adminOnly) {
+    return role === "ADMIN";
+  }
+  if (allowedRole === "ADMIN") {
+    return isAdminLikeRole(role);
+  }
+  return role === allowedRole;
+}
+
+function ProtectedRoute({
+  allowedRole,
+  adminOnly = false,
+  children,
+}: { allowedRole: UserRole; adminOnly?: boolean; children: React.ReactNode }) {
   const [authState, setAuthState] = useState<"checking" | "allowed" | "denied" | "unauthenticated">(
     hasStoredAuthSession() ? "checking" : "unauthenticated",
   );
@@ -37,7 +56,7 @@ function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; chil
       }
 
       if (isMockApiEnabled()) {
-        if (isMounted) setAuthState(storedUser.role === allowedRole ? "allowed" : "denied");
+        if (isMounted) setAuthState(roleAllowed(storedUser.role, allowedRole, adminOnly) ? "allowed" : "denied");
         return;
       }
 
@@ -50,7 +69,7 @@ function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; chil
       try {
         const currentUser = await getCurrentUser();
         if (!isMounted) return;
-        setAuthState(currentUser?.role === allowedRole ? "allowed" : currentUser ? "denied" : "unauthenticated");
+        setAuthState(roleAllowed(currentUser?.role, allowedRole, adminOnly) ? "allowed" : currentUser ? "denied" : "unauthenticated");
       } catch {
         clearAuthSession();
         if (isMounted) setAuthState("unauthenticated");
@@ -62,7 +81,7 @@ function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; chil
     return () => {
       isMounted = false;
     };
-  }, [allowedRole]);
+  }, [allowedRole, adminOnly]);
 
   if (authState === "checking") {
     return (
@@ -77,7 +96,7 @@ function ProtectedRoute({ allowedRole, children }: { allowedRole: UserRole; chil
   if (authState === "unauthenticated") return <Navigate to="/login" replace />;
   if (authState === "denied") {
     const storedUser = getStoredAuthUser();
-    return <Navigate to={storedUser?.role === "ADMIN" ? "/admin/dashboard" : "/business/dashboard"} replace />;
+    return <Navigate to={isAdminLikeRole(storedUser?.role) ? "/admin/dashboard" : "/business/dashboard"} replace />;
   }
   return <>{children}</>;
 }
@@ -95,8 +114,9 @@ const router = createBrowserRouter([
   { path: "/admin/patents", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentListPage /></ProtectedRoute> },
   { path: "/admin/patents/:patentId/edit", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentEditPage /></ProtectedRoute> },
   { path: "/admin/mailing", element: <ProtectedRoute allowedRole="ADMIN"><AdminMailingPage /></ProtectedRoute> },
-  { path: "/admin/settings", element: <ProtectedRoute allowedRole="ADMIN"><AdminSettingsPage /></ProtectedRoute> },
-  { path: "/admin/users", element: <ProtectedRoute allowedRole="ADMIN"><AdminUsersPage /></ProtectedRoute> },
+  { path: "/admin/audit-logs", element: <ProtectedRoute allowedRole="ADMIN"><AdminAuditLogPage /></ProtectedRoute> },
+  { path: "/admin/settings", element: <ProtectedRoute allowedRole="ADMIN" adminOnly><AdminSettingsPage /></ProtectedRoute> },
+  { path: "/admin/users", element: <ProtectedRoute allowedRole="ADMIN" adminOnly><AdminUsersPage /></ProtectedRoute> },
   { path: "/admin/patents/:patentId", element: <ProtectedRoute allowedRole="ADMIN"><AdminPatentDetailPage /></ProtectedRoute> },
   { path: "/business/dashboard", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessDashboardPage /></ProtectedRoute> },
   { path: "/business/review-requests", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessReviewRequestPage /></ProtectedRoute> },

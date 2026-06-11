@@ -519,3 +519,36 @@ function updateFallbackClassification(type: ClassificationType, nextValue: strin
   if (!values.includes(nextValue)) values.push(nextValue);
   return { ...group, values: values.sort((a, b) => a.localeCompare(b, "ko")) };
 }
+
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @description I4: 국가별 연차료 규칙(기산일·일괄 연차·납부 주기) 조회/수정 — fee.rule 오버라이드.
+ */
+export interface FeeRule {
+  country: string;
+  countryLabel: string;
+  basis: "APPLICATION_DATE" | "REGISTRATION_DATE";
+  initialLumpYears: number;
+  cycleMonths: number;
+  ruleLabel: string;
+}
+
+export async function getFeeRules(): Promise<FeeRule[]> {
+  if (!isBackendApiEnabled()) {
+    return [];
+  }
+  const response = await requestJson<ApiEnvelope<FeeRule[]>>("/settings/fee-rules");
+  return response.data ?? [];
+}
+
+export async function updateFeeRule(
+  country: string,
+  payload: { basis?: FeeRule["basis"]; initialLumpYears?: number; cycleMonths?: number },
+): Promise<FeeRule | undefined> {
+  const response = await requestJson<ApiEnvelope<FeeRule>>(`/settings/fee-rules/${country}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  return response.data ?? undefined;
+}

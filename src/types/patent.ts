@@ -22,7 +22,13 @@ export type {
   ReviewWorkflowStatus,
 } from "../constants/status";
 
-export type UserRole = "ADMIN" | "BUSINESS";
+// I3: LEGAL — 검토 업무는 ADMIN과 동일, 운영(계정·설정)만 제한되는 역할.
+export type UserRole = "ADMIN" | "LEGAL" | "BUSINESS";
+
+/** I3: 관리자형 역할 여부 — 라우팅·API 경로 선택에서 ADMIN과 동일하게 취급한다. */
+export function isAdminLikeRole(role: string | null | undefined): boolean {
+  return role === "ADMIN" || role === "LEGAL";
+}
 
 export interface PatentListItem {
   patentId: string;
@@ -149,6 +155,9 @@ export interface AiReportJob {
   finishedAt: string | null;
   message: string | null;
   reportId: string | null;
+  // W1: RUNNING일 때 agent 진행 단계(근거 수집/압축/4축 평가/레포트 작성). 미지원이면 null.
+  progressStage?: string | null;
+  progressStageLabel?: string | null;
 }
 
 export interface FinalDecisionRecord {
@@ -234,6 +243,9 @@ export interface FeeScheduleEntry {
   reviewStartDate: string | null;
   status: FeeScheduleEntryStatus;
   adjusted: boolean;
+  // F2: 납부 예상액(국가 요금표 기반 개략치) — 요금표 없는 국가는 null.
+  estimatedAmount: number | null;
+  currency: string | null;
 }
 
 export interface PatentFeeSchedule {
