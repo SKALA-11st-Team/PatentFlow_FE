@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Badge } from "../../../components/common/Badge";
 import { Button } from "../../../components/common/Button";
 import { MarkdownView } from "../../../components/common/MarkdownView";
@@ -52,10 +53,38 @@ export function AiReportStructuredContent({ report }: { report: PatentDetail["ai
 }
 
 export function RawMarkdownBlock({ content, title }: { content: string; title: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  // D2: 마크다운 제목(#/##)을 추출해 목차를 만든다 — 클릭 시 본문 내 해당 제목으로 스크롤.
+  const tocItems = content
+    .split("\n")
+    .filter((line) => /^#{1,2}\s+/.test(line))
+    .map((line) => line.replace(/^#{1,2}\s+/, "").trim())
+    .filter((heading, index, all) => heading && all.indexOf(heading) === index);
+
+  function scrollToHeading(heading: string) {
+    const container = containerRef.current;
+    if (!container) return;
+    const target = Array.from(container.querySelectorAll<HTMLElement>("h1, h2, h3"))
+      .find((element) => element.textContent?.trim() === heading);
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <details className="raw-markdown-block" open>
       <summary>{title}</summary>
-      <MarkdownView content={content} />
+      {tocItems.length >= 3 ? (
+        <nav aria-label="레포트 목차" className="markdown-toc">
+          <strong>목차</strong>
+          {tocItems.map((heading) => (
+            <button key={heading} onClick={() => scrollToHeading(heading)} type="button">
+              {heading}
+            </button>
+          ))}
+        </nav>
+      ) : null}
+      <div ref={containerRef}>
+        <MarkdownView content={content} />
+      </div>
     </details>
   );
 }

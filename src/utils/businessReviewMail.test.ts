@@ -64,6 +64,19 @@ describe("businessReviewMail — 특허 PDF 다운로드 링크(MAIL-12)", () =>
     expect(draft.body).not.toContain("특허 PDF 다운로드");
   });
 
+  // MAIL-13: 법무팀 업로드본(TW·UAE 등)은 presigned가 없으므로 특허 상세 딥링크를 안내한다.
+  it("UPLOADED 소스는 시스템 상세 딥링크 안내 라인을 추가한다", () => {
+    const draft = createBusinessReviewMailDraftFromPatents(
+      [patent("PAT-TW", { country: "TW" })],
+      [],
+      [{ patentId: "PAT-TW", pdfUrl: null, source: "UPLOADED", expiresAt: null }],
+    );
+
+    // 딥링크 URL은 VITE_APP_URL/window.origin 유무에 따라 생략될 수 있어 본문 문구만 검증한다.
+    expect(draft.body).toContain("특허 PDF: 시스템 특허 상세에서 다운로드");
+    expect(draft.body).not.toContain("7일간 유효");
+  });
+
   it("발송 payload의 patents에 pdfDownloadUrl을 포함한다(없으면 null)", () => {
     const draft = createBusinessReviewMailDraftFromPatents([patent("PAT-1"), patent("PAT-2")], [], [pdfLink]);
     const sendDraft = toBusinessReviewMailSendDraft(draft);

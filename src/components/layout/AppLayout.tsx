@@ -51,6 +51,8 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
   }, [role]);
   // NAV-01: 업무 흐름(검토 업무)과 운영(계정/설정)을 그룹으로 분리하고, 라우트만 있고
   // 사이드바에서 빠져 있던 검토 대상(/admin/review-targets) 링크를 추가한다.
+  // I3: LEGAL은 검토 업무는 관리자와 동일하되 운영(계정·설정) 메뉴가 숨겨진다.
+  const isLegalRole = currentUser?.role === "LEGAL";
   const navGroups = isAdmin
     ? [
         {
@@ -60,15 +62,20 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
             { label: "검토 대상", to: "/admin/review-targets" },
             { label: "특허관리", to: "/admin/patents" },
             { label: "AI 레포트 메일 발송", to: "/admin/mailing" },
+            { label: "감사 로그", to: "/admin/audit-logs" },
           ],
         },
-        {
-          label: "운영",
-          items: [
-            { label: "사업부/계정 관리", to: "/admin/users" },
-            { label: "설정", to: "/admin/settings" },
-          ],
-        },
+        ...(isLegalRole
+          ? []
+          : [
+              {
+                label: "운영",
+                items: [
+                  { label: "사업부/계정 관리", to: "/admin/users" },
+                  { label: "설정", to: "/admin/settings" },
+                ],
+              },
+            ]),
       ]
     : [
         {
@@ -84,6 +91,16 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
         },
       ];
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  // D4: 다크모드 — localStorage(patentflow.theme) 영속, documentElement[data-theme]로 적용.
+  const [theme, setTheme] = useState<"light" | "dark">(
+    () => (window.localStorage.getItem("patentflow.theme") === "dark" ? "dark" : "light"),
+  );
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("patentflow.theme", theme);
+  }, [theme]);
+  // D5: 모바일 사이드바 토글(768px 이하에서 햄버거 버튼 노출).
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   useEffect(() => {
     if (!isNotificationOpen) return;
 
@@ -117,7 +134,7 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <aside className={isSidebarOpen ? "sidebar sidebar-open" : "sidebar"}>
         <Link className="brand" to={isAdmin ? "/admin/dashboard" : "/business/dashboard"}>
           <span className="brand-mark">PF</span>
           <span>
@@ -150,6 +167,22 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
             {description ? <p>{description}</p> : null}
           </div>
           <div className="header-actions">
+            <button
+              aria-label="메뉴 열기/닫기"
+              className="sidebar-toggle-button"
+              onClick={() => setIsSidebarOpen((current) => !current)}
+              type="button"
+            >
+              ☰
+            </button>
+            <button
+              aria-label={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
+              className="theme-toggle-button"
+              onClick={() => setTheme((current) => (current === "dark" ? "light" : "dark"))}
+              type="button"
+            >
+              {theme === "dark" ? "☀" : "🌙"}
+            </button>
             <div className="notification-menu" ref={notificationMenuRef}>
               <button
                 aria-expanded={isNotificationOpen}

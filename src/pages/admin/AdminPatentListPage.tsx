@@ -8,7 +8,8 @@ import { Section } from "../../components/common/Section";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { getDepartments, type Department } from "../../api/departments";
-import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
+import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields, uploadPatentPdf } from "../../api/patents";
+import { downloadCsv, parsePatentCsv, patentsToCsv } from "../../utils/patentCsv";
 import { getApiErrorMessage } from "../../api/client";
 import { getClassifications, type ClassificationGroup } from "../../api/settings";
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
@@ -60,6 +61,10 @@ export function AdminPatentListPage() {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // MAIL-13: 등록 시 함께 업로드할 특허 PDF(선택). 등록 성공 후 patentId로 업로드한다.
+  const [pendingPdfFile, setPendingPdfFile] = useState<File | null>(null);
+  // I5: 자주 쓰는 필터 저장(localStorage) — 최대 5개, 칩 클릭으로 즉시 적용.
+  const [savedFilters, setSavedFilters] = useState<SavedPatentFilter[]>(() => loadSavedFilters());
   const [isManualMetadataEditEnabled, setIsManualMetadataEditEnabled] = useState(false);
 
   useEffect(() => {
@@ -171,7 +176,20 @@ export function AdminPatentListPage() {
       });
       setForm(emptyPatentForm);
       setIsManualMetadataEditEnabled(false);
-      setSaveMessage("특허가 등록되었습니다.");
+      // MAIL-13: 선택해 둔 PDF는 등록 직후 업로드한다. 업로드 실패해도 특허 등록은 유지되며
+      // 수정 화면에서 재업로드할 수 있다.
+      if (pendingPdfFile) {
+        try {
+          await uploadPatentPdf(result.patentId, pendingPdfFile);
+          setSaveMessage("특허와 PDF가 등록되었습니다.");
+        } catch (uploadError) {
+          setSaveMessage("특허는 등록되었으나 PDF 업로드에 실패했습니다. 수정 화면에서 다시 업로드해 주세요.");
+          console.error(uploadError);
+        }
+        setPendingPdfFile(null);
+      } else {
+        setSaveMessage("특허가 등록되었습니다.");
+      }
     } catch (error) {
       // API-02: 특허 등록 실패 시 에러 메시지를 화면에 노출한다.
       setSaveError(getApiErrorMessage(error, "특허 등록에 실패했습니다. 입력값과 BE 상태를 확인해 주세요."));
@@ -226,6 +244,99 @@ export function AdminPatentListPage() {
       ...currentForm,
       [name]: name === "registrationNumber" && value.trim() === "" ? null : value,
     }));
+  }
+
+  /** I5: 현재 필터 조합을 저장한다(최대 5개). */
+  function handleSaveCurrentFilter() {
+    const name = window.prompt("필터 이름을 입력하세요", `필터 ${savedFilters.length + 1}`);
+    if (!name) {
+      return;
+    }
+    const next = [...savedFilters.filter((filter) => filter.name !== name),
+      { name, keyword, reviewScope, workflowFilter, sort }].slice(-5);
+    setSavedFilters(next);
+    window.localStorage.setItem(SAVED_FILTER_KEY, JSON.stringify(next));
+  }
+
+  function handleApplySavedFilter(filter: SavedPatentFilter) {
+    setKeyword(filter.keyword);
+    setReviewScope(filter.reviewScope);
+    setWorkflowFilter(filter.workflowFilter);
+    setSort(filter.sort);
+  }
+
+  function handleDeleteSavedFilter(name: string) {
+    const next = savedFilters.filter((filter) => filter.name !== name);
+    setSavedFilters(next);
+    window.localStorage.setItem(SAVED_FILTER_KEY, JSON.stringify(next));
+  }
+
+  /**
+   * @relatedFR FR-LEGAL-02
+   * @description F5: 현재 조회된 특허 목록을 CSV로 내보낸다(Excel 한글 호환 BOM 포함).
+   */
+  function handleExportCsv() {
+    if (listedPatents.length === 0) {
+      setSaveMessage("내보낼 특허가 없습니다.");
+      return;
+    }
+    downloadCsv(`patentflow_patents_${new Date().toISOString().slice(0, 10)}.csv`, patentsToCsv(listedPatents));
+  }
+
+  /**
+   * @relatedFR FR-LEGAL-03
+   * @description F5: CSV로 특허를 일괄 등록한다 — 행별 실패는 건너뛰고 성공/실패 건수를 안내한다.
+   */
+  async function handleImportCsv(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    const text = await file.text();
+    const { rows, errors } = parsePatentCsv(text);
+    if (rows.length === 0) {
+      setSaveMessage(errors[0] ?? "가져올 행이 없습니다.");
+      return;
+    }
+    setIsSaving(true);
+    let succeeded = 0;
+    const failures = [...errors];
+    for (const row of rows) {
+      try {
+        const result = await createPatent(row.payload);
+        setPatentList((currentList) => {
+          const nextPatent = createListItemFromForm(row.payload, result.patentId);
+          return currentList.some((patent) => patent.patentId === nextPatent.patentId)
+            ? currentList.map((patent) => (patent.patentId === nextPatent.patentId ? nextPatent : patent))
+            : [nextPatent, ...currentList];
+        });
+        succeeded += 1;
+      } catch {
+        failures.push(`${row.line}행: ${row.payload.managementNumber} 등록 실패`);
+      }
+    }
+    setIsSaving(false);
+    setSaveMessage(`CSV 가져오기 — 성공 ${succeeded}건 / 실패 ${failures.length}건${
+      failures.length > 0 ? ` (${failures[0]} 등)` : ""}`);
+  }
+
+  // MAIL-13: 등록 폼의 특허 PDF 선택 — 형식·크기만 검증하고 실제 업로드는 등록 성공 후 수행한다.
+  function handlePdfFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (file && !file.name.toLowerCase().endsWith(".pdf")) {
+      setSaveMessage("PDF 파일만 첨부할 수 있습니다.");
+      event.target.value = "";
+      setPendingPdfFile(null);
+      return;
+    }
+    if (file && file.size > 50 * 1024 * 1024) {
+      setSaveMessage("PDF 파일은 50MB를 넘을 수 없습니다.");
+      event.target.value = "";
+      setPendingPdfFile(null);
+      return;
+    }
+    setPendingPdfFile(file);
   }
 
   return (
@@ -386,6 +497,22 @@ export function AdminPatentListPage() {
           <datalist id="technology-area-options">
             {technologyClassifications.map((value) => <option key={value} value={value} />)}
           </datalist>
+          <div className="context-suggestion-row">
+            <div>
+              <strong>특허 PDF 첨부 (선택)</strong>
+              <span>
+                KIPRIS로 공개전문 PDF를 가져올 수 없는 국가(대만·UAE 등)는 PDF를 선택해 두면 등록과 함께 업로드됩니다.
+              </span>
+            </div>
+            <label className="form-actions">
+              <input
+                accept=".pdf,application/pdf"
+                aria-label="등록할 특허 PDF 파일 선택"
+                onChange={handlePdfFileChange}
+                type="file"
+              />
+            </label>
+          </div>
           <div className="form-actions">
             <Button disabled={isSaving} type="submit">
               {isSaving ? "저장 중" : "특허 등록"}
@@ -400,6 +527,24 @@ export function AdminPatentListPage() {
         title="특허 수정"
         description={`${listedPatents.length}건의 특허가 조회되었습니다. 행을 클릭하면 상세 수정 페이지로 이동합니다.`}
       >
+        <div className="inline-action-group csv-action-row">
+          <Button onClick={handleExportCsv} type="button" variant="secondary">
+            CSV 내보내기
+          </Button>
+          <label className="csv-import-label">
+            CSV 가져오기
+            <input accept=".csv,text/csv" hidden onChange={handleImportCsv} type="file" />
+          </label>
+          <Button onClick={handleSaveCurrentFilter} type="button" variant="secondary">
+            현재 필터 저장
+          </Button>
+          {savedFilters.map((filter) => (
+            <span className="saved-filter-chip" key={filter.name}>
+              <button onClick={() => handleApplySavedFilter(filter)} type="button">{filter.name}</button>
+              <button aria-label={`${filter.name} 삭제`} onClick={() => handleDeleteSavedFilter(filter.name)} type="button">×</button>
+            </span>
+          ))}
+        </div>
         <div className="filter-bar patent-management-filter-bar">
           <label>
             <span>조회 범위</span>
@@ -575,6 +720,26 @@ function getEditablePatentRows(
  * @relatedUI UI-LEGAL-04
  * @description 등록 폼 데이터를 특허관리 테이블에서 즉시 확인할 수 있는 특허 항목으로 변환한다.
  */
+// I5: 저장 필터 모델 — 화면 필터 상태의 스냅샷.
+interface SavedPatentFilter {
+  name: string;
+  keyword: string;
+  reviewScope: DashboardScope;
+  workflowFilter: ReviewWorkflowFilter;
+  sort: string;
+}
+
+const SAVED_FILTER_KEY = "patentflow.savedFilters";
+
+function loadSavedFilters(): SavedPatentFilter[] {
+  try {
+    const raw = window.localStorage.getItem(SAVED_FILTER_KEY);
+    return raw ? (JSON.parse(raw) as SavedPatentFilter[]).slice(0, 5) : [];
+  } catch {
+    return [];
+  }
+}
+
 function createListItemFromForm(form: PatentFormState, patentId: string): PatentListItem {
   return {
     patentId,

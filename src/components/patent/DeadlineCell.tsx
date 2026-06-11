@@ -12,11 +12,20 @@ interface DeadlineCellProps {
 export function DeadlineCell({ dueDate }: DeadlineCellProps) {
   if (!dueDate) return <span className="deadline-cell"><strong>-</strong></span>;
   return (
-    <span className="deadline-cell">
+    <span className={`deadline-cell ${ddayToneClass(dueDate)}`}>
       <strong>{formatRemainingDays(dueDate)}</strong>
       <small>{formatShortDate(dueDate)}</small>
     </span>
   );
+}
+
+/** D3: 임박도 컬러 스케일 — D-7 이하 위험, D-30 이하 주의. */
+function ddayToneClass(dueDateText: string) {
+  const remainingDays = getRemainingDaysUntilDate(dueDateText);
+  if (remainingDays < 0) return "deadline-overdue";
+  if (remainingDays <= 7) return "deadline-urgent";
+  if (remainingDays <= 30) return "deadline-soon";
+  return "";
 }
 
 function formatShortDate(dateText: string) {

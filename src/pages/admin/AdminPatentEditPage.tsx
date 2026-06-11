@@ -7,6 +7,7 @@ import { Button } from "../../components/common/Button";
 import { Section } from "../../components/common/Section";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Breadcrumbs } from "../../components/layout/Breadcrumbs";
+import { PatentPdfManager } from "../../components/patent/PatentPdfManager";
 import type { PatentListItem, PatentUpsertPayload } from "../../types/patent";
 
 type PatentFormState = PatentUpsertPayload;
@@ -199,6 +200,7 @@ export function AdminPatentEditPage() {
               {isSuggestingContext ? "추천 중" : "AI 추천"}
             </Button>
           </div>
+          <PatentPdfManager patentId={currentPatentId} />
           <div className="patent-form-grid">
             <label>
               관리번호

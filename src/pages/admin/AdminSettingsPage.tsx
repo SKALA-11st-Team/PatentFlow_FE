@@ -13,12 +13,15 @@ import {
   getReviewQuarters,
   redirectToGoogleOAuth2,
   updateCountryExtension,
+  getFeeRules,
+  updateFeeRule,
   updateMailLeadMonths,
   updateResponseDeadline,
   type AnnualFeeScheduleItem,
   type ClassificationGroup,
   type ClassificationType,
   type CountryExtension,
+  type FeeRule,
   type MailOAuth2Status,
   type QuarterSetting,
   type ReviewPeriodTemplate,
@@ -54,6 +57,8 @@ export function AdminSettingsPage() {
   const [message, setMessage] = useState("");
   const [mailMessage, setMailMessage] = useState("");
   const [countryExtensions, setCountryExtensions] = useState<CountryExtension[]>([]);
+  // I4: 국가별 연차료 규칙(FEE-06) 편집 상태.
+  const [feeRules, setFeeRules] = useState<FeeRule[]>([]);
   const [mailLeadMonths, setMailLeadMonths] = useState(2);
   const [mailLeadMonthsInput, setMailLeadMonthsInput] = useState(2);
   const [isSavingMailLead, setIsSavingMailLead] = useState(false);
@@ -92,6 +97,7 @@ export function AdminSettingsPage() {
       getReviewQuarters(currentYear + 1),
       getReviewPeriodTemplates(),
       getCountryExtensions(),
+      getFeeRules().catch(() => []),
       getClassifications(),
       getMailLeadMonths(),
       getResponseDeadline(),
@@ -102,6 +108,7 @@ export function AdminSettingsPage() {
         nextYearQ,
         nextReviewPeriodTemplates,
         nextExtensions,
+        nextFeeRules,
         nextClassifications,
         nextMailLead,
         nextDeadline,
@@ -110,6 +117,7 @@ export function AdminSettingsPage() {
         setAllQuarters([...thisYearQ, ...nextYearQ]);
         setReviewPeriodTemplates(nextReviewPeriodTemplates);
         setCountryExtensions(nextExtensions);
+        setFeeRules(nextFeeRules);
         setClassifications(nextClassifications);
         setOAuth2Status(nextOAuth2);
         setMailLeadMonths(nextMailLead);
@@ -299,6 +307,44 @@ export function AdminSettingsPage() {
             </p>
           </section>
 
+          {/* I4(FEE-06): 국가별 연차료 규칙(기산일·일괄 연차·납부 주기) 편집 */}
+          <section className="section">
+            <div className="section-header">
+              <div>
+                <h2>국가별 연차료 규칙</h2>
+                <p>기산일(출원일/등록일), 설정등록 시 일괄 납부 연차 수, 납부 주기를 국가별로 조정합니다.</p>
+              </div>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>국가</th>
+                    <th>기산일</th>
+                    <th>일괄 납부 연차</th>
+                    <th>납부 주기(개월)</th>
+                    <th>현재 규칙</th>
+                    <th>작업</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {feeRules.map((rule) => (
+                    <FeeRuleRow
+                      key={rule.country}
+                      rule={rule}
+                      onSave={async (country, payload) => {
+                        const updated = await updateFeeRule(country, payload);
+                        if (updated) {
+                          setFeeRules((prev) => prev.map((r) => (r.country === country ? updated : r)));
+                        }
+                      }}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           <section className="section">
             <div className="section-header">
               <div>
@@ -367,6 +413,70 @@ export function AdminSettingsPage() {
         />
       ) : null}
     </AppLayout>
+  );
+}
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @description I4(FEE-06): 국가별 연차료 규칙 한 행 — 기산일·일괄 연차·주기를 편집·저장한다.
+ */
+function FeeRuleRow({
+  rule,
+  onSave,
+}: {
+  rule: FeeRule;
+  onSave: (country: string, payload: { basis: FeeRule["basis"]; initialLumpYears: number; cycleMonths: number }) => Promise<void>;
+}) {
+  const [basis, setBasis] = useState<FeeRule["basis"]>(rule.basis);
+  const [lumpYears, setLumpYears] = useState(rule.initialLumpYears);
+  const [cycleMonths, setCycleMonths] = useState(rule.cycleMonths);
+  const [isSaving, setIsSaving] = useState(false);
+
+  async function handleSave() {
+    setIsSaving(true);
+    try {
+      await onSave(rule.country, { basis, initialLumpYears: lumpYears, cycleMonths });
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <tr>
+      <td><strong>{rule.countryLabel}</strong> ({rule.country})</td>
+      <td>
+        <select aria-label={`${rule.country} 기산일`} onChange={(event) => setBasis(event.target.value as FeeRule["basis"])} value={basis}>
+          <option value="APPLICATION_DATE">출원일</option>
+          <option value="REGISTRATION_DATE">등록일</option>
+        </select>
+      </td>
+      <td>
+        <input
+          aria-label={`${rule.country} 일괄 납부 연차`}
+          max={10}
+          min={0}
+          onChange={(event) => setLumpYears(Number(event.target.value))}
+          type="number"
+          value={lumpYears}
+        />
+      </td>
+      <td>
+        <input
+          aria-label={`${rule.country} 납부 주기(개월)`}
+          max={120}
+          min={1}
+          onChange={(event) => setCycleMonths(Number(event.target.value))}
+          type="number"
+          value={cycleMonths}
+        />
+      </td>
+      <td className="table-subtext">{rule.ruleLabel}</td>
+      <td>
+        <Button disabled={isSaving} onClick={handleSave} type="button" variant="secondary">
+          {isSaving ? "저장 중" : "저장"}
+        </Button>
+      </td>
+    </tr>
   );
 }
 

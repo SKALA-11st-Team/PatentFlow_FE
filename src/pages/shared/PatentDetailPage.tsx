@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getPatentFeeSchedule } from "../../api/patents";
+import { downloadPatentPdf, getPatentFamily, getPatentFeeSchedule, getPatentPdfMeta } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Breadcrumbs } from "../../components/layout/Breadcrumbs";
 import { Badge } from "../../components/common/Badge";
@@ -11,7 +11,7 @@ import { BusinessSubmissionHistoryDetail } from "../../components/business/Busin
 import { BusinessReviewMailPreviewModal } from "../../components/mailing/BusinessReviewMailPreviewModal";
 import { recommendationLabels, reviewWorkflowStatusLabels } from "../../constants/status";
 import type { MailingDeliveryStatus, MailingHistoryItem } from "../../types/mailing";
-import type { PatentFeeSchedule, PatentHistoryItem, PatentLifecycleStatus, UserRole } from "../../types/patent";
+import type { PatentFeeSchedule, PatentHistoryItem, PatentLifecycleStatus, PatentListItem, PatentPdfMeta, UserRole } from "../../types/patent";
 import { formatDate, usePatentDetail } from "./patent-detail/PatentDetailHooks";
 import {
   AiReportSection,
@@ -95,6 +95,10 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
   // FEE-06: 연차료 일정은 BE fee-schedule API가 단일 출처 — 국가 규칙·검토 시작일·수신처 포함.
   const [feeSchedule, setFeeSchedule] = useState<PatentFeeSchedule | null>(null);
+  // MAIL-13: 법무팀이 업로드한 특허 PDF 첨부 상태 — 있으면 다운로드 버튼 노출(메일 안내의 도착지).
+  const [pdfMeta, setPdfMeta] = useState<PatentPdfMeta | null>(null);
+  // F6: 특허 패밀리 — 같은 관리번호 계열의 국가별 출원.
+  const [familyPatents, setFamilyPatents] = useState<PatentListItem[]>([]);
   useEffect(() => {
     if (!patentId) {
       return;
@@ -102,7 +106,24 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     getPatentFeeSchedule(patentId, { business: !isAdmin })
       .then((schedule) => setFeeSchedule(schedule ?? null))
       .catch(() => setFeeSchedule(null));
+    getPatentPdfMeta(patentId, { business: !isAdmin })
+      .then(setPdfMeta)
+      .catch(() => setPdfMeta(null));
+    getPatentFamily(patentId, { business: !isAdmin })
+      .then(setFamilyPatents)
+      .catch(() => setFamilyPatents([]));
   }, [patentId, isAdmin]);
+
+  async function handleDownloadPatentPdf() {
+    if (!patentId) {
+      return;
+    }
+    try {
+      await downloadPatentPdf(patentId, pdfMeta?.docName ?? null, { business: !isAdmin });
+    } catch {
+      // 다운로드 실패는 치명적이지 않음 — 원문 URL 경로가 별도로 존재한다.
+    }
+  }
 
   // FR-LEGAL-09: 레포트 편집은 별도 훅으로 관리한다(usePatentDetail 비대화 방지).
   const aiReportEditing = useAiReportEditing(patentId, patent?.aiEvaluationReport ?? null, (updatedReport) => {
@@ -157,6 +178,11 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
             )}
           </div>
           <p>{patent.reviewReason}</p>
+          {pdfMeta?.exists && pdfMeta.storageType === "UPLOADED" ? (
+            <Button onClick={handleDownloadPatentPdf} type="button" variant="secondary">
+              특허 PDF 다운로드{pdfMeta.docName ? ` (${pdfMeta.docName})` : ""}
+            </Button>
+          ) : null}
         </div>
         <div className="meta-grid">
           <Meta label="관리번호" value={patent.managementNumber} />
@@ -170,6 +196,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta label="예상 소멸일" value={patent.expectedExpirationDate} />
         </div>
         {feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
+        {familyPatents.length > 0 ? <PatentFamilyCard isAdmin={isAdmin} members={familyPatents} /> : null}
       </section>
 
       <div className="detail-followup-grid">
@@ -579,6 +606,7 @@ function FeeScheduleCard({ schedule }: { schedule: PatentFeeSchedule }) {
               <th>연차</th>
               <th>납부 예정일</th>
               <th>검토 시작 · 고지 발송 ({schedule.mailLeadMonths}개월 전)</th>
+              <th>예상 납부액</th>
               <th>상태</th>
             </tr>
           </thead>
@@ -599,6 +627,7 @@ function FeeScheduleCard({ schedule }: { schedule: PatentFeeSchedule }) {
                     <span className="table-subtext">D-{daysUntil(item.reviewStartDate)}</span>
                   )}
                 </td>
+                <td>{formatFeeAmount(item.estimatedAmount, item.currency)}</td>
                 <td>
                   {item.status === "PAID_LUMP" ? (
                     <span className="badge badge-success">등록 시 일괄 납부</span>
@@ -612,6 +641,71 @@ function FeeScheduleCard({ schedule }: { schedule: PatentFeeSchedule }) {
                     <span className="badge badge-neutral">예정</span>
                   )}
                 </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {upcomingFeeTotal(schedule) ? (
+        <p className="table-subtext">향후 납부 예상 합계: {upcomingFeeTotal(schedule)}</p>
+      ) : null}
+    </div>
+  );
+}
+
+/** F2: 예상 납부액 표기 — 요금표 없는 국가·일괄 행은 — 로 둔다. */
+function formatFeeAmount(amount: number | null, currency: string | null) {
+  if (amount == null) {
+    return "—";
+  }
+  return `${new Intl.NumberFormat("ko-KR").format(amount)}${currency ? ` ${currency}` : ""}`;
+}
+
+/** F2: 향후(NEXT·FUTURE) 납부 예상 합계 — 금액 있는 항목이 없으면 null. */
+function upcomingFeeTotal(schedule: PatentFeeSchedule): string | null {
+  const upcoming = schedule.items.filter(
+    (item) => (item.status === "NEXT" || item.status === "FUTURE") && item.estimatedAmount != null,
+  );
+  if (upcoming.length === 0) {
+    return null;
+  }
+  const total = upcoming.reduce((sum, item) => sum + (item.estimatedAmount ?? 0), 0);
+  return formatFeeAmount(total, upcoming[0].currency);
+}
+
+/**
+ * @relatedFR FR-LEGAL-05
+ * @relatedUI UI-LEGAL-04, UI-BUS-02
+ * @description F6: 특허 패밀리 카드 — 같은 관리번호 계열의 국가별 출원을 한눈에 보고 상세로 이동한다.
+ */
+function PatentFamilyCard({ isAdmin, members }: { isAdmin: boolean; members: PatentListItem[] }) {
+  return (
+    <div className="fee-schedule-card">
+      <div className="fee-schedule-header">
+        <h3 className="fee-schedule-title">특허 패밀리</h3>
+        <span className="fee-schedule-dept">같은 계열 {members.length}건</span>
+      </div>
+      <div className="table-wrap fee-schedule-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>관리번호</th>
+              <th>국가</th>
+              <th>상태</th>
+              <th>납부 예정일</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((member) => (
+              <tr key={member.patentId}>
+                <td>
+                  <Link to={`${isAdmin ? "/admin" : "/business"}/patents/${member.patentId}`}>
+                    {member.managementNumber}
+                  </Link>
+                </td>
+                <td>{member.country}</td>
+                <td>{reviewWorkflowStatusLabels[member.reviewWorkflowStatus]}</td>
+                <td>{member.feeDueDate || "—"}</td>
               </tr>
             ))}
           </tbody>
