@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { getDepartmentRecipientMappings, getMailingHistory } from "../../api/mailing";
+import { getDepartmentRecipientMappings, getMailingHistory, getPatentPdfLinks } from "../../api/mailing";
 import { getPatents, sendBusinessReviewMails } from "../../api/patents";
 import { getApiErrorMessage } from "../../api/client";
 import { Badge } from "../../components/common/Badge";
@@ -67,15 +67,18 @@ export function AdminMailingPage() {
 
   const hasNoRecipients = !isLoading && recipientMappings.length === 0;
 
-  function handleOpenGroupedPreview() {
+  async function handleOpenGroupedPreview() {
     if (hasNoRecipients) {
       setMessage("등록된 사업부 계정이 없습니다. 계정 관리에서 사업부 계정을 먼저 추가하세요.");
       return;
     }
-    setMailDrafts(groupedPreview);
+    // MAIL-12: 미리보기 열 때 PDF 다운로드 링크를 해석해 본문에 포함한다(실패 시 원문 URL만).
+    const pdfLinks = await getPatentPdfLinks(readyPatents.map((patent) => patent.patentId));
+    const drafts = createGroupedBusinessReviewMailDrafts(readyPatents, recipientMappings, pdfLinks);
+    setMailDrafts(drafts);
     setActiveMailIndex(0);
     setIsSendConfirmOpen(false);
-    setMessage(groupedPreview.length === 0 ? "메일 발송 대기 상태의 특허가 없습니다." : "");
+    setMessage(drafts.length === 0 ? "메일 발송 대기 상태의 특허가 없습니다." : "");
   }
 
   function handleCloseMailPreview() {

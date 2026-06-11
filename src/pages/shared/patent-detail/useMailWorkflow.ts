@@ -1,5 +1,5 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { getDepartmentRecipientMappings, getMailingHistory } from "../../../api/mailing";
+import { getDepartmentRecipientMappings, getMailingHistory, getPatentPdfLinks } from "../../../api/mailing";
 import { getPatentDetail, getPatents, sendBusinessReviewMails } from "../../../api/patents";
 import { useToast } from "../../../components/common/toastContext";
 import type { DepartmentRecipientMapping, MailingHistoryItem } from "../../../types/mailing";
@@ -87,11 +87,10 @@ export function useMailWorkflow({ patent, setPatent, refreshPatentHistory, setAc
     try {
       const allMailReady = await getPatents({ reviewWorkflowStatus: "MAIL_READY" });
       const sameDeptPatents = allMailReady.filter((p) => p.departmentId === patent.departmentId);
-      const grouped = createGroupedBusinessReviewMailDrafts(
-        sameDeptPatents.length > 0 ? sameDeptPatents : [patent],
-        recipientMappings,
-      );
-      setMailDrafts(grouped);
+      const targetPatents = sameDeptPatents.length > 0 ? sameDeptPatents : [patent];
+      // MAIL-12: PDF 링크 해석 실패는 빈 목록으로 진행 — 미리보기를 막지 않는다.
+      const pdfLinks = await getPatentPdfLinks(targetPatents.map((p) => p.patentId));
+      setMailDrafts(createGroupedBusinessReviewMailDrafts(targetPatents, recipientMappings, pdfLinks));
     } catch {
       setMailDrafts(createGroupedBusinessReviewMailDrafts([patent], recipientMappings));
     }

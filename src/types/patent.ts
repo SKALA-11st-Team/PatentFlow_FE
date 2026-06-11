@@ -209,3 +209,41 @@ export interface PatentUpsertPayload extends PatentBibliographicInfo {
   technologyArea: string;
   productName: string;
 }
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-04, UI-BUS-02
+ * FEE-06: 특허 상세 연차료 일정 — BE fee-schedule API가 국가 규칙(KR 일괄 납부, US 유지료)을
+ * 단일 출처로 계산해 내려준다. FE는 표시만 담당한다.
+ */
+export interface FeeScheduleRecipient {
+  departmentId: string;
+  departmentName: string;
+  managerName: string;
+  managerEmail: string;
+  ccEmails: string[];
+}
+
+export type FeeScheduleEntryStatus = "PAID_LUMP" | "PAST" | "NEXT" | "FUTURE";
+
+export interface FeeScheduleEntry {
+  yearLabel: string;
+  yearNumber: number;
+  lump: boolean;
+  dueDate: string;
+  reviewStartDate: string | null;
+  status: FeeScheduleEntryStatus;
+  adjusted: boolean;
+}
+
+export interface PatentFeeSchedule {
+  patentId: string;
+  country: string;
+  basis: "APPLICATION_DATE" | "REGISTRATION_DATE";
+  basisDate: string | null;
+  paymentRuleLabel: string;
+  initialLumpYears: number;
+  mailLeadMonths: number;
+  recipient: FeeScheduleRecipient | null;
+  items: FeeScheduleEntry[];
+}

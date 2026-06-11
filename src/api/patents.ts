@@ -13,6 +13,7 @@ import {
   getFilteredMockPatents,
   getMockPatentAiReportOriginal,
   getMockPatentDetail,
+  getMockPatentFeeSchedule,
   getMockPatentPage,
   lookupMockPatentBibliographicInfo,
   recordMockCoApplicantConsent,
@@ -31,6 +32,7 @@ import type {
   CoApplicantConsent,
   PatentBibliographicInfo,
   PatentDetail,
+  PatentFeeSchedule,
   AiReportJob,
   EvaluationScore,
   FinalDecisionRecord,
@@ -401,6 +403,25 @@ export async function getBusinessPatentDetail(patentId: string): Promise<PatentD
   }
 
   return getMockPatentDetail(patentId);
+}
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-04, UI-BUS-02
+ * @description FEE-06: 특허 상세 연차료 일정 조회 — 국가 규칙 기반 도래일·검토 시작일·수신처를
+ * BE가 단일 출처로 계산한다. 사업부 사용자는 부서 가드가 있는 business 경로를 사용한다.
+ */
+export async function getPatentFeeSchedule(
+  patentId: string,
+  options: { business?: boolean } = {},
+): Promise<PatentFeeSchedule | undefined> {
+  if (isBackendApiEnabled()) {
+    const basePath = options.business ? "/business/patents" : "/patents";
+    const response = await requestJson<ApiEnvelope<PatentFeeSchedule>>(`${basePath}/${patentId}/fee-schedule`);
+    return response.data ?? undefined;
+  }
+
+  return getMockPatentFeeSchedule(patentId);
 }
 
 /**

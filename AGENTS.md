@@ -57,7 +57,7 @@ Use these rules consistently in frontend labels, filters, mock data, mailing pre
 - FE 설정/연동 관련 화면과 문구에서는 `OAuth`라는 표현을 쓰지 말고, 반드시 `Google 계정 연동`으로만 표기한다.
 - Country-specific patent dashboards must distinguish domestic patents from overseas patents because annual-fee payment rules differ by country.
 - Future annual-fee payment dates should be visualized and adjustable in administrator UI, with enough data in mocks/API contracts to show original date, adjusted date, country, and adjustment reason.
-- 특허 연차료의 기준일은 등록일이 아니라 출원일이다. 연차료 계산, 안내 문구, 필터, mock data, API contract 모두 이 기준을 따른다.
+- 특허 연차료의 기준일은 국가별 규칙을 따른다(FEE-06). KR은 등록일 기준(설정등록 시 1~3년차 일괄 납부, 4년차부터 매년), US는 등록일 기준 3.5/7.5/11.5년 유지료, 그 외 국가는 출원일 기준 매년을 기본값으로 한다. 연차료 계산, 안내 문구, 필터, mock data, API contract 모두 이 기준을 따른다(일정 계산은 BE fee-schedule API가 단일 출처).
 - In business classification, `기존 사업` means an ended business, not an existing/active business.
 - Business classification and technology classification must be administrator-editable: add, delete, rename, and reuse across patent edit forms, filters, dashboards, and AI report displays.
 
