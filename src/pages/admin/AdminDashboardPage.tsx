@@ -275,6 +275,20 @@ export function AdminDashboardPage() {
         <ErrorNotice message={departmentErrorMessage} />
       </div>
 
+      {/* D1: 검토 퍼널·연차료 도래 타임라인 — 이미 로드된 목록/요약 데이터만으로 그린다(추가 API 없음). */}
+      <section className="section dashboard-visual-row">
+        <ReviewFunnelCard
+          stages={[
+            { label: "검토 대상", count: quarterlyTargets.length },
+            { label: "메일 발송 대기", count: mailReady.length },
+            { label: "회신 대기", count: waitingBusiness.length },
+            { label: "회신 수신", count: businessResponseReceived.length },
+            { label: "처리 완료", count: actionRecorded.length },
+          ]}
+        />
+        <FeeTimelineCard patents={patents} />
+      </section>
+
       <BusinessAreaReviewCards
         distribution={areaDistribution}
         isLoading={areaDistributionLoading}
@@ -537,4 +551,59 @@ function formatPercent(value: number, total: number) {
   }
 
   return `${Math.round((value / total) * 100)}%`;
+}
+
+/**
+ * @relatedFR LEGAL-01
+ * @relatedUI UI-LEGAL-01
+ * @description D1: 분기 검토 퍼널 — 워크플로 단계별 건수를 가로 막대로 시각화한다(차트 라이브러리 없음).
+ */
+function ReviewFunnelCard({ stages }: { stages: Array<{ label: string; count: number }> }) {
+  const max = Math.max(1, ...stages.map((stage) => stage.count));
+  return (
+    <div className="dashboard-visual-card">
+      <h3>검토 진행 퍼널</h3>
+      <div className="funnel-rows">
+        {stages.map((stage) => (
+          <div className="funnel-row" key={stage.label}>
+            <span className="funnel-label">{stage.label}</span>
+            <span className="funnel-bar-track">
+              <span className="funnel-bar" style={{ width: `${Math.max(4, (stage.count / max) * 100)}%` }} />
+            </span>
+            <span className="funnel-count">{stage.count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-01
+ * @description D1: 향후 12개월 연차료 도래 타임라인 — 월별 납부 예정 건수를 미니 막대로 보여준다.
+ */
+function FeeTimelineCard({ patents }: { patents: PatentListItem[] }) {
+  const now = new Date();
+  const buckets = Array.from({ length: 12 }, (_, offset) => {
+    const month = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
+    const count = patents.filter((patent) => patent.feeDueDate?.startsWith(key)).length;
+    return { key, label: `${month.getMonth() + 1}월`, count };
+  });
+  const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
+  return (
+    <div className="dashboard-visual-card">
+      <h3>연차료 도래 타임라인 (12개월)</h3>
+      <div className="timeline-bars">
+        {buckets.map((bucket) => (
+          <div className="timeline-col" key={bucket.key} title={`${bucket.key} · ${bucket.count}건`}>
+            <span className="timeline-count">{bucket.count > 0 ? bucket.count : ""}</span>
+            <span className="timeline-bar" style={{ height: `${Math.max(4, (bucket.count / max) * 100)}%` }} />
+            <span className="timeline-label">{bucket.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
