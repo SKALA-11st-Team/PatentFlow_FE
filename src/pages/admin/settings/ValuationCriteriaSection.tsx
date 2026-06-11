@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getApiErrorMessage } from "../../../api/client";
+import { MarkdownView } from "../../../components/common/MarkdownView";
 import {
   DEFAULT_VALUATION_CRITERIA,
   getValuationCriteria,
@@ -60,6 +61,7 @@ export function ValuationCriteriaSection() {
   const [promptMessage, setPromptMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [savingPromptAxis, setSavingPromptAxis] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   const applyCriteria = (next: ValuationCriteria) => {
     setCriteria(next);
@@ -285,7 +287,7 @@ export function ValuationCriteriaSection() {
               aria-selected={activeAxis === axis}
               className={activeAxis === axis ? "selected" : ""}
               key={axis}
-              onClick={() => setActiveAxis(axis)}
+              onClick={() => { setActiveAxis(axis); setShowPreview(false); }}
               role="tab"
               type="button"
             >
@@ -304,12 +306,22 @@ export function ValuationCriteriaSection() {
                 value={promptReasons[activeAxis] ?? ""}
               />
             </label>
-            <textarea
-              className="criteria-markdown-editor"
-              onChange={(event) => setPromptDrafts((drafts) => ({ ...drafts, [activeAxis]: event.target.value }))}
-              spellCheck={false}
-              value={activePromptDraft}
-            />
+            <div className="criteria-editor-toolbar">
+              <button className={!showPreview ? "selected" : ""} onClick={() => setShowPreview(false)} type="button">편집</button>
+              <button className={showPreview ? "selected" : ""} onClick={() => setShowPreview(true)} type="button">미리보기</button>
+            </div>
+            {showPreview ? (
+              <div className="criteria-markdown-preview">
+                <MarkdownView content={activePromptDraft} />
+              </div>
+            ) : (
+              <textarea
+                className="criteria-markdown-editor"
+                onChange={(event) => setPromptDrafts((drafts) => ({ ...drafts, [activeAxis]: event.target.value }))}
+                spellCheck={false}
+                value={activePromptDraft}
+              />
+            )}
           </>
         ) : (
           <p className="empty-table-cell">Agent md 기준을 불러오지 못했습니다.</p>

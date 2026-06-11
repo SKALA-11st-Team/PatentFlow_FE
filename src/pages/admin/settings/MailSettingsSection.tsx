@@ -102,10 +102,7 @@ export function MailSettingsSection({
               type="number"
               value={mailLeadMonthsInput}
             />
-            <small className="form-helper-text">
-              분기 시작일 몇 개월 전에 검토를 시작할지 설정합니다. 기본값은 2개월입니다.
-              현재 저장값: {mailLeadMonths}개월
-            </small>
+            <small className="form-saved-value">현재 저장값: {mailLeadMonths}개월</small>
           </label>
           {mailLeadMessage ? <p className="notice notice-compact">{mailLeadMessage}</p> : null}
           <div>
@@ -151,10 +148,7 @@ export function MailSettingsSection({
               />
             </label>
           </div>
-          <small className="form-helper-text">
-            기본값: 검토 시작 후 1개월 0일.
-            현재 저장값: 검토 시작 후 {responseDeadline.months}개월 {responseDeadline.days}일
-          </small>
+          <small className="form-saved-value">현재 저장값: 검토 시작 후 {responseDeadline.months}개월 {responseDeadline.days}일</small>
           {deadlineMessage ? <p className="notice notice-compact">{deadlineMessage}</p> : null}
           <div>
             <Button
