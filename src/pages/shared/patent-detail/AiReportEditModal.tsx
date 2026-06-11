@@ -129,7 +129,11 @@ export function AiReportEditModal({
   const hasChanges = Object.keys(overrides).length > 0;
   const hasInvalidScore = report.scores.some((score) => {
     const draft = scoreDrafts[score.category];
-    if (!draft || draft.score.trim() === "") return false;
+    if (!draft) return false;
+    if (draft.score.trim() === "") {
+      // 원래 점수가 있던 축을 비우는 것은 '점수 삭제'가 아니라 미입력 — 조용히 무시되지 않도록 차단한다.
+      return score.score !== null;
+    }
     const value = Number(draft.score);
     return Number.isNaN(value) || value < 0 || value > 100;
   });
@@ -188,7 +192,9 @@ export function AiReportEditModal({
             const draft = scoreDrafts[score.category];
             const draftScore = draft?.score.trim() === "" ? null : Number(draft?.score);
             const isInvalid =
-              draftScore !== null && (Number.isNaN(draftScore) || draftScore < 0 || draftScore > 100);
+              draftScore === null
+                ? score.score !== null
+                : Number.isNaN(draftScore) || draftScore < 0 || draftScore > 100;
             return (
               <div className="ai-report-edit-score-row" key={score.category}>
                 <div className="ai-report-edit-score-head">
@@ -209,7 +215,11 @@ export function AiReportEditModal({
                     ) : null}
                   </div>
                 </div>
-                {isInvalid ? <p className="field-error">점수는 0~100 사이여야 합니다.</p> : null}
+                {isInvalid ? (
+                  <p className="field-error">
+                    {draftScore === null ? "점수를 입력해 주세요(비울 수 없습니다)." : "점수는 0~100 사이여야 합니다."}
+                  </p>
+                ) : null}
                 <textarea
                   aria-label={`${evaluationCategoryLabels[score.category]} 근거`}
                   onChange={(event) => updateScoreDraft(score.category, { evidenceSummary: event.target.value })}

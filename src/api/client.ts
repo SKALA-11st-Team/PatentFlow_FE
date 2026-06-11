@@ -1,4 +1,4 @@
-import { clearAuthSession, getStoredAccessToken } from "./authStorage";
+import { clearAuthSession, getStoredAccessToken, updateAccessToken } from "./authStorage";
 
 const importMetaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
 const API_BASE_URL = normalizeApiBaseUrl(importMetaEnv?.VITE_API_BASE_URL ?? "");
@@ -121,8 +121,19 @@ let inFlightRefresh: Promise<void> | null = null;
 
 function refreshAccessTokenOnce(): Promise<void> {
   if (!inFlightRefresh) {
-    inFlightRefresh = requestJsonInternal<ApiEnvelope<unknown>>("/auth/refresh", { method: "POST" }, false)
-      .then(() => undefined)
+    inFlightRefresh = requestJsonInternal<ApiEnvelope<{ accessToken?: string | null }>>(
+      "/auth/refresh",
+      { method: "POST" },
+      false,
+    )
+      .then((response) => {
+        // API-04: 새 accessToken을 메모리에 반영한다 — 버리면 재시도가 만료 토큰 헤더로 나가
+        // BE의 쿠키 fallback에만 의존하게 된다(쿠키 차단 환경에서 무한 401).
+        const nextAccessToken = response.data?.accessToken;
+        if (nextAccessToken) {
+          updateAccessToken(nextAccessToken);
+        }
+      })
       .finally(() => {
         inFlightRefresh = null;
       });

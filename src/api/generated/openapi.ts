@@ -276,6 +276,22 @@ export interface paths {
         patch: operations["patchFinalDecision"];
         trace?: never;
     };
+    "/api/v1/patents/{patentId}/co-applicant-consent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recordCoApplicantConsent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/patents/{patentId}/business-submissions": {
         parameters: {
             query?: never;
@@ -1369,6 +1385,131 @@ export interface components {
             /** @enum {string} */
             reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
         };
+        CoApplicantConsentRequest: {
+            /** @enum {string} */
+            status: "PENDING" | "AGREED" | "DISAGREED";
+            reason: string;
+        };
+        AiEvaluationReportResponse: {
+            reportId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** @enum {string} */
+            recommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
+            recommendationReason?: string;
+            /** Format: int32 */
+            totalScore?: number;
+            /** Format: double */
+            averageScore?: number;
+            finalGrade?: string;
+            finalIndicator?: string;
+            degraded?: boolean;
+            failureReason?: string;
+            scores?: components["schemas"]["EvaluationScoreResponse"][];
+            missingInformation?: string[];
+            rawMarkdown?: string;
+            markdownFilePath?: string;
+            keyEvidence?: string;
+            judgementGrounds?: string[];
+            businessCheckRequests?: string[];
+            externalSources?: components["schemas"]["SourceResponse"][];
+            edited?: boolean;
+            editedBy?: string;
+            /** Format: date-time */
+            editedAt?: string;
+            /** Format: int32 */
+            editVersion?: number;
+            editStale?: boolean;
+            appliedCriteria?: {
+                [key: string]: unknown;
+            };
+        };
+        ApiResponsePatentDetailResponse: {
+            data?: components["schemas"]["PatentDetailResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        BusinessOpinionResponse: {
+            /** @enum {string} */
+            decision?: "MAINTAIN" | "ABANDON";
+            reason?: string;
+            /** Format: date-time */
+            submittedAt?: string;
+        };
+        CoApplicantConsentResponse: {
+            /** @enum {string} */
+            status?: "PENDING" | "AGREED" | "DISAGREED";
+            reason?: string;
+            /** Format: date-time */
+            decidedAt?: string;
+            decidedBy?: string;
+        };
+        EvaluationScoreResponse: {
+            /** @enum {string} */
+            category?: "RIGHTS" | "TECHNOLOGY" | "MARKET" | "BUSINESS_ALIGNMENT";
+            /** Format: int32 */
+            score?: number;
+            grade?: string;
+            evidence?: string;
+            evidenceDetails?: components["schemas"]["EvidenceDetailResponse"][];
+        };
+        EvidenceDetailResponse: {
+            text?: string;
+            source?: components["schemas"]["SourceResponse"];
+        };
+        PatentDetailResponse: {
+            patentId?: string;
+            managementNumber?: string;
+            applicationNumber?: string;
+            registrationNumber?: string;
+            title?: string;
+            draftTitle?: string;
+            businessArea?: string;
+            technologyArea?: string;
+            productName?: string;
+            country?: string;
+            coApplicants?: string;
+            /** Format: date */
+            applicationDate?: string;
+            /** Format: date */
+            registrationDate?: string;
+            /** Format: date */
+            expectedExpirationDate?: string;
+            departmentId?: string;
+            departmentName?: string;
+            /** @enum {string} */
+            lifecycleStatus?: "ACTIVE" | "ABANDONED" | "EXPIRED";
+            /** @enum {string} */
+            reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+            /** Format: date */
+            feeDueDate?: string;
+            reviewReason?: string;
+            /** @enum {string} */
+            currentRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
+            /** @enum {string} */
+            businessOpinionDecision?: "MAINTAIN" | "ABANDON";
+            /** @enum {string} */
+            legalActionResult?: "MAINTAINED" | "ABANDONED";
+            summary?: components["schemas"]["PatentSummaryResponse"];
+            aiEvaluationReport?: components["schemas"]["AiEvaluationReportResponse"];
+            finalDecisionRecord?: components["schemas"]["FinalDecisionRecordResponse"];
+            businessOpinion?: components["schemas"]["BusinessOpinionResponse"];
+            inReview?: boolean;
+            jointApplication?: boolean;
+            coApplicantConsent?: components["schemas"]["CoApplicantConsentResponse"];
+        };
+        PatentSummaryResponse: {
+            summaryText?: string;
+            problemSolved?: string;
+            coreTechnicalPoints?: string[];
+            claimsSummary?: string;
+            missingFields?: string[];
+        };
+        SourceResponse: {
+            title?: string;
+            url?: string;
+        };
         BusinessChecklistResponseDto: {
             itemId: string;
             /** Format: int32 */
@@ -1577,116 +1718,6 @@ export interface components {
         };
         AssignDepartmentRequest: {
             departmentId: string;
-        };
-        AiEvaluationReportResponse: {
-            reportId?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** @enum {string} */
-            recommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
-            recommendationReason?: string;
-            /** Format: int32 */
-            totalScore?: number;
-            /** Format: double */
-            averageScore?: number;
-            finalGrade?: string;
-            finalIndicator?: string;
-            degraded?: boolean;
-            failureReason?: string;
-            scores?: components["schemas"]["EvaluationScoreResponse"][];
-            missingInformation?: string[];
-            rawMarkdown?: string;
-            markdownFilePath?: string;
-            keyEvidence?: string;
-            judgementGrounds?: string[];
-            businessCheckRequests?: string[];
-            externalSources?: components["schemas"]["SourceResponse"][];
-            edited?: boolean;
-            editedBy?: string;
-            /** Format: date-time */
-            editedAt?: string;
-            /** Format: int32 */
-            editVersion?: number;
-            editStale?: boolean;
-            appliedCriteria?: {
-                [key: string]: unknown;
-            };
-        };
-        ApiResponsePatentDetailResponse: {
-            data?: components["schemas"]["PatentDetailResponse"];
-            message?: string;
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        BusinessOpinionResponse: {
-            /** @enum {string} */
-            decision?: "MAINTAIN" | "ABANDON";
-            reason?: string;
-            /** Format: date-time */
-            submittedAt?: string;
-        };
-        EvaluationScoreResponse: {
-            /** @enum {string} */
-            category?: "RIGHTS" | "TECHNOLOGY" | "MARKET" | "BUSINESS_ALIGNMENT";
-            /** Format: int32 */
-            score?: number;
-            grade?: string;
-            evidence?: string;
-            evidenceDetails?: components["schemas"]["EvidenceDetailResponse"][];
-        };
-        EvidenceDetailResponse: {
-            text?: string;
-            source?: components["schemas"]["SourceResponse"];
-        };
-        PatentDetailResponse: {
-            patentId?: string;
-            managementNumber?: string;
-            applicationNumber?: string;
-            registrationNumber?: string;
-            title?: string;
-            draftTitle?: string;
-            businessArea?: string;
-            technologyArea?: string;
-            productName?: string;
-            country?: string;
-            coApplicants?: string;
-            /** Format: date */
-            applicationDate?: string;
-            /** Format: date */
-            registrationDate?: string;
-            /** Format: date */
-            expectedExpirationDate?: string;
-            departmentId?: string;
-            departmentName?: string;
-            /** @enum {string} */
-            lifecycleStatus?: "ACTIVE" | "ABANDONED" | "EXPIRED";
-            /** @enum {string} */
-            reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
-            /** Format: date */
-            feeDueDate?: string;
-            reviewReason?: string;
-            /** @enum {string} */
-            currentRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
-            /** @enum {string} */
-            businessOpinionDecision?: "MAINTAIN" | "ABANDON";
-            /** @enum {string} */
-            legalActionResult?: "MAINTAINED" | "ABANDONED";
-            summary?: components["schemas"]["PatentSummaryResponse"];
-            aiEvaluationReport?: components["schemas"]["AiEvaluationReportResponse"];
-            finalDecisionRecord?: components["schemas"]["FinalDecisionRecordResponse"];
-            businessOpinion?: components["schemas"]["BusinessOpinionResponse"];
-            inReview?: boolean;
-        };
-        PatentSummaryResponse: {
-            summaryText?: string;
-            problemSolved?: string;
-            coreTechnicalPoints?: string[];
-            claimsSummary?: string;
-            missingFields?: string[];
-        };
-        SourceResponse: {
-            title?: string;
-            url?: string;
         };
         AiReportEditRequest: {
             baseReportId: string;
@@ -2777,6 +2808,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseFinalDecisionResponse"];
+                };
+            };
+        };
+    };
+    recordCoApplicantConsent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CoApplicantConsentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePatentDetailResponse"];
                 };
             };
         };

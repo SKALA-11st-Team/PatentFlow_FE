@@ -51,6 +51,12 @@ export function storeAuthSession(user: AuthUser, accessToken?: string | null) {
   window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
 }
 
+// API-04: /auth/refresh 성공 시 새 accessToken을 메모리에 반영한다. 과거에는 refresh 응답을
+// 버려 메모리 토큰이 만료된 채 남았고, BE의 쿠키 fallback 덕에 우연히 동작하는 구조였다.
+export function updateAccessToken(accessToken: string | null) {
+  accessTokenInMemory = accessToken;
+}
+
 export function clearAuthSession() {
   accessTokenInMemory = null;
   window.localStorage.removeItem(USER_STORAGE_KEY);

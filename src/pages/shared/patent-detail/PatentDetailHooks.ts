@@ -177,26 +177,39 @@ export function usePatentDetail(role: UserRole) {
         }
 
         setPatent(nextPatent);
-        setPatentHistoryMessage("평가 및 판단 이력을 불러오는 중입니다.");
 
-        try {
-          const nextHistoryItems = await getPatentHistory(nextPatent.patentId);
+        if (isAdmin) {
+          setPatentHistoryMessage("평가 및 판단 이력을 불러오는 중입니다.");
+          try {
+            const nextHistoryItems = await getPatentHistory(nextPatent.patentId);
 
-          if (isMounted) {
-            setPatentHistoryItems(nextHistoryItems);
-            setPatentHistoryMessage(nextHistoryItems.length === 0 ? "아직 저장된 평가 및 판단 이력이 없습니다." : "");
+            if (isMounted) {
+              setPatentHistoryItems(nextHistoryItems);
+              setPatentHistoryMessage(nextHistoryItems.length === 0 ? "아직 저장된 평가 및 판단 이력이 없습니다." : "");
+            }
+          } catch {
+            if (isMounted) {
+              setPatentHistoryItems([]);
+              setPatentHistoryMessage("평가 및 판단 이력을 불러오지 못했습니다.");
+            }
           }
-        } catch {
-          if (isMounted) {
-            setPatentHistoryItems([]);
-            setPatentHistoryMessage("평가 및 판단 이력을 불러오지 못했습니다.");
-          }
+        } else {
+          // /patents/{id}/history는 ADMIN 전용 — BUSINESS는 보장된 403 호출 대신 호출을 생략한다.
+          setPatentHistoryItems([]);
+          setPatentHistoryMessage("기존 의사결정 기록이 없습니다.");
+        }
+
+        if (!isMounted) {
+          return;
         }
 
         if (hasPersistedBusinessOpinion(nextPatent)) {
           setHasSubmittedBusinessChecklist(true);
           try {
             const latestSubmission = await getLatestBusinessSubmission(nextPatent);
+            if (!isMounted) {
+              return;
+            }
             const scores = latestSubmission?.checklistScores ?? [];
             if (latestSubmission && scores.length > 0) {
               setBusinessChecklistSubmission({
@@ -219,14 +232,18 @@ export function usePatentDetail(role: UserRole) {
               setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
             }
           } catch {
-            setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
+            if (isMounted) {
+              setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
+            }
           }
         } else {
           setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
           setHasSubmittedBusinessChecklist(false);
         }
 
-        setLoadMessage("");
+        if (isMounted) {
+          setLoadMessage("");
+        }
       } catch {
         if (isMounted) {
           setLoadMessage("특허 상세 정보를 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
@@ -262,7 +279,18 @@ export function usePatentDetail(role: UserRole) {
 
     setBusinessChecklistSubmission(savedSubmission);
     setHasSubmittedBusinessChecklist(hasCompleteBusinessChecklistSubmission(savedSubmission));
-    setPatent((await getPatentDetail(patent.patentId)) ?? patent);
+    try {
+      // 사업부 사용자는 ADMIN 전용 /patents/{id}가 403이므로 역할에 맞는 상세 API로 재조회한다.
+      // 과거에는 항상 getPatentDetail을 호출해 제출이 성공해도 403으로 모달이 닫히지 않았다.
+      const refreshed = isAdmin
+        ? await getPatentDetail(patent.patentId)
+        : await getBusinessPatentDetail(patent.patentId);
+      if (refreshed) {
+        setPatent(refreshed);
+      }
+    } catch {
+      // 재조회 실패는 비치명 — 제출 자체는 성공했으므로 모달은 닫는다.
+    }
     setIsChecklistOpen(false);
   }
 

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getPatentAiReportOriginal,
   revertPatentAiReport,
@@ -25,6 +25,15 @@ export function useAiReportEditing(
   const [editMessage, setEditMessage] = useState("");
   const [originalReport, setOriginalReport] = useState<AiEvaluationReport | null>(null);
   const [isShowingOriginal, setIsShowingOriginal] = useState(false);
+
+  // 같은 라우트에서 특허만 바뀌는 이동(알림 링크 등) 시 이전 특허의 원본/모달 상태가
+  // 새 특허 화면에 그대로 남지 않도록 patentId 변경 시 편집 상태를 리셋한다.
+  useEffect(() => {
+    setIsEditModalOpen(false);
+    setIsShowingOriginal(false);
+    setOriginalReport(null);
+    setEditMessage("");
+  }, [patentId]);
 
   const handleSaveEdit = useCallback(
     async (overrides: AiReportOverridesPayload) => {

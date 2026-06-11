@@ -129,12 +129,17 @@ export function ValuationCriteriaSection() {
     try {
       const updated = await updateValuationCriteria(payload);
       applyCriteria(updated);
-      setHistory(await getValuationCriteriaHistory());
       setMessage("");
       showToast(
         `가치평가 기준 v${updated.config.version}이 저장되었습니다. 이후 생성되는 AI 레포트부터 적용됩니다.`,
         "success",
       );
+      // 이력 조회 실패는 저장 실패가 아니다 — 별도 처리해 성공 토스트를 가리지 않는다.
+      try {
+        setHistory(await getValuationCriteriaHistory());
+      } catch {
+        // 이력 갱신 실패는 무시(다음 진입 시 재조회).
+      }
     } catch (error) {
       showToast(getApiErrorMessage(error, "가치평가 기준 저장에 실패했습니다."), "error");
     } finally {

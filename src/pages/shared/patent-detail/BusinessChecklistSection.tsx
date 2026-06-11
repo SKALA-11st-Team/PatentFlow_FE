@@ -155,6 +155,7 @@ export function BusinessChecklistModal({
 }) {
   const [draft, setDraft] = useState(initialSubmission);
   const [submitMessage, setSubmitMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const total = getBusinessChecklistTotal(draft);
 
   return (
@@ -264,18 +265,27 @@ export function BusinessChecklistModal({
             취소
           </Button>
           <Button
+            disabled={isSubmitting}
             type="button"
-            onClick={() => {
+            onClick={async () => {
               if (!hasCompleteBusinessChecklistSubmission(draft)) {
                 setSubmitMessage("모든 체크리스트 점수와 사업부 의견을 입력해 주세요.");
                 return;
               }
 
               setSubmitMessage("");
-              onSubmit({ ...draft, evaluatedAt: "2026-05-03" });
+              setIsSubmitting(true);
+              try {
+                // 평가일은 데모 더미("2026-05-03")가 아니라 실제 제출일을 기록한다.
+                await onSubmit({ ...draft, evaluatedAt: new Date().toISOString().slice(0, 10) });
+              } catch (error) {
+                setSubmitMessage(error instanceof Error ? error.message : "의견 제출에 실패했습니다. 다시 시도해 주세요.");
+              } finally {
+                setIsSubmitting(false);
+              }
             }}
           >
-            관리자에게 전달
+            {isSubmitting ? "전달 중..." : "관리자에게 전달"}
           </Button>
         </div>
       </Modal>
