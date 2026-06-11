@@ -7,9 +7,11 @@ import type {
   AiEvaluationReport,
   AiReportEditPayload,
   CoApplicantConsent,
+  FeeScheduleEntry,
   LegalActionResult,
   PatentBibliographicInfo,
   PatentDetail,
+  PatentFeeSchedule,
   PatentLifecycleStatus,
   PatentListItem,
   PatentUpsertPayload,
@@ -559,4 +561,65 @@ function getSortablePatentValue(patent: PatentListItem, field: string) {
   }
 
   return patent.title;
+}
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-04, UI-BUS-02
+ * @description FEE-06: 연차료 일정 mock — BE 미연결 시 feeDueDate 기준 단순 연 단위 일정을 생성한다.
+ * (국가 정밀 규칙은 BE가 단일 출처이며, mock은 화면 개발용 근사치만 제공한다.)
+ */
+export function getMockPatentFeeSchedule(patentId: string): PatentFeeSchedule | undefined {
+  const detail = getMockPatentDetail(patentId);
+  if (!detail || !detail.feeDueDate) {
+    return undefined;
+  }
+  const mailLeadMonths = 2;
+  const [year, month, day] = detail.feeDueDate.split("-").map(Number);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const toIso = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+  let nextAssigned = false;
+  const items: FeeScheduleEntry[] = Array.from({ length: 7 }, (_, index) => {
+    const offset = index - 3;
+    const dueDate = new Date(year + offset, month - 1, day);
+    const reviewStartDate = new Date(year + offset, month - 1 - mailLeadMonths, day);
+    const past = dueDate.getTime() < today.getTime();
+    const isNext = !past && !nextAssigned;
+    if (isNext) {
+      nextAssigned = true;
+    }
+    return {
+      yearLabel: `${year + offset}년`,
+      yearNumber: 0,
+      lump: false,
+      dueDate: toIso(dueDate),
+      reviewStartDate: toIso(reviewStartDate),
+      status: past ? "PAST" : isNext ? "NEXT" : "FUTURE",
+      adjusted: false,
+    };
+  });
+
+  return {
+    patentId,
+    country: detail.country,
+    basis: "APPLICATION_DATE",
+    basisDate: detail.applicationDate ?? null,
+    paymentRuleLabel: "출원일 기준 매년 도래하는 연차료",
+    initialLumpYears: 0,
+    mailLeadMonths,
+    recipient: detail.departmentName
+      ? {
+          departmentId: detail.departmentId ?? "",
+          departmentName: detail.departmentName,
+          managerName: `${detail.departmentName} 담당자`,
+          managerEmail: "",
+          ccEmails: [],
+        }
+      : null,
+    items,
+  };
 }

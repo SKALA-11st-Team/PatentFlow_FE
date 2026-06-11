@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getMailLeadMonths } from "../../api/settings";
+import { getPatentFeeSchedule } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Breadcrumbs } from "../../components/layout/Breadcrumbs";
 import { Badge } from "../../components/common/Badge";
@@ -11,7 +11,7 @@ import { BusinessSubmissionHistoryDetail } from "../../components/business/Busin
 import { BusinessReviewMailPreviewModal } from "../../components/mailing/BusinessReviewMailPreviewModal";
 import { recommendationLabels, reviewWorkflowStatusLabels } from "../../constants/status";
 import type { MailingDeliveryStatus, MailingHistoryItem } from "../../types/mailing";
-import type { PatentHistoryItem, PatentLifecycleStatus, UserRole } from "../../types/patent";
+import type { PatentFeeSchedule, PatentHistoryItem, PatentLifecycleStatus, UserRole } from "../../types/patent";
 import { formatDate, usePatentDetail } from "./patent-detail/PatentDetailHooks";
 import {
   AiReportSection,
@@ -93,10 +93,16 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     setIsConsentModalOpen,
   } = usePatentDetail(role);
 
-  const [mailLeadMonths, setMailLeadMonths] = useState(2);
+  // FEE-06: 연차료 일정은 BE fee-schedule API가 단일 출처 — 국가 규칙·검토 시작일·수신처 포함.
+  const [feeSchedule, setFeeSchedule] = useState<PatentFeeSchedule | null>(null);
   useEffect(() => {
-    getMailLeadMonths().then(setMailLeadMonths).catch(() => {});
-  }, []);
+    if (!patentId) {
+      return;
+    }
+    getPatentFeeSchedule(patentId, { business: !isAdmin })
+      .then((schedule) => setFeeSchedule(schedule ?? null))
+      .catch(() => setFeeSchedule(null));
+  }, [patentId, isAdmin]);
 
   // FR-LEGAL-09: 레포트 편집은 별도 훅으로 관리한다(usePatentDetail 비대화 방지).
   const aiReportEditing = useAiReportEditing(patentId, patent?.aiEvaluationReport ?? null, (updatedReport) => {
@@ -163,9 +169,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta label="관련제품" value={patent.productName} />
           <Meta label="예상 소멸일" value={patent.expectedExpirationDate} />
         </div>
-        {patent.feeDueDate ? (
-          <FeeScheduleCard feeDueDate={patent.feeDueDate} mailLeadMonths={mailLeadMonths} departmentName={patent.departmentName} />
-        ) : null}
+        {feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
       </section>
 
       <div className="detail-followup-grid">
@@ -541,73 +545,68 @@ function SummaryBlock({ title, content }: { title: string; content: string }) {
   );
 }
 
-function feeShortDate(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function FeeScheduleCard({
-  feeDueDate,
-  mailLeadMonths,
-  departmentName,
-}: {
-  feeDueDate: string;
-  mailLeadMonths: number;
-  departmentName: string;
-}) {
+/**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-04, UI-BUS-02
+ * @description FEE-06: 연차료 납부 일정 카드 — BE fee-schedule API가 계산한 국가 규칙 기반
+ * 도래일(KR 일괄 납부·US 유지료 포함), 검토 시작(고지 발송) 예정일, 수신처를 한눈에 보여준다.
+ */
+function FeeScheduleCard({ schedule }: { schedule: PatentFeeSchedule }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // feeDueDate는 BE가 계산한 다음 납부일 — month/day를 기준으로 ±3년 생성
-  const [baseYear, baseMonth, baseDay] = feeDueDate.split("-").map(Number);
-
-  const rows = Array.from({ length: 7 }, (_, i) => {
-    const offset = i - 3; // -3 to +3
-    const year = baseYear + offset;
-
-    const dueDate = new Date(year, baseMonth - 1, baseDay);
-    const notifDate = new Date(year, baseMonth - 1 - mailLeadMonths, baseDay);
-
-    const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / 86_400_000);
-    const daysUntilNotif = Math.ceil((notifDate.getTime() - today.getTime()) / 86_400_000);
-    const isCurrent = offset === 0; // feeDueDate 연도 = 다음 납부 연도
-    const isPast = daysUntilDue < 0;
-
-    return { year, dueDate, notifDate, daysUntilDue, daysUntilNotif, isCurrent, isPast };
-  });
+  const daysUntil = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return Math.ceil((new Date(y, m - 1, d).getTime() - today.getTime()) / 86_400_000);
+  };
+  const recipientLabel = schedule.recipient
+    ? `${schedule.recipient.departmentName} · ${schedule.recipient.managerName}${
+        schedule.recipient.managerEmail ? ` (${schedule.recipient.managerEmail})` : ""
+      }`
+    : "미배정";
 
   return (
     <div className="fee-schedule-card">
       <div className="fee-schedule-header">
         <h3 className="fee-schedule-title">연차료 납부 일정</h3>
-        <span className="fee-schedule-dept">담당: {departmentName || "미배정"}</span>
+        <span className="fee-schedule-dept">고지 수신처: {recipientLabel}</span>
       </div>
+      <p className="table-subtext">{schedule.paymentRuleLabel}</p>
       <div className="table-wrap fee-schedule-table-wrap">
         <table>
           <thead>
             <tr>
-              <th>연도</th>
+              <th>연차</th>
               <th>납부 예정일</th>
-              <th>검토 시작 ({mailLeadMonths}개월 전)</th>
+              <th>검토 시작 · 고지 발송 ({schedule.mailLeadMonths}개월 전)</th>
               <th>상태</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ year, dueDate, notifDate, daysUntilDue, daysUntilNotif, isCurrent, isPast }) => (
-              <tr key={year} className={isCurrent ? "fee-row-current" : isPast ? "fee-row-past" : ""}>
-                <td><strong>{year}</strong></td>
-                <td>{feeShortDate(dueDate)}</td>
+            {schedule.items.map((item) => (
+              <tr
+                key={`${item.yearLabel}-${item.dueDate}`}
+                className={item.status === "NEXT" ? "fee-row-current" : item.status !== "FUTURE" ? "fee-row-past" : ""}
+              >
                 <td>
-                  {feeShortDate(notifDate)}
-                  {!isPast && daysUntilNotif > 0 && (
-                    <span className="table-subtext">D-{daysUntilNotif}</span>
+                  <strong>{item.yearLabel}</strong>
+                  {item.adjusted ? <span className="table-subtext">조정됨</span> : null}
+                </td>
+                <td>{item.dueDate}</td>
+                <td>
+                  {item.reviewStartDate ?? "—"}
+                  {item.status === "NEXT" && item.reviewStartDate && daysUntil(item.reviewStartDate) > 0 && (
+                    <span className="table-subtext">D-{daysUntil(item.reviewStartDate)}</span>
                   )}
                 </td>
                 <td>
-                  {isPast ? (
+                  {item.status === "PAID_LUMP" ? (
+                    <span className="badge badge-success">등록 시 일괄 납부</span>
+                  ) : item.status === "PAST" ? (
                     <span className="badge badge-neutral">완료</span>
-                  ) : isCurrent ? (
-                    <span className={`badge ${daysUntilDue <= 60 ? "badge-warning" : "badge-primary"}`}>
-                      D-{daysUntilDue} 납부예정
+                  ) : item.status === "NEXT" ? (
+                    <span className={`badge ${daysUntil(item.dueDate) <= 60 ? "badge-warning" : "badge-primary"}`}>
+                      D-{daysUntil(item.dueDate)} 납부예정
                     </span>
                   ) : (
                     <span className="badge badge-neutral">예정</span>
