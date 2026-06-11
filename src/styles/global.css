@@ -4187,3 +4187,78 @@ tbody tr:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* ── UI-008: 설정 subnav 및 Agent md 평가 기준 편집 ── */
+.settings-subnav {
+  align-items: center;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-sm);
+}
+
+.settings-subnav button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 var(--spacing-md);
+}
+
+.settings-subnav button:hover,
+.settings-subnav button:focus-visible {
+  background: var(--color-bg-light);
+  color: var(--color-text-dark);
+  outline: none;
+}
+
+.settings-subnav button.selected {
+  background: rgba(var(--color-primary-rgb), 0.08);
+  border-color: rgba(var(--color-primary-rgb), 0.22);
+  color: var(--color-primary);
+}
+
+.settings-subnav-compact {
+  margin-bottom: var(--spacing-md);
+}
+
+.settings-editor-panel {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-top: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.compact-section-header {
+  margin-bottom: var(--spacing-md);
+}
+
+.criteria-markdown-editor {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-dark);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  min-height: 520px;
+  padding: var(--spacing-md);
+  resize: vertical;
+  width: 100%;
+}
+
+.criteria-markdown-editor:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}

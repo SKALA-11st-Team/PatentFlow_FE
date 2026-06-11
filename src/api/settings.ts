@@ -196,6 +196,93 @@ export async function getValuationCriteriaHistory(): Promise<ValuationCriteriaVe
   return response.data ?? [];
 }
 
+
+export interface ValuationPrompt {
+  axis: string;
+  label: string;
+  path: string;
+  markdown: string;
+  checksum: string;
+  updatedAt: string | null;
+}
+
+export interface ValuationPromptPayload {
+  markdown: string;
+  reason?: string;
+  expectedChecksum?: string;
+}
+
+const DEFAULT_VALUATION_PROMPTS: ValuationPrompt[] = [
+  {
+    axis: "legal",
+    label: "권리성",
+    path: "prompts/valuation/valuation_legal.md",
+    markdown: "# Valuation Legal Axis Prompt\n\n권리성 축의 세부 평가 기준 md입니다.",
+    checksum: "mock-legal",
+    updatedAt: null,
+  },
+  {
+    axis: "technology",
+    label: "기술성",
+    path: "prompts/valuation/valuation_technology.md",
+    markdown: "# Valuation Technology Axis Prompt\n\n기술성 축의 세부 평가 기준 md입니다.",
+    checksum: "mock-technology",
+    updatedAt: null,
+  },
+  {
+    axis: "market",
+    label: "시장성",
+    path: "prompts/valuation/valuation_market.md",
+    markdown: "# Valuation Market Axis Prompt\n\n시장성 축의 세부 평가 기준 md입니다.",
+    checksum: "mock-market",
+    updatedAt: null,
+  },
+  {
+    axis: "business_fit",
+    label: "사업 연계성",
+    path: "prompts/valuation/valuation_business_fit.md",
+    markdown: "# Valuation Business Fit Axis Prompt\n\n사업 연계성 축의 세부 평가 기준 md입니다.",
+    checksum: "mock-business-fit",
+    updatedAt: null,
+  },
+];
+
+let mockValuationPrompts = structuredClone(DEFAULT_VALUATION_PROMPTS);
+
+export async function getValuationPrompts(): Promise<ValuationPrompt[]> {
+  if (!isBackendApiEnabled()) return structuredClone(mockValuationPrompts);
+  const response = await requestJson<ApiEnvelope<ValuationPrompt[]>>("/settings/valuation-criteria/prompts");
+  return response.data ?? [];
+}
+
+export async function getValuationPrompt(axis: string): Promise<ValuationPrompt> {
+  if (!isBackendApiEnabled()) {
+    return structuredClone(mockValuationPrompts.find((item) => item.axis === axis) ?? mockValuationPrompts[0]);
+  }
+  const response = await requestJson<ApiEnvelope<ValuationPrompt>>(
+    `/settings/valuation-criteria/prompts/${encodeURIComponent(axis)}`,
+  );
+  return response.data as ValuationPrompt;
+}
+
+export async function updateValuationPrompt(axis: string, payload: ValuationPromptPayload): Promise<ValuationPrompt> {
+  if (!isBackendApiEnabled()) {
+    const updated: ValuationPrompt = {
+      ...(mockValuationPrompts.find((item) => item.axis === axis) ?? mockValuationPrompts[0]),
+      markdown: payload.markdown,
+      checksum: `mock-${axis}-${Date.now()}`,
+      updatedAt: new Date().toISOString(),
+    };
+    mockValuationPrompts = mockValuationPrompts.map((item) => (item.axis === axis ? updated : item));
+    return structuredClone(updated);
+  }
+  const response = await requestJson<ApiEnvelope<ValuationPrompt>>(
+    `/settings/valuation-criteria/prompts/${encodeURIComponent(axis)}`,
+    { method: "PUT", body: JSON.stringify(payload) },
+  );
+  return response.data as ValuationPrompt;
+}
+
 // ── 사업부 체크리스트 항목 관리 (리걸팀) ─────────────────────
 
 export interface BusinessChecklistItemPayload {
@@ -360,6 +447,8 @@ export interface AnnualFeeScheduleItem {
   adjustedAnnualFeeDueDate: string | null;
   latestAdjustmentReason: string | null;
   countryExtensionMonths: number;
+  annualFeeBasis: "APPLICATION_DATE" | "REGISTRATION_DATE" | string;
+  paymentRuleLabel: string | null;
   adjustmentHistory: AnnualFeeAdjustmentHistory[];
 }
 

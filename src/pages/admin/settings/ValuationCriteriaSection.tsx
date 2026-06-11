@@ -4,10 +4,13 @@ import {
   DEFAULT_VALUATION_CRITERIA,
   getValuationCriteria,
   getValuationCriteriaHistory,
+  getValuationPrompts,
   updateValuationCriteria,
+  updateValuationPrompt,
   type ValuationCriteria,
   type ValuationCriteriaPayload,
   type ValuationCriteriaVersion,
+  type ValuationPrompt,
 } from "../../../api/settings";
 import { Button } from "../../../components/common/Button";
 import { useToast } from "../../../components/common/toastContext";
@@ -19,19 +22,7 @@ const AXIS_LABELS: Record<string, string> = {
   business_fit: "사업 연계성",
 };
 
-const SUBSCORE_GROUP_LABELS: Record<string, string> = {
-  legal: "권리성 세부 배점",
-  business_fit: "사업 연계성 세부 배점",
-};
-
-const SUBSCORE_LABELS: Record<string, string> = {
-  right_stability: "권리안정성",
-  claim_protection: "권리보호력",
-  portfolio_defensive_value: "포트폴리오·해외 권리",
-  official_business_evidence: "공식 사업 근거",
-  product_function_direct_match: "제품·기능 직접 일치",
-  business_context_fit: "사업 맥락 적합성",
-};
+const AXIS_ORDER = ["legal", "technology", "market", "business_fit"];
 
 type NumberDraft = Record<string, string>;
 type GroupDraft = Record<string, NumberDraft>;
@@ -49,10 +40,9 @@ const hasInvalidNumber = (draft: NumberDraft, { min = 0, max = 100 } = {}) =>
   });
 
 /**
- * @relatedFR FR-LEGAL-09
- * @relatedUI UI-LEGAL-07 (UI-008 평가 기준 구성)
- * @description 리걸팀이 AI 가치평가 에이전트의 평가 세부사항(축 가중치/등급 컷오프/유지 임계/
- *     subscore 배점)을 조정하는 관리자 설정 섹션. 변경은 이후 생성되는 레포트부터 적용된다.
+ * @relatedFR FR-006, FR-007, FR-008, FR-LEGAL-21
+ * @relatedUI UI-008
+ * @description AI 특허 평가 레포트의 축 가중치와 Agent md 기반 세부 평가 기준을 관리한다.
  */
 export function ValuationCriteriaSection() {
   const { showToast } = useToast();
@@ -62,8 +52,14 @@ export function ValuationCriteriaSection() {
   const [cutoffDraft, setCutoffDraft] = useState<NumberDraft>({});
   const [thresholdDraft, setThresholdDraft] = useState("60");
   const [subscoreDraft, setSubscoreDraft] = useState<GroupDraft>({});
+  const [prompts, setPrompts] = useState<ValuationPrompt[]>([]);
+  const [promptDrafts, setPromptDrafts] = useState<Record<string, string>>({});
+  const [promptReasons, setPromptReasons] = useState<Record<string, string>>({});
+  const [activeAxis, setActiveAxis] = useState("legal");
   const [message, setMessage] = useState("");
+  const [promptMessage, setPromptMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [savingPromptAxis, setSavingPromptAxis] = useState<string | null>(null);
 
   const applyCriteria = (next: ValuationCriteria) => {
     setCriteria(next);
@@ -77,13 +73,19 @@ export function ValuationCriteriaSection() {
     );
   };
 
+  const applyPrompts = (nextPrompts: ValuationPrompt[]) => {
+    setPrompts(nextPrompts);
+    setPromptDrafts(Object.fromEntries(nextPrompts.map((item) => [item.axis, item.markdown])));
+  };
+
   useEffect(() => {
     let isMounted = true;
-    Promise.all([getValuationCriteria(), getValuationCriteriaHistory()])
-      .then(([current, versions]) => {
+    Promise.all([getValuationCriteria(), getValuationCriteriaHistory(), getValuationPrompts()])
+      .then(([current, versions, nextPrompts]) => {
         if (!isMounted) return;
         applyCriteria(current);
         setHistory(versions);
+        applyPrompts(nextPrompts);
       })
       .catch((error) => {
         if (isMounted) setMessage(getApiErrorMessage(error, "가치평가 기준을 불러오지 못했습니다."));
@@ -110,6 +112,9 @@ export function ValuationCriteriaSection() {
     [subscoreDraft],
   );
   const canSave = !axisInvalid && !cutoffInvalid && !thresholdInvalid && invalidSubscoreGroups.length === 0;
+  const activePrompt = prompts.find((item) => item.axis === activeAxis);
+  const activePromptDraft = promptDrafts[activeAxis] ?? "";
+  const isPromptDirty = Boolean(activePrompt && activePrompt.markdown !== activePromptDraft);
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -129,21 +134,37 @@ export function ValuationCriteriaSection() {
     try {
       const updated = await updateValuationCriteria(payload);
       applyCriteria(updated);
-      setMessage("");
-      showToast(
-        `가치평가 기준 v${updated.config.version}이 저장되었습니다. 이후 생성되는 AI 레포트부터 적용됩니다.`,
-        "success",
-      );
-      // 이력 조회 실패는 저장 실패가 아니다 — 별도 처리해 성공 토스트를 가리지 않는다.
+      showToast(`가치평가 기준 v${updated.config.version}이 저장되었습니다.`, "success");
       try {
         setHistory(await getValuationCriteriaHistory());
       } catch {
-        // 이력 갱신 실패는 무시(다음 진입 시 재조회).
+        // 이력 갱신 실패는 다음 진입 시 재조회한다.
       }
     } catch (error) {
       showToast(getApiErrorMessage(error, "가치평가 기준 저장에 실패했습니다."), "error");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSavePrompt = async () => {
+    if (!activePrompt || !isPromptDirty) return;
+    setSavingPromptAxis(activeAxis);
+    setPromptMessage("");
+    try {
+      const updated = await updateValuationPrompt(activeAxis, {
+        markdown: activePromptDraft,
+        reason: promptReasons[activeAxis],
+        expectedChecksum: activePrompt.checksum,
+      });
+      setPrompts((current) => current.map((item) => (item.axis === activeAxis ? updated : item)));
+      setPromptDrafts((drafts) => ({ ...drafts, [activeAxis]: updated.markdown }));
+      setPromptReasons((drafts) => ({ ...drafts, [activeAxis]: "" }));
+      showToast(`${updated.label} 세부 평가 기준 md가 저장되었습니다.`, "success");
+    } catch (error) {
+      setPromptMessage(getApiErrorMessage(error, "세부 평가 기준 md 저장에 실패했습니다."));
+    } finally {
+      setSavingPromptAxis(null);
     }
   };
 
@@ -166,8 +187,7 @@ export function ValuationCriteriaSection() {
         <div>
           <h2>AI 가치평가 기준</h2>
           <p>
-            축 가중치·등급 컷오프·유지 권고 임계값·세부 배점을 조정합니다. 저장 후 새로 생성되는 AI
-            레포트부터 적용되며, 기존 레포트는 다시 채점되지 않습니다.
+            4개 평가축의 가중치와 Agent md 파일의 세부 평가 기준을 관리합니다. 변경은 이후 생성되는 AI 레포트부터 적용됩니다.
           </p>
         </div>
         <div className="inline-action-group">
@@ -175,7 +195,7 @@ export function ValuationCriteriaSection() {
             기본값 복원
           </Button>
           <Button disabled={!canSave || isSaving} onClick={handleSave} type="button">
-            {isSaving ? "저장 중..." : "기준 저장"}
+            {isSaving ? "저장 중..." : "가중치 저장"}
           </Button>
         </div>
       </div>
@@ -192,9 +212,7 @@ export function ValuationCriteriaSection() {
       <div className="valuation-criteria-grid">
         <div className="valuation-criteria-card">
           <h3>축 가중치</h3>
-          <p className="valuation-criteria-help">
-            평균 점수 산출 시 각 평가축의 비중입니다. 합계가 100이어야 합니다.
-          </p>
+          <p className="valuation-criteria-help">평균 점수 산출 시 각 평가축의 비중입니다. 합계가 100이어야 합니다.</p>
           {Object.keys(AXIS_LABELS).map((axis) => (
             <label className="valuation-criteria-field" key={axis}>
               <span>{AXIS_LABELS[axis]}</span>
@@ -210,7 +228,7 @@ export function ValuationCriteriaSection() {
           ))}
           <p className={axisInvalid ? "field-error" : "valuation-criteria-sum"}>
             합계 {axisSum}
-            {axisInvalid ? " — 합계가 100이어야 저장할 수 있습니다." : " / 100"}
+            {axisInvalid ? " - 합계가 100이어야 저장할 수 있습니다." : " / 100"}
           </p>
         </div>
 
@@ -246,38 +264,61 @@ export function ValuationCriteriaSection() {
         </div>
       </div>
 
-      <details className="valuation-criteria-advanced">
-        <summary>세부 배점 (고급)</summary>
-        <div className="valuation-criteria-grid">
-          {Object.entries(subscoreDraft).map(([group, draft]) => (
-            <div className="valuation-criteria-card" key={group}>
-              <h3>{SUBSCORE_GROUP_LABELS[group] ?? group}</h3>
-              {Object.keys(draft).map((key) => (
-                <label className="valuation-criteria-field" key={key}>
-                  <span>{SUBSCORE_LABELS[key] ?? key}</span>
-                  <input
-                    inputMode="numeric"
-                    max={100}
-                    min={0}
-                    onChange={(event) =>
-                      setSubscoreDraft((current) => ({
-                        ...current,
-                        [group]: { ...current[group], [key]: event.target.value },
-                      }))
-                    }
-                    type="number"
-                    value={draft[key] ?? ""}
-                  />
-                </label>
-              ))}
-              <p className={invalidSubscoreGroups.includes(group) ? "field-error" : "valuation-criteria-sum"}>
-                합계 {draftSum(draft)}
-                {invalidSubscoreGroups.includes(group) ? " — 합계가 100이어야 합니다." : " / 100"}
-              </p>
-            </div>
+      <div className="settings-editor-panel">
+        <div className="section-header compact-section-header">
+          <div>
+            <h3>세부 평가 기준 md</h3>
+            <p>점수 후보와 판단 기준은 Agent의 valuation prompt md 파일을 직접 편집합니다.</p>
+          </div>
+          <Button
+            disabled={!isPromptDirty || savingPromptAxis === activeAxis}
+            onClick={handleSavePrompt}
+            type="button"
+            variant="secondary"
+          >
+            {savingPromptAxis === activeAxis ? "저장 중..." : "md 저장"}
+          </Button>
+        </div>
+        <div aria-label="가치평가 축 선택" className="settings-subnav settings-subnav-compact" role="tablist">
+          {AXIS_ORDER.map((axis) => (
+            <button
+              aria-selected={activeAxis === axis}
+              className={activeAxis === axis ? "selected" : ""}
+              key={axis}
+              onClick={() => setActiveAxis(axis)}
+              role="tab"
+              type="button"
+            >
+              {AXIS_LABELS[axis]}
+            </button>
           ))}
         </div>
-      </details>
+        {activePrompt ? (
+          <>
+            <p className="notice notice-compact">
+              파일: {activePrompt.path} · checksum {activePrompt.checksum.slice(0, 8)}
+              {activePrompt.updatedAt ? ` · ${activePrompt.updatedAt.slice(0, 10)}` : ""}
+            </p>
+            {promptMessage ? <p className="field-error">{promptMessage}</p> : null}
+            <label className="form-field">
+              <span className="form-label-text">변경 사유</span>
+              <input
+                onChange={(event) => setPromptReasons((drafts) => ({ ...drafts, [activeAxis]: event.target.value }))}
+                placeholder="예: 권리보호력 점수 후보 보정"
+                value={promptReasons[activeAxis] ?? ""}
+              />
+            </label>
+            <textarea
+              className="criteria-markdown-editor"
+              onChange={(event) => setPromptDrafts((drafts) => ({ ...drafts, [activeAxis]: event.target.value }))}
+              spellCheck={false}
+              value={activePromptDraft}
+            />
+          </>
+        ) : (
+          <p className="empty-table-cell">Agent md 기준을 불러오지 못했습니다.</p>
+        )}
+      </div>
 
       {history.length ? (
         <details className="valuation-criteria-advanced">
@@ -291,8 +332,7 @@ export function ValuationCriteriaSection() {
                 <span>
                   가중치 {Object.entries(item.config.axisWeights)
                     .map(([axis, weight]) => `${AXIS_LABELS[axis] ?? axis} ${weight}`)
-                    .join(", ")}{" "}
-                  · 유지 임계 {item.config.maintainThreshold}점
+                    .join(", ")} · 유지 임계 {item.config.maintainThreshold}점
                 </span>
               </div>
             ))}
