@@ -23,12 +23,13 @@ export interface BusinessReviewMailPatentSummary {
 
 /**
  * @relatedFR FR-LEGAL-13
- * MAIL-12: 특허별 PDF 다운로드 링크 해석 결과 — KIPRIS_S3는 presigned 링크, ORIGINAL_URL은 원문 폴백.
+ * MAIL-12/MAIL-13: 특허별 PDF 다운로드 링크 해석 결과 — UPLOADED는 법무팀 직접 업로드본
+ * (앱 내 다운로드, pdfUrl 없음), KIPRIS_S3는 presigned 링크, ORIGINAL_URL은 원문 폴백.
  */
 export interface PatentPdfLink {
   patentId: string;
   pdfUrl: string | null;
-  source: "KIPRIS_S3" | "ORIGINAL_URL";
+  source: "UPLOADED" | "KIPRIS_S3" | "ORIGINAL_URL";
   expiresAt: string | null;
 }
 

@@ -8,7 +8,7 @@ import { Section } from "../../components/common/Section";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { WorkflowStatusBadge } from "../../components/patent/WorkflowStatusBadge";
 import { getDepartments, type Department } from "../../api/departments";
-import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields } from "../../api/patents";
+import { createPatent, lookupPatentBibliographicInfo, suggestPatentContextFields, uploadPatentPdf } from "../../api/patents";
 import { getApiErrorMessage } from "../../api/client";
 import { getClassifications, type ClassificationGroup } from "../../api/settings";
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
@@ -60,6 +60,8 @@ export function AdminPatentListPage() {
   const [isLookingUp, setIsLookingUp] = useState(false);
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // MAIL-13: 등록 시 함께 업로드할 특허 PDF(선택). 등록 성공 후 patentId로 업로드한다.
+  const [pendingPdfFile, setPendingPdfFile] = useState<File | null>(null);
   const [isManualMetadataEditEnabled, setIsManualMetadataEditEnabled] = useState(false);
 
   useEffect(() => {
@@ -171,7 +173,20 @@ export function AdminPatentListPage() {
       });
       setForm(emptyPatentForm);
       setIsManualMetadataEditEnabled(false);
-      setSaveMessage("특허가 등록되었습니다.");
+      // MAIL-13: 선택해 둔 PDF는 등록 직후 업로드한다. 업로드 실패해도 특허 등록은 유지되며
+      // 수정 화면에서 재업로드할 수 있다.
+      if (pendingPdfFile) {
+        try {
+          await uploadPatentPdf(result.patentId, pendingPdfFile);
+          setSaveMessage("특허와 PDF가 등록되었습니다.");
+        } catch (uploadError) {
+          setSaveMessage("특허는 등록되었으나 PDF 업로드에 실패했습니다. 수정 화면에서 다시 업로드해 주세요.");
+          console.error(uploadError);
+        }
+        setPendingPdfFile(null);
+      } else {
+        setSaveMessage("특허가 등록되었습니다.");
+      }
     } catch (error) {
       // API-02: 특허 등록 실패 시 에러 메시지를 화면에 노출한다.
       setSaveError(getApiErrorMessage(error, "특허 등록에 실패했습니다. 입력값과 BE 상태를 확인해 주세요."));
@@ -226,6 +241,24 @@ export function AdminPatentListPage() {
       ...currentForm,
       [name]: name === "registrationNumber" && value.trim() === "" ? null : value,
     }));
+  }
+
+  // MAIL-13: 등록 폼의 특허 PDF 선택 — 형식·크기만 검증하고 실제 업로드는 등록 성공 후 수행한다.
+  function handlePdfFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    if (file && !file.name.toLowerCase().endsWith(".pdf")) {
+      setSaveMessage("PDF 파일만 첨부할 수 있습니다.");
+      event.target.value = "";
+      setPendingPdfFile(null);
+      return;
+    }
+    if (file && file.size > 50 * 1024 * 1024) {
+      setSaveMessage("PDF 파일은 50MB를 넘을 수 없습니다.");
+      event.target.value = "";
+      setPendingPdfFile(null);
+      return;
+    }
+    setPendingPdfFile(file);
   }
 
   return (
@@ -386,6 +419,22 @@ export function AdminPatentListPage() {
           <datalist id="technology-area-options">
             {technologyClassifications.map((value) => <option key={value} value={value} />)}
           </datalist>
+          <div className="context-suggestion-row">
+            <div>
+              <strong>특허 PDF 첨부 (선택)</strong>
+              <span>
+                KIPRIS로 공개전문 PDF를 가져올 수 없는 국가(대만·UAE 등)는 PDF를 선택해 두면 등록과 함께 업로드됩니다.
+              </span>
+            </div>
+            <label className="form-actions">
+              <input
+                accept=".pdf,application/pdf"
+                aria-label="등록할 특허 PDF 파일 선택"
+                onChange={handlePdfFileChange}
+                type="file"
+              />
+            </label>
+          </div>
           <div className="form-actions">
             <Button disabled={isSaving} type="submit">
               {isSaving ? "저장 중" : "특허 등록"}

@@ -64,6 +64,38 @@ export async function requestJson<T>(path: string, init: RequestInit = {}): Prom
   return requestJsonInternal<T>(path, init, true);
 }
 
+/**
+ * @relatedFR FR-LEGAL-13
+ * @description MAIL-13: 인증이 필요한 바이너리(특허 PDF 등) 다운로드 — requestJson과 동일한
+ * 토큰/401 갱신 처리를 거쳐 Blob을 돌려준다.
+ */
+export async function requestBlob(path: string, allowRefresh = true): Promise<Blob> {
+  const headers = new Headers();
+  const accessToken = getStoredAccessToken();
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, { credentials: "include", headers });
+
+  if (response.status === 401 && allowRefresh) {
+    try {
+      await refreshAccessTokenOnce();
+    } catch (refreshError) {
+      clearAuthSession();
+      redirectToLogin();
+      throw refreshError;
+    }
+    return requestBlob(path, false);
+  }
+
+  if (!response.ok) {
+    throw new ApiRequestError(response.status, response.statusText, await parseErrorEnvelope(response));
+  }
+
+  return response.blob();
+}
+
 async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefresh: boolean): Promise<T> {
   const method = init.method?.toUpperCase() ?? "GET";
   const headers = new Headers(init.headers);
@@ -72,7 +104,9 @@ async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefr
     headers.set("Accept", "application/json");
   }
 
-  if (!headers.has("Content-Type")) {
+  // MAIL-13: FormData 업로드는 브라우저가 multipart boundary를 포함한 Content-Type을
+  // 자동 생성해야 하므로 강제 설정하지 않는다(설정하면 boundary 누락으로 업로드가 깨진다).
+  if (!headers.has("Content-Type") && !(init.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 

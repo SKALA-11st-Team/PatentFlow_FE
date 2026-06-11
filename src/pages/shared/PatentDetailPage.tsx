@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getPatentFeeSchedule } from "../../api/patents";
+import { downloadPatentPdf, getPatentFeeSchedule, getPatentPdfMeta } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Breadcrumbs } from "../../components/layout/Breadcrumbs";
 import { Badge } from "../../components/common/Badge";
@@ -11,7 +11,7 @@ import { BusinessSubmissionHistoryDetail } from "../../components/business/Busin
 import { BusinessReviewMailPreviewModal } from "../../components/mailing/BusinessReviewMailPreviewModal";
 import { recommendationLabels, reviewWorkflowStatusLabels } from "../../constants/status";
 import type { MailingDeliveryStatus, MailingHistoryItem } from "../../types/mailing";
-import type { PatentFeeSchedule, PatentHistoryItem, PatentLifecycleStatus, UserRole } from "../../types/patent";
+import type { PatentFeeSchedule, PatentHistoryItem, PatentLifecycleStatus, PatentPdfMeta, UserRole } from "../../types/patent";
 import { formatDate, usePatentDetail } from "./patent-detail/PatentDetailHooks";
 import {
   AiReportSection,
@@ -95,6 +95,8 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
   // FEE-06: 연차료 일정은 BE fee-schedule API가 단일 출처 — 국가 규칙·검토 시작일·수신처 포함.
   const [feeSchedule, setFeeSchedule] = useState<PatentFeeSchedule | null>(null);
+  // MAIL-13: 법무팀이 업로드한 특허 PDF 첨부 상태 — 있으면 다운로드 버튼 노출(메일 안내의 도착지).
+  const [pdfMeta, setPdfMeta] = useState<PatentPdfMeta | null>(null);
   useEffect(() => {
     if (!patentId) {
       return;
@@ -102,7 +104,21 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     getPatentFeeSchedule(patentId, { business: !isAdmin })
       .then((schedule) => setFeeSchedule(schedule ?? null))
       .catch(() => setFeeSchedule(null));
+    getPatentPdfMeta(patentId, { business: !isAdmin })
+      .then(setPdfMeta)
+      .catch(() => setPdfMeta(null));
   }, [patentId, isAdmin]);
+
+  async function handleDownloadPatentPdf() {
+    if (!patentId) {
+      return;
+    }
+    try {
+      await downloadPatentPdf(patentId, pdfMeta?.docName ?? null, { business: !isAdmin });
+    } catch {
+      // 다운로드 실패는 치명적이지 않음 — 원문 URL 경로가 별도로 존재한다.
+    }
+  }
 
   // FR-LEGAL-09: 레포트 편집은 별도 훅으로 관리한다(usePatentDetail 비대화 방지).
   const aiReportEditing = useAiReportEditing(patentId, patent?.aiEvaluationReport ?? null, (updatedReport) => {
@@ -157,6 +173,11 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
             )}
           </div>
           <p>{patent.reviewReason}</p>
+          {pdfMeta?.exists && pdfMeta.storageType === "UPLOADED" ? (
+            <Button onClick={handleDownloadPatentPdf} type="button" variant="secondary">
+              특허 PDF 다운로드{pdfMeta.docName ? ` (${pdfMeta.docName})` : ""}
+            </Button>
+          ) : null}
         </div>
         <div className="meta-grid">
           <Meta label="관리번호" value={patent.managementNumber} />

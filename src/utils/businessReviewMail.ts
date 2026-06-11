@@ -41,27 +41,41 @@ export function createBusinessReviewMailDraftFromPatents(
     throw new Error("메일 초안을 만들 특허가 없습니다.");
   }
 
-  // MAIL-12: KIPRIS_S3 링크만 본문에 PDF 라인을 추가한다(ORIGINAL_URL 폴백은 기존 원문 라인으로 충분).
+  // MAIL-12/MAIL-13: KIPRIS_S3는 presigned 링크, UPLOADED(법무팀 직접 업로드 — TW·UAE 등)는
+  // 인증이 필요한 앱 내 다운로드라 특허 상세 딥링크를 안내한다. ORIGINAL_URL 폴백은 원문 라인으로 충분.
   const pdfLinkByPatentId = new Map(
-    pdfLinks.filter((link) => link.source === "KIPRIS_S3" && link.pdfUrl).map((link) => [link.patentId, link]),
+    pdfLinks
+      .filter((link) => link.source === "UPLOADED" || (link.source === "KIPRIS_S3" && link.pdfUrl))
+      .map((link) => [link.patentId, link]),
   );
   const recipient = getDepartmentRecipient(firstPatent, recipientMappings);
-  const patentLines = patents.flatMap((patent, index) => [
-    `${index + 1}. ${patent.managementNumber} · ${patent.title}`,
-    `   - 관련 사업: ${getDisplayValue(patent.businessArea)}`,
-    `   - 관련 기술: ${getDisplayValue(patent.technologyArea)}`,
-    `   - 연차료 납부 예정일: ${patent.feeDueDate}`,
-    `   - 특허 원문: ${getOriginalPatentUrl(patent)}`,
-    ...(pdfLinkByPatentId.has(patent.patentId)
-      ? [`   - 특허 PDF 다운로드: ${pdfLinkByPatentId.get(patent.patentId)!.pdfUrl} (7일간 유효)`]
-      : []),
-  ]);
 
   // MAIL-10: placeholder(patentflow.example.com) 대신 실제 앱 URL — VITE_APP_URL 우선, 없으면 현재 origin,
   // 둘 다 없으면 접속 URL 라인을 생략한다(메일에 가짜 URL 노출 방지).
   const importMetaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
   const accessUrl = (importMetaEnv?.VITE_APP_URL?.trim())
     || (typeof window !== "undefined" ? window.location.origin : "");
+
+  const patentLines = patents.flatMap((patent, index) => {
+    const pdfLink = pdfLinkByPatentId.get(patent.patentId);
+    return [
+      `${index + 1}. ${patent.managementNumber} · ${patent.title}`,
+      `   - 관련 사업: ${getDisplayValue(patent.businessArea)}`,
+      `   - 관련 기술: ${getDisplayValue(patent.technologyArea)}`,
+      `   - 연차료 납부 예정일: ${patent.feeDueDate}`,
+      `   - 특허 원문: ${getOriginalPatentUrl(patent)}`,
+      ...(pdfLink?.source === "KIPRIS_S3"
+        ? [`   - 특허 PDF 다운로드: ${pdfLink.pdfUrl} (7일간 유효)`]
+        : []),
+      ...(pdfLink?.source === "UPLOADED"
+        ? [
+            `   - 특허 PDF: 시스템 특허 상세에서 다운로드${
+              accessUrl ? ` (${accessUrl}/business/patents/${patent.patentId})` : ""
+            }`,
+          ]
+        : []),
+    ];
+  });
   return {
     body: [
       `${recipient.name}님,`,

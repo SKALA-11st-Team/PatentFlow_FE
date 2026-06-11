@@ -247,3 +247,18 @@ export interface PatentFeeSchedule {
   recipient: FeeScheduleRecipient | null;
   items: FeeScheduleEntry[];
 }
+
+/**
+ * @relatedFR FR-LEGAL-13
+ * MAIL-13: 특허 PDF 첨부 상태 — 법무팀 직접 업로드(UPLOADED, TW·UAE 등 KIPRIS 미지원 국가) 또는
+ * KIPRIS S3 캐시(KIPRIS_S3). 등록/수정 화면의 업로드 위젯과 상세 화면의 다운로드 버튼이 사용한다.
+ */
+export interface PatentPdfMeta {
+  patentId: string;
+  exists: boolean;
+  storageType: "UPLOADED" | "KIPRIS_S3" | null;
+  docName: string | null;
+  contentLength: number | null;
+  uploadedBy: string | null;
+  createdAt: string | null;
+}

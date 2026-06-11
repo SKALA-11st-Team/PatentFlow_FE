@@ -14,6 +14,7 @@ import type {
   PatentFeeSchedule,
   PatentLifecycleStatus,
   PatentListItem,
+  PatentPdfMeta,
   PatentUpsertPayload,
   Recommendation,
 } from "../types/patent";
@@ -622,4 +623,42 @@ export function getMockPatentFeeSchedule(patentId: string): PatentFeeSchedule | 
       : null,
     items,
   };
+}
+
+/**
+ * @relatedFR FR-LEGAL-13
+ * MAIL-13: 특허 PDF 첨부 mock — 업로드 메타만 인메모리로 보관한다(본문 저장·다운로드는 BE 전용).
+ */
+const mockPatentPdfMetas = new Map<string, PatentPdfMeta>();
+
+export function getMockPatentPdfMeta(patentId: string): PatentPdfMeta {
+  return (
+    mockPatentPdfMetas.get(patentId) ?? {
+      patentId,
+      exists: false,
+      storageType: null,
+      docName: null,
+      contentLength: null,
+      uploadedBy: null,
+      createdAt: null,
+    }
+  );
+}
+
+export function setMockPatentPdf(patentId: string, docName: string, contentLength: number): PatentPdfMeta {
+  const meta: PatentPdfMeta = {
+    patentId,
+    exists: true,
+    storageType: "UPLOADED",
+    docName,
+    contentLength,
+    uploadedBy: "Legal팀(mock)",
+    createdAt: new Date().toISOString(),
+  };
+  mockPatentPdfMetas.set(patentId, meta);
+  return meta;
+}
+
+export function removeMockPatentPdf(patentId: string) {
+  mockPatentPdfMetas.delete(patentId);
 }

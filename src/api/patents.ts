@@ -1,5 +1,6 @@
 import {
   isBackendApiEnabled,
+  requestBlob,
   requestJson,
   toQueryString,
   type ApiEnvelope,
@@ -15,6 +16,9 @@ import {
   getMockPatentDetail,
   getMockPatentFeeSchedule,
   getMockPatentPage,
+  getMockPatentPdfMeta,
+  removeMockPatentPdf,
+  setMockPatentPdf,
   lookupMockPatentBibliographicInfo,
   recordMockCoApplicantConsent,
   recordMockPatentFinalDecision,
@@ -33,6 +37,7 @@ import type {
   PatentBibliographicInfo,
   PatentDetail,
   PatentFeeSchedule,
+  PatentPdfMeta,
   AiReportJob,
   EvaluationScore,
   FinalDecisionRecord,
@@ -403,6 +408,72 @@ export async function getBusinessPatentDetail(patentId: string): Promise<PatentD
   }
 
   return getMockPatentDetail(patentId);
+}
+
+/**
+ * @relatedFR FR-LEGAL-13
+ * @relatedUI UI-LEGAL-03
+ * @description MAIL-13: 법무팀 특허 PDF 직접 업로드 — TW·UAE 등 KIPRIS로 공개전문을 가져올 수
+ * 없는 국가의 특허에 등록/수정 화면에서 PDF를 첨부한다(기존 첨부는 교체).
+ */
+export async function uploadPatentPdf(patentId: string, file: File): Promise<PatentPdfMeta> {
+  if (isBackendApiEnabled()) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await requestJson<ApiEnvelope<PatentPdfMeta>>(`/patents/${patentId}/pdf`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.data) {
+      throw new Error("PDF 업로드 응답이 비어 있습니다.");
+    }
+    return response.data;
+  }
+
+  return setMockPatentPdf(patentId, file.name, file.size);
+}
+
+export async function getPatentPdfMeta(
+  patentId: string,
+  options: { business?: boolean } = {},
+): Promise<PatentPdfMeta> {
+  if (isBackendApiEnabled()) {
+    const basePath = options.business ? "/business/patents" : "/patents";
+    const response = await requestJson<ApiEnvelope<PatentPdfMeta>>(`${basePath}/${patentId}/pdf/meta`);
+    return response.data ?? { patentId, exists: false, storageType: null, docName: null, contentLength: null, uploadedBy: null, createdAt: null };
+  }
+
+  return getMockPatentPdfMeta(patentId);
+}
+
+export async function deletePatentPdf(patentId: string): Promise<void> {
+  if (isBackendApiEnabled()) {
+    await requestJson<ApiEnvelope<PatentPdfMeta>>(`/patents/${patentId}/pdf`, { method: "DELETE" });
+    return;
+  }
+
+  removeMockPatentPdf(patentId);
+}
+
+/** MAIL-13: 업로드된 특허 PDF를 받아 브라우저 다운로드를 트리거한다. */
+export async function downloadPatentPdf(
+  patentId: string,
+  docName: string | null,
+  options: { business?: boolean } = {},
+): Promise<void> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("mock 모드에서는 PDF 다운로드를 지원하지 않습니다.");
+  }
+  const basePath = options.business ? "/business/patents" : "/patents";
+  const blob = await requestBlob(`${basePath}/${patentId}/pdf`);
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = docName ?? `${patentId}.pdf`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
 }
 
 /**
