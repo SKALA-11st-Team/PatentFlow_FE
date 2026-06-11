@@ -14,7 +14,9 @@ import { createDepartment, deleteDepartment, getDepartments, updateDepartment, t
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
+import { PaginationControls } from "../../components/common/PaginationControls";
 import { AppLayout } from "../../components/layout/AppLayout";
+import { useClientPagination } from "../../hooks/useClientPagination";
 
 /**
  * @relatedFR FR-COM-01, FR-LEGAL-12, FR-LEGAL-16
@@ -26,6 +28,8 @@ export function AdminUsersPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [accountTab, setAccountTab] = useState<"admin" | "business">("business");
+  const businessUsers = users.filter(u => u.role === "BUSINESS");
+  const { currentPage, pageSize, pagedItems: pagedBusinessUsers, setCurrentPage, totalItems: businessTotalItems, totalPages: businessTotalPages } = useClientPagination(businessUsers, [accountTab], 10);
   // 사업부 섹션과 계정 섹션의 메시지를 분리해 서로 다른 위치에 표시한다.
   const [deptMessage, setDeptMessage] = useState("");
   const [isDeptError, setIsDeptError] = useState(false);
@@ -378,9 +382,8 @@ export function AdminUsersPage() {
         ) : null}
 
         {/* 사업부 계정 탭 */}
-        {accountTab === "business" && (() => {
-          const businessUsers = users.filter(u => u.role === "BUSINESS");
-          return (
+        {accountTab === "business" && (
+          <div style={{ minHeight: "420px" }}>
             <div className="table-wrap">
               <table>
                 <thead>
@@ -393,7 +396,7 @@ export function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {businessUsers.map((user) => (
+                  {pagedBusinessUsers.map((user) => (
                     <tr key={user.id}>
                       <td>{user.username}</td>
                       <td>{user.email}</td>
@@ -412,8 +415,15 @@ export function AdminUsersPage() {
                 </tbody>
               </table>
             </div>
-          );
-        })()}
+            <PaginationControls
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              pageSize={pageSize}
+              totalItems={businessTotalItems}
+              totalPages={businessTotalPages}
+            />
+          </div>
+        )}
 
         {/* 관리자 정보 탭 */}
         {accountTab === "admin" && (() => {

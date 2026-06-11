@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getMailLeadMonths } from "../../api/settings";
 import { AppLayout } from "../../components/layout/AppLayout";
 import { Breadcrumbs } from "../../components/layout/Breadcrumbs";
 import { Badge } from "../../components/common/Badge";
@@ -91,6 +93,11 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     setIsConsentModalOpen,
   } = usePatentDetail(role);
 
+  const [mailLeadMonths, setMailLeadMonths] = useState(2);
+  useEffect(() => {
+    getMailLeadMonths().then(setMailLeadMonths).catch(() => {});
+  }, []);
+
   // FR-LEGAL-09: 레포트 편집은 별도 훅으로 관리한다(usePatentDetail 비대화 방지).
   const aiReportEditing = useAiReportEditing(patentId, patent?.aiEvaluationReport ?? null, (updatedReport) => {
     setPatent((current) =>
@@ -156,6 +163,9 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta label="관련제품" value={patent.productName} />
           <Meta label="예상 소멸일" value={patent.expectedExpirationDate} />
         </div>
+        {patent.feeDueDate ? (
+          <FeeScheduleCard feeDueDate={patent.feeDueDate} mailLeadMonths={mailLeadMonths} departmentName={patent.departmentName} />
+        ) : null}
       </section>
 
       <div className="detail-followup-grid">
@@ -527,6 +537,87 @@ function SummaryBlock({ title, content }: { title: string; content: string }) {
     <div>
       <h3>{title}</h3>
       <p>{content}</p>
+    </div>
+  );
+}
+
+function feeShortDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function FeeScheduleCard({
+  feeDueDate,
+  mailLeadMonths,
+  departmentName,
+}: {
+  feeDueDate: string;
+  mailLeadMonths: number;
+  departmentName: string;
+}) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // feeDueDate는 BE가 계산한 다음 납부일 — month/day를 기준으로 ±3년 생성
+  const [baseYear, baseMonth, baseDay] = feeDueDate.split("-").map(Number);
+
+  const rows = Array.from({ length: 7 }, (_, i) => {
+    const offset = i - 3; // -3 to +3
+    const year = baseYear + offset;
+
+    const dueDate = new Date(year, baseMonth - 1, baseDay);
+    const notifDate = new Date(year, baseMonth - 1 - mailLeadMonths, baseDay);
+
+    const daysUntilDue = Math.ceil((dueDate.getTime() - today.getTime()) / 86_400_000);
+    const daysUntilNotif = Math.ceil((notifDate.getTime() - today.getTime()) / 86_400_000);
+    const isCurrent = offset === 0; // feeDueDate 연도 = 다음 납부 연도
+    const isPast = daysUntilDue < 0;
+
+    return { year, dueDate, notifDate, daysUntilDue, daysUntilNotif, isCurrent, isPast };
+  });
+
+  return (
+    <div className="fee-schedule-card">
+      <div className="fee-schedule-header">
+        <h3 className="fee-schedule-title">연차료 납부 일정</h3>
+        <span className="fee-schedule-dept">담당: {departmentName || "미배정"}</span>
+      </div>
+      <div className="table-wrap fee-schedule-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>연도</th>
+              <th>납부 예정일</th>
+              <th>검토 시작 ({mailLeadMonths}개월 전)</th>
+              <th>상태</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ year, dueDate, notifDate, daysUntilDue, daysUntilNotif, isCurrent, isPast }) => (
+              <tr key={year} className={isCurrent ? "fee-row-current" : isPast ? "fee-row-past" : ""}>
+                <td><strong>{year}</strong></td>
+                <td>{feeShortDate(dueDate)}</td>
+                <td>
+                  {feeShortDate(notifDate)}
+                  {!isPast && daysUntilNotif > 0 && (
+                    <span className="table-subtext">D-{daysUntilNotif}</span>
+                  )}
+                </td>
+                <td>
+                  {isPast ? (
+                    <span className="badge badge-neutral">완료</span>
+                  ) : isCurrent ? (
+                    <span className={`badge ${daysUntilDue <= 60 ? "badge-warning" : "badge-primary"}`}>
+                      D-{daysUntilDue} 납부예정
+                    </span>
+                  ) : (
+                    <span className="badge badge-neutral">예정</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

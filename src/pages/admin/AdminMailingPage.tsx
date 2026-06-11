@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getDepartmentRecipientMappings, getMailingHistory } from "../../api/mailing";
 import { getPatents, sendBusinessReviewMails } from "../../api/patents";
-import { getMailSettings, type MailSettings } from "../../api/settings";
 import { getApiErrorMessage } from "../../api/client";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
@@ -30,7 +29,6 @@ export function AdminMailingPage() {
   const [mailDrafts, setMailDrafts] = useState<BusinessReviewMailDraft[]>([]);
   const [activeMailIndex, setActiveMailIndex] = useState(0);
   const [isSendConfirmOpen, setIsSendConfirmOpen] = useState(false);
-  const [mailSettings, setMailSettings] = useState<MailSettings | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("메일링 설정을 불러오는 중입니다.");
@@ -45,17 +43,15 @@ export function AdminMailingPage() {
     let isMounted = true;
     async function loadMailingData() {
       try {
-        const [nextMappings, nextPatents, nextHistoryItems, nextMailSettings] = await Promise.all([
+        const [nextMappings, nextPatents, nextHistoryItems] = await Promise.all([
           getDepartmentRecipientMappings(),
           getPatents(),
           getMailingHistory(),
-          getMailSettings(),
         ]);
         if (!isMounted) return;
         setRecipientMappings(nextMappings);
         setPatents(nextPatents);
         setMailingHistoryItems(nextHistoryItems);
-        setMailSettings(nextMailSettings);
         setMessage("");
       } catch (error) {
         if (isMounted) {
@@ -70,7 +66,6 @@ export function AdminMailingPage() {
   }, []);
 
   const hasNoRecipients = !isLoading && recipientMappings.length === 0;
-  const isMailNotConfigured = mailSettings !== null && (!mailSettings.gmailUsername || !mailSettings.isAppPasswordConfigured);
 
   function handleOpenGroupedPreview() {
     if (hasNoRecipients) {
@@ -125,15 +120,6 @@ export function AdminMailingPage() {
       description="사업부 계정의 이메일로 담당자별 묶음 발송합니다."
     >
       <Section title="메일 발송 준비" description="메일 발송 대기 특허를 담당자 이메일 기준으로 묶어 미리봅니다.">
-        {isMailNotConfigured ? (
-          <p className="notice notice-warning" style={{ marginBottom: "1rem" }}>
-            Gmail 메일 발송 설정이 완료되지 않았습니다. 메일 발송을 눌러도 실제 이메일이 전송되지 않습니다.{" "}
-            <Link to="/admin/settings" className="text-link">
-              설정
-            </Link>
-            에서 Gmail 계정과 Google 계정 연동 설정을 해 주세요.
-          </p>
-        ) : null}
         <div className="mailing-summary-grid">
           <SummaryItem label="발송 대기 특허" value={`${readyPatents.length}건`} />
           <SummaryItem label="생성될 메일" value={`${groupedPreview.length}통`} />

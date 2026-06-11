@@ -295,12 +295,8 @@ export function ValuationCriteriaSection() {
         </div>
         {activePrompt ? (
           <>
-            <p className="notice notice-compact">
-              파일: {activePrompt.path} · checksum {activePrompt.checksum.slice(0, 8)}
-              {activePrompt.updatedAt ? ` · ${activePrompt.updatedAt.slice(0, 10)}` : ""}
-            </p>
             {promptMessage ? <p className="field-error">{promptMessage}</p> : null}
-            <label className="form-field">
+            <label className="form-field" style={{ maxWidth: "480px" }}>
               <span className="form-label-text">변경 사유</span>
               <input
                 onChange={(event) => setPromptReasons((drafts) => ({ ...drafts, [activeAxis]: event.target.value }))}

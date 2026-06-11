@@ -2,28 +2,6 @@ import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
 import { businessChecklistItems as mockChecklistSeed } from "../mocks/businessChecklist.mock";
 import type { BusinessChecklistItem } from "../types/businessChecklist";
 
-export interface MailSettings {
-  gmailUsername: string | null;
-  isAppPasswordConfigured: boolean;
-}
-
-export async function getMailSettings(): Promise<MailSettings> {
-  if (!isBackendApiEnabled()) return { gmailUsername: null, isAppPasswordConfigured: false };
-  const response = await requestJson<ApiEnvelope<MailSettings>>("/admin/settings/mail");
-  return response.data ?? { gmailUsername: null, isAppPasswordConfigured: false };
-}
-
-export async function updateMailSettings(
-  gmailUsername: string,
-  gmailAppPassword: string,
-): Promise<MailSettings> {
-  const response = await requestJson<ApiEnvelope<MailSettings>>("/admin/settings/mail", {
-    method: "PUT",
-    body: JSON.stringify({ gmailUsername, gmailAppPassword }),
-  });
-  return response.data!;
-}
-
 export interface QuarterSetting {
   quarterKey: string;
   year: number;

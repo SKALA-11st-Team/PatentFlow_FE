@@ -8,21 +8,18 @@ import {
   getCountryExtensions,
   getMailLeadMonths,
   getMailOAuth2Status,
-  getMailSettings,
   getResponseDeadline,
   getReviewPeriodTemplates,
   getReviewQuarters,
   redirectToGoogleOAuth2,
   updateCountryExtension,
   updateMailLeadMonths,
-  updateMailSettings,
   updateResponseDeadline,
   type AnnualFeeScheduleItem,
   type ClassificationGroup,
   type ClassificationType,
   type CountryExtension,
   type MailOAuth2Status,
-  type MailSettings,
   type QuarterSetting,
   type ReviewPeriodTemplate,
   type ResponseDeadline,
@@ -55,10 +52,6 @@ const SETTINGS_SECTIONS: { id: SettingsSectionId; label: string }[] = [
 export function AdminSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
-  const [mailSettings, setMailSettings] = useState<MailSettings | null>(null);
-  const [mailForm, setMailForm] = useState({ gmailUsername: "", gmailAppPassword: "" });
-  const [showLegacyMailForm, setShowLegacyMailForm] = useState(false);
-  const [isSavingMail, setIsSavingMail] = useState(false);
   const [mailMessage, setMailMessage] = useState("");
   const [countryExtensions, setCountryExtensions] = useState<CountryExtension[]>([]);
   const [mailLeadMonths, setMailLeadMonths] = useState(2);
@@ -98,7 +91,6 @@ export function AdminSettingsPage() {
       getReviewQuarters(currentYear),
       getReviewQuarters(currentYear + 1),
       getReviewPeriodTemplates(),
-      getMailSettings(),
       getCountryExtensions(),
       getClassifications(),
       getMailLeadMonths(),
@@ -109,7 +101,6 @@ export function AdminSettingsPage() {
         thisYearQ,
         nextYearQ,
         nextReviewPeriodTemplates,
-        nextMailSettings,
         nextExtensions,
         nextClassifications,
         nextMailLead,
@@ -118,8 +109,6 @@ export function AdminSettingsPage() {
       ]) => {
         setAllQuarters([...thisYearQ, ...nextYearQ]);
         setReviewPeriodTemplates(nextReviewPeriodTemplates);
-        setMailSettings(nextMailSettings);
-        setMailForm({ gmailUsername: nextMailSettings.gmailUsername ?? "", gmailAppPassword: "" });
         setCountryExtensions(nextExtensions);
         setClassifications(nextClassifications);
         setOAuth2Status(nextOAuth2);
@@ -143,22 +132,6 @@ export function AdminSettingsPage() {
         setAnnualFeeMessage(getApiErrorMessage(error, "연차료 예정표를 불러오지 못했습니다."));
       });
   }, [annualFeeCountry]);
-
-  async function handleSaveMail(e: React.FormEvent) {
-    e.preventDefault();
-    setIsSavingMail(true);
-    setMailMessage("");
-    try {
-      const updated = await updateMailSettings(mailForm.gmailUsername, mailForm.gmailAppPassword);
-      setMailSettings(updated);
-      setMailForm((f) => ({ ...f, gmailAppPassword: "" }));
-      setMailMessage("메일 설정이 저장되었습니다.");
-    } catch (error) {
-      setMailMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    } finally {
-      setIsSavingMail(false);
-    }
-  }
 
   async function handleSaveMailLeadMonths(event: React.FormEvent) {
     event.preventDefault();
@@ -264,13 +237,6 @@ export function AdminSettingsPage() {
           onConnect={handleConnectOAuth2}
           onDisconnect={handleDisconnectOAuth2}
           mailMessage={mailMessage}
-          mailSettings={mailSettings}
-          mailForm={mailForm}
-          setMailForm={setMailForm}
-          showLegacyMailForm={showLegacyMailForm}
-          setShowLegacyMailForm={setShowLegacyMailForm}
-          isSavingMail={isSavingMail}
-          onSaveMail={handleSaveMail}
           mailLeadMonths={mailLeadMonths}
           mailLeadMonthsInput={mailLeadMonthsInput}
           setMailLeadMonthsInput={setMailLeadMonthsInput}
@@ -474,8 +440,8 @@ function AnnualFeeScheduleRow({
   return (
     <tr>
       <td>
-        <strong>{item.managementNumber}</strong>
-        <span className="table-subtext">{item.title}</span>
+        <strong>{item.title}</strong>
+        <span className="table-subtext">{item.managementNumber}</span>
       </td>
       <td>
         <span className={item.domesticPatent ? "badge badge-success" : "badge badge-neutral"}>

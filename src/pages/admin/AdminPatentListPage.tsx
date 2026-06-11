@@ -449,6 +449,7 @@ export function AdminPatentListPage() {
                 <th>특허명</th>
                 <th>관리번호</th>
                 <th>출원/등록번호</th>
+                <th>공동출원사(인)</th>
                 <th>관련사업 분야</th>
                 <th>관련기술 / 제품</th>
                 <th>검토 단계</th>
@@ -457,7 +458,7 @@ export function AdminPatentListPage() {
             </thead>
             <tbody>
               {isLoading ? (
-                <TableLoadingRows columns={7} />
+                <TableLoadingRows columns={8} />
               ) : displayedPatents.map((patent) => (
                 <tr
                   className="clickable-row"
@@ -481,6 +482,7 @@ export function AdminPatentListPage() {
                     {patent.applicationNumber}
                     <span className="table-subtext">{patent.registrationNumber ?? "등록번호 없음"}</span>
                   </td>
+                  <td>{patent.coApplicants || "—"}</td>
                   <td>{patent.businessArea}</td>
                   <td>
                     {patent.technologyArea}
@@ -510,7 +512,7 @@ export function AdminPatentListPage() {
               ))}
               {!isLoading && listedPatents.length === 0 ? (
                 <tr>
-                  <td className="empty-table-cell" colSpan={7}>
+                  <td className="empty-table-cell" colSpan={8}>
                     조건에 해당하는 수정 대상 특허가 없습니다.
                   </td>
                 </tr>
