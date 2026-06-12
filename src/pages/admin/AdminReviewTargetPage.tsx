@@ -85,7 +85,6 @@ export function AdminReviewTargetPage() {
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const [quarterFilter, setQuarterFilter] = useState<QuarterFilter>("ALL");
   const [countryFilter, setCountryFilter] = useState(() => searchParams.get("country")?.trim() || "ALL");
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [selectedPatentIds, setSelectedPatentIds] = useState<string[]>([]);
   const [actionMessage, setActionMessage] = useState("");
@@ -114,10 +113,8 @@ export function AdminReviewTargetPage() {
         sortKey,
         viewMode === "MAIL_READINESS" ? "ALL" : quarterFilter,
         countryFilter,
-        dateRange.from,
-        dateRange.to,
       ),
-    [contextFilterKey, contextFilterValue, countryFilter, dateRange.from, dateRange.to, patentList, quarterFilter, scope, searchKeyword, sortKey, viewMode, workflowFilter],
+    [contextFilterKey, contextFilterValue, countryFilter, patentList, quarterFilter, scope, searchKeyword, sortKey, viewMode, workflowFilter],
   );
   const visiblePatents = useMemo(
     () =>
