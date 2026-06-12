@@ -863,7 +863,7 @@ select:focus {
 .audit-summary-grid {
   display: grid;
   gap: var(--spacing-lg);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: var(--spacing-lg);
 }
 
@@ -1247,6 +1247,12 @@ select:focus {
   box-shadow: var(--shadow-sm);
   color: var(--color-text-dark);
   font-weight: 700;
+}
+
+.review-target-status-tabs {
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  margin-bottom: var(--spacing-md);
+  max-width: 360px;
 }
 
 .business-area-overview {
