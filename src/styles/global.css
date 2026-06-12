@@ -4471,15 +4471,10 @@ tbody tr:hover {
 .timeline-count { font-size: 0.7rem; color: var(--color-text-muted); }
 .timeline-label { font-size: 0.7rem; color: var(--color-text-light); }
 
-/* D1-EXT: 분기별 예상 연차료 차트 */
-.fee-chart-bars {
+/* D1-EXT: 분기별 예상 연차료 선 그래프 */
+.fee-chart-svg {
   height: 9rem;
-}
-
-.fee-chart-amount {
-  color: var(--color-text-muted);
-  font-size: 0.68rem;
-  white-space: nowrap;
+  width: 100%;
 }
 
 /* ── D2: 마크다운 목차 ──────────────────────────────────────────────── */
@@ -4821,6 +4816,28 @@ tbody tr:hover {
   color: var(--color-text-muted);
   font-size: 0.68rem;
   white-space: nowrap;
+}
+
+.extension-timeline-line-repeat {
+  background: repeating-linear-gradient(
+    to right,
+    var(--color-border) 0,
+    var(--color-border) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  bottom: 0.9rem;
+  height: 2px;
+  position: absolute;
+  right: 0;
+}
+
+.extension-timeline-flag-ghost {
+  opacity: 0.35;
+}
+
+.extension-timeline-repeat-label {
+  font-style: italic;
 }
 
 /* ── 항목8: 연차료 규칙 서브섹션 구분선 ───────────────────────────── */

@@ -607,30 +607,78 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
     return { key: `${start.getFullYear()}-Q${q}`, label: `${yy}년 ${q}분기`, totalKrw };
   });
   const max = Math.max(1, ...buckets.map((b) => b.totalKrw));
+  const W = 400, H = 90;
+  const PX = 30, PT = 22, PB = 20;
+  const cW = W - PX * 2;
+  const cH = H - PT - PB;
+  const pts = buckets.map((b, i) => ({
+    x: PX + (cW / (buckets.length - 1)) * i,
+    y: PT + (1 - b.totalKrw / max) * cH,
+    ...b,
+  }));
+  const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+  const areaPath = `${linePath} L ${pts[pts.length - 1].x.toFixed(1)} ${PT + cH} L ${pts[0].x.toFixed(1)} ${PT + cH} Z`;
+
   return (
     <div className="dashboard-visual-card">
       <div className="dashboard-visual-card-head">
         <h3>분기별 예상 연차료</h3>
         <span className="table-subtext">추정치 (참고용)</span>
       </div>
-      <div className="timeline-bars fee-chart-bars">
-        {buckets.map((bucket) => (
-          <div className="timeline-col" key={bucket.key} title={`${bucket.label} · 약 ${formatKrwShort(bucket.totalKrw)}원`}>
-            <span className="timeline-count fee-chart-amount">
-              {bucket.totalKrw > 0 ? formatKrwShort(bucket.totalKrw) : ""}
-            </span>
-            <span
-              className="timeline-bar"
-              style={{
-                background: "rgba(var(--color-primary-rgb), 0.55)",
-                borderRadius: "4px 4px 0 0",
-                height: `${Math.max(4, (bucket.totalKrw / max) * 100)}%`,
-              }}
+      <svg
+        className="fee-chart-svg"
+        preserveAspectRatio="xMidYMid meet"
+        viewBox={`0 0 ${W} ${H}`}
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <line
+          strokeWidth="1"
+          style={{ stroke: "var(--color-border)" }}
+          x1={PX}
+          x2={W - PX}
+          y1={PT + cH}
+          y2={PT + cH}
+        />
+        <path d={areaPath} style={{ fill: "rgba(var(--color-primary-rgb), 0.07)" }} />
+        <path
+          d={linePath}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          style={{ stroke: "rgba(var(--color-primary-rgb), 0.75)" }}
+        />
+        {pts.map((p) => (
+          <g key={p.key}>
+            {p.totalKrw > 0 && (
+              <text
+                fontSize="8.5"
+                style={{ fill: "var(--color-text-muted)" }}
+                textAnchor="middle"
+                x={p.x}
+                y={p.y - 6}
+              >
+                {formatKrwShort(p.totalKrw)}원
+              </text>
+            )}
+            <circle
+              cx={p.x}
+              cy={p.y}
+              r="3.5"
+              style={{ fill: "rgba(var(--color-primary-rgb), 0.85)" }}
             />
-            <span className="timeline-label">{bucket.label}</span>
-          </div>
+            <text
+              fontSize="8.5"
+              style={{ fill: "var(--color-text-light)" }}
+              textAnchor="middle"
+              x={p.x}
+              y={PT + cH + 13}
+            >
+              {p.label}
+            </text>
+          </g>
         ))}
-      </div>
+      </svg>
     </div>
   );
 }

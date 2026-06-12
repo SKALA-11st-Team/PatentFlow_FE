@@ -220,7 +220,6 @@ export function AnnualFeeSettingsSection() {
                   <th>국가</th>
                   <th>기산일</th>
                   <th>일괄 납부 연차</th>
-                  <th>납부 주기(개월)</th>
                   <th>현재 규칙</th>
                 </tr>
               </thead>
@@ -257,22 +256,12 @@ export function AnnualFeeSettingsSection() {
                           value={draft.initialLumpYears}
                         />
                       </td>
-                      <td>
-                        <input
-                          aria-label={`${rule.country} 납부 주기(개월)`}
-                          max={120}
-                          min={1}
-                          onChange={(event) => updateDraft({ cycleMonths: Number(event.target.value) })}
-                          type="number"
-                          value={draft.cycleMonths}
-                        />
-                      </td>
                       <td className="rule-label-cell">{rule.ruleLabel}</td>
                     </tr>
                   );
                 })}
                 {feeRules.length === 0 ? (
-                  <tr><td className="empty-table-cell" colSpan={5}>연차료 규칙을 불러오지 못했습니다.</td></tr>
+                  <tr><td className="empty-table-cell" colSpan={4}>연차료 규칙을 불러오지 못했습니다.</td></tr>
                 ) : null}
               </tbody>
             </table>
@@ -340,6 +329,8 @@ function ExtensionRoundsModal({
   const today = new Date();
   const todayLabel = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, "0")}.${String(today.getDate()).padStart(2, "0")}`;
   const validPreviews = fullPreviews.filter((p): p is NonNullable<typeof p> => p !== null);
+  const lastFlagPct = validPreviews.length <= 1 ? 50 : 90;
+  const lastPreview = validPreviews.length > 0 ? validPreviews[validPreviews.length - 1] : null;
 
   return (
     <Modal ariaLabel={`${extension.label} 연장 기간 변경`} className="extension-rounds-modal" onClose={onClose}>
@@ -359,7 +350,12 @@ function ExtensionRoundsModal({
           예상 납부일은 오늘({todayLabel})을 기준으로 합니다
         </p>
         <div className="extension-timeline-track">
-          <div className="extension-timeline-line" />
+          {/* 정의된 회차까지 solid 선 */}
+          <div className="extension-timeline-line" style={{ right: `${100 - lastFlagPct}%` }} />
+          {/* 마지막 회차 이후 dashed 반복 선 */}
+          {lastPreview && (
+            <div className="extension-timeline-line-repeat" style={{ left: `${lastFlagPct}%` }} />
+          )}
           {validPreviews.map((preview, idx) => {
             const total = Math.max(1, validPreviews.length - 1);
             const leftPct = validPreviews.length === 1 ? 50 : 10 + (idx / total) * 80;
@@ -375,6 +371,15 @@ function ExtensionRoundsModal({
               </div>
             );
           })}
+          {/* 반복 ghost 깃발 */}
+          {lastPreview && (
+            <div className="extension-timeline-flag extension-timeline-flag-ghost" style={{ left: "97%" }}>
+              <span className="extension-timeline-flag-marker">▲</span>
+              <span className="extension-timeline-flag-label extension-timeline-repeat-label">
+                {lastPreview.quarterLabel} ↻
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
