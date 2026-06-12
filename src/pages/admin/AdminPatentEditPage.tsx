@@ -24,7 +24,8 @@ export function AdminPatentEditPage() {
   const [form, setForm] = useState<PatentFormState>(() => createEmptyFormState());
   const [saveMessage, setSaveMessage] = useState("");
   const [loadMessage, setLoadMessage] = useState("특허 정보를 불러오는 중입니다.");
-  const [isSuggestingContext, setIsSuggestingContext] = useState(false);
+  const [isSuggestingBusinessArea, setIsSuggestingBusinessArea] = useState(false);
+  const [isSuggestingTechnologyArea, setIsSuggestingTechnologyArea] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
 
@@ -115,38 +116,32 @@ export function AdminPatentEditPage() {
   /**
    * @relatedFR FR-LEGAL-03, FR-LEGAL-04
    * @relatedUI UI-LEGAL-04
-   * @description 수정 폼의 특허명/제품 정보를 기준으로 관련사업/관련기술 분야 AI 추천값을 적용한다.
+   * @description 필드별 AI 분류 추천 — 해당 필드의 값만 업데이트한다.
    */
-  async function handleSuggestContextFields() {
-    setSaveMessage("");
-
-    if (!form.title.trim() && !form.productName.trim() && !form.technologyArea.trim()) {
-      setSaveMessage("특허명 또는 관련제품 정보가 있어야 AI 추천을 사용할 수 있습니다.");
+  async function suggestField(
+    field: "businessArea" | "technologyArea",
+    setLoading: (v: boolean) => void,
+  ) {
+    if (!form.title.trim() && !form.productName.trim()) {
+      setSaveMessage("특허명 또는 관련제품 정보가 있어야 추천할 수 있습니다.");
       return;
     }
-
-    setIsSuggestingContext(true);
-
+    setSaveMessage("");
+    setLoading(true);
     try {
       const suggestion = await suggestPatentContextFields(form);
-
       if (!suggestion) {
-        setSaveMessage("가까운 기존 관련사업/관련기술 분야를 찾지 못했습니다. 직접 입력해 주세요.");
+        setSaveMessage("적합한 분류를 찾지 못했습니다. 직접 입력해 주세요.");
         return;
       }
-
-      setForm((currentForm) => ({
-        ...currentForm,
-        businessArea: suggestion.businessArea,
-        technologyArea: suggestion.technologyArea,
-      }));
+      setForm((prev) => ({ ...prev, [field]: suggestion[field] }));
       setSaveMessage(
-        `AI 추천: ${suggestion.businessArea} / ${suggestion.technologyArea} (신뢰도 ${suggestion.confidenceText})`,
+        `AI 추천 적용 (${field === "businessArea" ? "관련사업" : "관련기술"}): ${suggestion[field]} (신뢰도 ${suggestion.confidenceText})`,
       );
     } catch (error) {
-      setSaveMessage(getApiErrorMessage(error, "AI 분야 추천에 실패했습니다. 잠시 후 다시 시도해 주세요."));
+      setSaveMessage(getApiErrorMessage(error, "AI 추천에 실패했습니다. 잠시 후 다시 시도해 주세요."));
     } finally {
-      setIsSuggestingContext(false);
+      setLoading(false);
     }
   }
 
@@ -177,16 +172,6 @@ export function AdminPatentEditPage() {
         description="테이블 row에서 선택한 특허입니다. 수정 후 저장하면 특허관리 목록에 반영됩니다."
       >
         <form className="patent-edit-form" onSubmit={handleSavePatent}>
-          <div className="context-suggestion-row">
-            <div>
-              <strong>관련 분야 AI 추천</strong>
-              <span>기존 특허의 관련사업/관련기술 분야 중 가장 가까운 값을 추천합니다.</span>
-            </div>
-            <Button disabled={isSuggestingContext} onClick={handleSuggestContextFields} type="button" variant="secondary">
-              <span aria-hidden="true" className="ai-sparkle-icon" />
-              {isSuggestingContext ? "추천 중" : "AI 추천"}
-            </Button>
-          </div>
           <PatentPdfManager patentId={currentPatentId} />
           <div className="patent-form-grid">
             <label>
@@ -227,11 +212,35 @@ export function AdminPatentEditPage() {
             </label>
             <label>
               관련사업 분야
-              <input list="edit-business-area-options" name="businessArea" onChange={handleFormChange} value={form.businessArea} />
+              <div className="input-ai-row">
+                <input list="edit-business-area-options" name="businessArea" onChange={handleFormChange} value={form.businessArea} />
+                <button
+                  aria-label="관련사업 분야 AI 추천"
+                  className="input-ai-btn"
+                  disabled={isSuggestingBusinessArea}
+                  onClick={() => suggestField("businessArea", setIsSuggestingBusinessArea)}
+                  title="AI 추천"
+                  type="button"
+                >
+                  <span aria-hidden="true" className="ai-sparkle-icon" />
+                </button>
+              </div>
             </label>
             <label>
               관련기술 분야
-              <input list="edit-technology-area-options" name="technologyArea" onChange={handleFormChange} value={form.technologyArea} />
+              <div className="input-ai-row">
+                <input list="edit-technology-area-options" name="technologyArea" onChange={handleFormChange} value={form.technologyArea} />
+                <button
+                  aria-label="관련기술 분야 AI 추천"
+                  className="input-ai-btn"
+                  disabled={isSuggestingTechnologyArea}
+                  onClick={() => suggestField("technologyArea", setIsSuggestingTechnologyArea)}
+                  title="AI 추천"
+                  type="button"
+                >
+                  <span aria-hidden="true" className="ai-sparkle-icon" />
+                </button>
+              </div>
             </label>
             <label>
               관련제품

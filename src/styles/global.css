@@ -860,6 +860,49 @@ select:focus {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.audit-summary-grid {
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: var(--spacing-lg);
+}
+
+.audit-summary-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 4px;
+  padding: var(--spacing-lg);
+}
+
+.audit-summary-card span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.audit-summary-card strong {
+  color: var(--color-text-dark);
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.audit-summary-card small {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.audit-usage-list {
+  color: var(--color-text-primary);
+  display: grid;
+  gap: var(--spacing-sm);
+  line-height: 1.6;
+  margin: 0;
+  padding-left: var(--spacing-lg);
+}
+
 .kpi-card,
 .quarter-donut-card,
 .section {
@@ -2130,34 +2173,42 @@ tbody tr:hover {
   grid-template-columns: minmax(260px, 1fr) auto;
 }
 
-.context-suggestion-row {
+/* ── AI 인라인 추천 버튼 ─────────────────────────────────────────── */
+.input-ai-row {
   align-items: center;
-  background: var(--color-bg-light);
+  display: flex;
+  gap: 0.4rem;
+}
+
+.input-ai-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.input-ai-btn {
+  align-items: center;
+  background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  display: grid;
-  gap: var(--spacing-md);
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding: var(--spacing-md);
-}
-
-.context-suggestion-row strong {
-  display: block;
-  font-size: 14px;
-}
-
-.context-suggestion-row span {
+  border-radius: var(--radius-sm);
   color: var(--color-text-muted);
-  display: block;
-  font-size: 13px;
-  margin-top: 2px;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 2.1rem;
+  justify-content: center;
+  padding: 0;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+  width: 2.1rem;
 }
 
-.context-suggestion-row .btn {
-  align-items: center;
-  display: inline-flex;
-  gap: var(--spacing-sm);
-  justify-content: center;
+.input-ai-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.input-ai-btn:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .patent-inline-action-row {
@@ -2187,6 +2238,46 @@ tbody tr:hover {
   flex-shrink: 0;
   gap: var(--spacing-sm);
   justify-content: center;
+}
+
+.patent-registration-steps {
+  counter-reset: patent-registration-step;
+  display: grid;
+  gap: var(--spacing-sm);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.patent-registration-steps li {
+  align-items: center;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  display: flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: var(--spacing-sm);
+  min-height: 42px;
+  padding: 10px var(--spacing-md);
+}
+
+.patent-registration-steps li::before {
+  align-items: center;
+  background: var(--color-primary);
+  border-radius: 999px;
+  color: var(--color-white);
+  content: counter(patent-registration-step);
+  counter-increment: patent-registration-step;
+  display: inline-flex;
+  flex: 0 0 22px;
+  font-size: 12px;
+  height: 22px;
+  justify-content: center;
+  line-height: 1;
+  width: 22px;
 }
 
 .metadata-switch {
@@ -2245,7 +2336,8 @@ tbody tr:hover {
 }
 
 .context-suggestion-row .ai-sparkle-icon,
-.patent-inline-action-row .ai-sparkle-icon {
+.patent-inline-action-row .ai-sparkle-icon,
+.input-ai-btn .ai-sparkle-icon {
   display: inline-block;
   height: 16px;
   margin-top: 0;
@@ -2254,7 +2346,8 @@ tbody tr:hover {
 }
 
 .context-suggestion-row .ai-sparkle-icon::before,
-.patent-inline-action-row .ai-sparkle-icon::before {
+.patent-inline-action-row .ai-sparkle-icon::before,
+.input-ai-btn .ai-sparkle-icon::before {
   background: currentColor;
   clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%);
   content: "";
@@ -2266,7 +2359,8 @@ tbody tr:hover {
 }
 
 .context-suggestion-row .ai-sparkle-icon::after,
-.patent-inline-action-row .ai-sparkle-icon::after {
+.patent-inline-action-row .ai-sparkle-icon::after,
+.input-ai-btn .ai-sparkle-icon::after {
   background: currentColor;
   border-radius: 999px;
   box-shadow: 9px -5px 0 -1px currentColor;
@@ -3357,7 +3451,8 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 
-  .context-suggestion-row {
+  .audit-summary-grid,
+  .patent-registration-steps {
     grid-template-columns: 1fr;
   }
 
