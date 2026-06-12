@@ -13,6 +13,7 @@ import { getStoredAuthUser } from "../../api/authStorage";
 import { createDepartment, deleteDepartment, getDepartments, updateDepartment, type Department } from "../../api/departments";
 import { getApiErrorMessage } from "../../api/client";
 import { Button } from "../../components/common/Button";
+import { IconButton } from "../../components/common/IconButton";
 import { Modal } from "../../components/common/Modal";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { AppLayout } from "../../components/layout/AppLayout";
@@ -324,12 +325,8 @@ export function AdminUsersPage() {
                   <td><code>{department.departmentId}</code></td>
                   <td>{department.departmentName}</td>
                   <td className="table-cell-actions">
-                    <Button onClick={() => openEditDepartmentModal(department)} type="button" variant="secondary">
-                      수정
-                    </Button>
-                    <Button onClick={() => handleDeleteDepartment(department)} type="button" variant="secondary">
-                      삭제
-                    </Button>
+                    <IconButton icon="edit" label={`${department.departmentName} 수정`} onClick={() => openEditDepartmentModal(department)} />
+                    <IconButton icon="delete" label={`${department.departmentName} 삭제`} onClick={() => handleDeleteDepartment(department)} tone="danger" />
                   </td>
                 </tr>
               ))}
@@ -403,9 +400,9 @@ export function AdminUsersPage() {
                       <td>{user.departmentName ?? "-"}</td>
                       <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString("ko-KR") : "-"}</td>
                       <td className="table-cell-actions">
-                        <Button onClick={() => openEditUserModal(user)} type="button" variant="secondary">수정</Button>
-                        <Button onClick={() => handleResetPassword(user)} type="button" variant="secondary">임시 비밀번호 발급</Button>
-                        <Button onClick={() => handleDeleteUser(user)} type="button" variant="secondary">삭제</Button>
+                        <IconButton icon="edit" label={`${user.username} 수정`} onClick={() => openEditUserModal(user)} />
+                        <IconButton icon="key" label={`${user.username} 임시 비밀번호 발급`} onClick={() => handleResetPassword(user)} />
+                        <IconButton icon="delete" label={`${user.username} 삭제`} onClick={() => handleDeleteUser(user)} tone="danger" />
                       </td>
                     </tr>
                   ))}

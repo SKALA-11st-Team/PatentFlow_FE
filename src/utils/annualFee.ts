@@ -1,4 +1,34 @@
 /**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-01
+ * @description D1-EXT: 대시보드 분기별 연차료 바 차트용 KRW 추정치. 실제 납부액과 다를 수 있으며 참고용이다.
+ * KR: 등록일 기준 4단계 누진 / US: 3.5·7.5·11.5년 유지료 / 그 외: 플랫 300,000원.
+ */
+export function estimateAnnualFeeKrw(
+  country: string | null,
+  registrationDate: string | null,
+  applicationDate: string | null,
+): number {
+  const cc = (country ?? "").toUpperCase();
+  const baseText = registrationDate ?? applicationDate;
+  const baseMs = baseText ? new Date(baseText).getTime() : null;
+  const ageYears = baseMs ? (Date.now() - baseMs) / (365.25 * 24 * 3_600_000) : 5;
+
+  if (cc === "KR") {
+    if (ageYears < 4) return 150_000;
+    if (ageYears < 7) return 180_000;
+    if (ageYears < 10) return 240_000;
+    return 300_000;
+  }
+  if (cc === "US") {
+    if (ageYears < 3.5) return 1_160_000;
+    if (ageYears < 7.5) return 2_600_000;
+    return 5_400_000;
+  }
+  return 300_000;
+}
+
+/**
  * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-01, UI-LEGAL-04, UI-BUS-03
  * @description 출원일 기준으로 매년 도래하는 다음 연차료 납부 기한을 계산한다.

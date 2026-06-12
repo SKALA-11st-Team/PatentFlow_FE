@@ -28,6 +28,7 @@ import {
 } from "../../constants/status";
 import type { PatentListItem } from "../../types/patent";
 import { isQuarterlyReviewTarget } from "../../utils/reviewWorkflow";
+import { estimateAnnualFeeKrw } from "../../utils/annualFee";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
 type DashboardScope = "ALL" | "QUARTER" | "NOT_IN_QUARTER";
@@ -288,6 +289,11 @@ export function AdminDashboardPage() {
           ]}
         />
         <FeeTimelineCard patents={patents} />
+      </section>
+
+      {/* D1-EXT: 분기별 예상 연차료 — 추가 API 없이 로드된 patents 기반으로 집계한다 */}
+      <section className="section">
+        <QuarterlyFeeChartCard patents={patents} />
       </section>
 
       <BusinessAreaReviewCards
@@ -577,6 +583,62 @@ function ReviewFunnelCard({ stages }: { stages: Array<{ label: string; count: nu
       </div>
     </div>
   );
+}
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-01
+ * @description D1-EXT: 다음 4분기 연차료 예상 총액 — 기존 patents 배열 기반 KRW 추정치 바 차트.
+ */
+function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
+  const now = new Date();
+  const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+  const buckets = Array.from({ length: 4 }, (_, offset) => {
+    const start = new Date(now.getFullYear(), quarterStart + offset * 3, 1);
+    const q = Math.floor(start.getMonth() / 3) + 1;
+    const yy = String(start.getFullYear()).slice(2);
+    const monthKeys = Array.from({ length: 3 }, (_, mo) => {
+      const m = new Date(start.getFullYear(), start.getMonth() + mo, 1);
+      return `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
+    });
+    const totalKrw = patents
+      .filter((p) => monthKeys.some((k) => p.feeDueDate?.startsWith(k)))
+      .reduce((sum, p) => sum + estimateAnnualFeeKrw(p.country, p.registrationDate, p.applicationDate), 0);
+    return { key: `${start.getFullYear()}-Q${q}`, label: `${yy}년 ${q}분기`, totalKrw };
+  });
+  const max = Math.max(1, ...buckets.map((b) => b.totalKrw));
+  return (
+    <div className="dashboard-visual-card">
+      <div className="dashboard-visual-card-head">
+        <h3>분기별 예상 연차료</h3>
+        <span className="table-subtext">추정치 (참고용)</span>
+      </div>
+      <div className="timeline-bars fee-chart-bars">
+        {buckets.map((bucket) => (
+          <div className="timeline-col" key={bucket.key} title={`${bucket.label} · 약 ${formatKrwShort(bucket.totalKrw)}원`}>
+            <span className="timeline-count fee-chart-amount">
+              {bucket.totalKrw > 0 ? formatKrwShort(bucket.totalKrw) : ""}
+            </span>
+            <span
+              className="timeline-bar"
+              style={{
+                background: "rgba(var(--color-primary-rgb), 0.55)",
+                borderRadius: "4px 4px 0 0",
+                height: `${Math.max(4, (bucket.totalKrw / max) * 100)}%`,
+              }}
+            />
+            <span className="timeline-label">{bucket.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatKrwShort(amount: number): string {
+  if (amount >= 100_000_000) return `${(amount / 100_000_000).toFixed(1)}억`;
+  if (amount >= 10_000) return `${Math.round(amount / 10_000)}만`;
+  return `${amount}`;
 }
 
 /**
