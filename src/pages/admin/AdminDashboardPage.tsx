@@ -28,7 +28,7 @@ import {
 } from "../../constants/status";
 import type { PatentListItem } from "../../types/patent";
 import { isQuarterlyReviewTarget } from "../../utils/reviewWorkflow";
-import { estimateAnnualFeeKrw } from "../../utils/annualFee";
+import { estimateAnnualFeeKrw, getNextAnnualFeeDueDate } from "../../utils/annualFee";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
 type DashboardScope = "ALL" | "QUARTER" | "NOT_IN_QUARTER";
@@ -602,7 +602,11 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
       return `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
     });
     const totalKrw = patents
-      .filter((p) => monthKeys.some((k) => p.feeDueDate?.startsWith(k)))
+      .filter((p) => {
+        // feeDueDate가 없는 경우 출원일/등록일 기준으로 다음 납부 예정일을 계산해 fallback 사용
+        const dueDate = p.feeDueDate || getNextAnnualFeeDueDate(p.applicationDate, now, p.registrationDate);
+        return monthKeys.some((k) => dueDate.startsWith(k));
+      })
       .reduce((sum, p) => sum + estimateAnnualFeeKrw(p.country, p.registrationDate, p.applicationDate), 0);
     return { key: `${start.getFullYear()}-Q${q}`, label: `${yy}년 ${q}분기`, totalKrw };
   });
