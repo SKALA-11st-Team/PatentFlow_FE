@@ -8,6 +8,7 @@ import {
   type BusinessChecklistItemPayload,
 } from "../../../api/settings";
 import { Button } from "../../../components/common/Button";
+import { IconButton } from "../../../components/common/IconButton";
 import { useToast } from "../../../components/common/toastContext";
 import type { BusinessChecklistItem } from "../../../types/businessChecklist";
 
@@ -205,17 +206,12 @@ export function ChecklistSettingsSection() {
           <div className="checklist-item-card" key={item.id}>
             <div className="checklist-item-head">
               <div>
-                <small>{item.category}</small>
                 <strong>{item.title}</strong>
                 {item.description ? <p>{item.description}</p> : null}
               </div>
               <div className="inline-action-group">
-                <Button onClick={() => startEdit(item)} type="button" variant="secondary">
-                  수정
-                </Button>
-                <Button onClick={() => handleDelete(item)} type="button" variant="secondary">
-                  삭제
-                </Button>
+                <IconButton icon="edit" label={`${item.title} 수정`} onClick={() => startEdit(item)} />
+                <IconButton icon="delete" label={`${item.title} 삭제`} onClick={() => handleDelete(item)} tone="danger" />
               </div>
             </div>
             {editingItemId === item.id ? (

@@ -10,6 +10,9 @@ export interface AuditLogEntry {
   id: string;
   type: AuditLogType;
   patentId: string;
+  // AUDIT-02(항목7): 특허 ID만으로는 식별이 어려워 BE가 관리번호·특허명을 함께 내려준다.
+  managementNumber: string | null;
+  patentTitle: string | null;
   actor: string | null;
   summary: string;
   occurredAt: string | null;

@@ -1,35 +1,26 @@
 import { useEffect, useState } from "react";
 import {
-  adjustAnnualFeeSchedule,
   activateReviewQuarter,
   disconnectMailOAuth2,
-  getAnnualFeeSchedule,
   getClassifications,
-  getCountryExtensions,
   getMailLeadMonths,
   getMailOAuth2Status,
   getResponseDeadline,
   getReviewPeriodTemplates,
   getReviewQuarters,
   redirectToGoogleOAuth2,
-  updateCountryExtension,
-  getFeeRules,
-  updateFeeRule,
   updateMailLeadMonths,
   updateResponseDeadline,
-  type AnnualFeeScheduleItem,
   type ClassificationGroup,
   type ClassificationType,
-  type CountryExtension,
-  type FeeRule,
   type MailOAuth2Status,
   type QuarterSetting,
   type ReviewPeriodTemplate,
   type ResponseDeadline,
 } from "../../api/settings";
 import { getApiErrorMessage } from "../../api/client";
-import { Button } from "../../components/common/Button";
 import { AppLayout } from "../../components/layout/AppLayout";
+import { AnnualFeeSettingsSection } from "./settings/AnnualFeeSettingsSection";
 import { MailSettingsSection } from "./settings/MailSettingsSection";
 import { QuarterSettingsSection } from "./settings/QuarterSettingsSection";
 import { ClassificationSettingsSection } from "./settings/ClassificationSettingsSection";
@@ -56,9 +47,6 @@ export function AdminSettingsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [mailMessage, setMailMessage] = useState("");
-  const [countryExtensions, setCountryExtensions] = useState<CountryExtension[]>([]);
-  // I4: 국가별 연차료 규칙(FEE-06) 편집 상태.
-  const [feeRules, setFeeRules] = useState<FeeRule[]>([]);
   const [mailLeadMonths, setMailLeadMonths] = useState(2);
   const [mailLeadMonthsInput, setMailLeadMonthsInput] = useState(2);
   const [isSavingMailLead, setIsSavingMailLead] = useState(false);
@@ -73,9 +61,6 @@ export function AdminSettingsPage() {
   const [classificationMessage, setClassificationMessage] = useState("");
   const [oauth2Status, setOAuth2Status] = useState<MailOAuth2Status>({ connected: false, connectedEmail: null });
   const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [annualFeeSchedule, setAnnualFeeSchedule] = useState<AnnualFeeScheduleItem[]>([]);
-  const [annualFeeCountry, setAnnualFeeCountry] = useState("ALL");
-  const [annualFeeMessage, setAnnualFeeMessage] = useState("");
   const [activeSettingsSection, setActiveSettingsSection] = useState<SettingsSectionId>("mail");
 
   useEffect(() => {
@@ -96,8 +81,6 @@ export function AdminSettingsPage() {
       getReviewQuarters(currentYear),
       getReviewQuarters(currentYear + 1),
       getReviewPeriodTemplates(),
-      getCountryExtensions(),
-      getFeeRules().catch(() => []),
       getClassifications(),
       getMailLeadMonths(),
       getResponseDeadline(),
@@ -107,8 +90,6 @@ export function AdminSettingsPage() {
         thisYearQ,
         nextYearQ,
         nextReviewPeriodTemplates,
-        nextExtensions,
-        nextFeeRules,
         nextClassifications,
         nextMailLead,
         nextDeadline,
@@ -116,8 +97,6 @@ export function AdminSettingsPage() {
       ]) => {
         setAllQuarters([...thisYearQ, ...nextYearQ]);
         setReviewPeriodTemplates(nextReviewPeriodTemplates);
-        setCountryExtensions(nextExtensions);
-        setFeeRules(nextFeeRules);
         setClassifications(nextClassifications);
         setOAuth2Status(nextOAuth2);
         setMailLeadMonths(nextMailLead);
@@ -128,18 +107,6 @@ export function AdminSettingsPage() {
       .catch((error) => setMessage(getApiErrorMessage(error, "설정을 불러오지 못했습니다.")))
       .finally(() => setIsLoading(false));
   }, []);
-
-  useEffect(() => {
-    getAnnualFeeSchedule(annualFeeCountry)
-      .then((nextSchedule) => {
-        setAnnualFeeSchedule(nextSchedule);
-        setAnnualFeeMessage("");
-      })
-      .catch((error) => {
-        setAnnualFeeSchedule([]);
-        setAnnualFeeMessage(getApiErrorMessage(error, "연차료 예정표를 불러오지 못했습니다."));
-      });
-  }, [annualFeeCountry]);
 
   async function handleSaveMailLeadMonths(event: React.FormEvent) {
     event.preventDefault();
@@ -270,138 +237,7 @@ export function AdminSettingsPage() {
         />
       ) : null}
 
-      {activeSettingsSection === "annualFee" ? (
-        <>
-          <section className="section">
-            <div className="section-header">
-              <div>
-                <h2>유지 결정 시 납부일 연장 기간</h2>
-                <p>관리자가 특허를 유지 처리하면 국가별 납부 규칙에 따라 다음 납부 예정일을 계산합니다.</p>
-              </div>
-            </div>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>국가</th>
-                    <th>연장 기간 (개월)</th>
-                    <th>작업</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {countryExtensions.map((ext) => (
-                    <CountryExtensionRow
-                      key={ext.country}
-                      ext={ext}
-                      onSave={async (country, months) => {
-                        const updated = await updateCountryExtension(country, months);
-                        setCountryExtensions((prev) => prev.map((e) => (e.country === country ? updated : e)));
-                      }}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="form-helper-text" style={{ marginTop: "0.5rem" }}>
-              미국 특허는 등록일 기준 3.5년, 7.5년, 11.5년 유지료 일정을 우선 적용합니다.
-            </p>
-          </section>
-
-          {/* I4(FEE-06): 국가별 연차료 규칙(기산일·일괄 연차·납부 주기) 편집 */}
-          <section className="section">
-            <div className="section-header">
-              <div>
-                <h2>국가별 연차료 규칙</h2>
-                <p>기산일(출원일/등록일), 설정등록 시 일괄 납부 연차 수, 납부 주기를 국가별로 조정합니다.</p>
-              </div>
-            </div>
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>국가</th>
-                    <th>기산일</th>
-                    <th>일괄 납부 연차</th>
-                    <th>납부 주기(개월)</th>
-                    <th>현재 규칙</th>
-                    <th>작업</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {feeRules.map((rule) => (
-                    <FeeRuleRow
-                      key={rule.country}
-                      rule={rule}
-                      onSave={async (country, payload) => {
-                        const updated = await updateFeeRule(country, payload);
-                        if (updated) {
-                          setFeeRules((prev) => prev.map((r) => (r.country === country ? updated : r)));
-                        }
-                      }}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-
-          <section className="section">
-            <div className="section-header">
-              <div>
-                <h2>국가별 연차료 납부 예정일</h2>
-                <p>실제 특허 데이터와 국가별 계산 규칙으로 산정된 미래 납부 예정일을 확인하고 조정합니다.</p>
-              </div>
-              <label className="form-field" style={{ maxWidth: 220 }}>
-                <span className="form-label-text">국가</span>
-                <select onChange={(event) => setAnnualFeeCountry(event.target.value)} value={annualFeeCountry}>
-                  <option value="ALL">전체</option>
-                  {countryExtensions.map((ext) => (
-                    <option key={ext.country} value={ext.country}>{ext.label}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            {annualFeeMessage ? <p className="notice notice-compact" style={{ marginBottom: "1rem" }}>{annualFeeMessage}</p> : null}
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>특허</th>
-                    <th>국가 구분</th>
-                    <th>기준일</th>
-                    <th>현재 예정일</th>
-                    <th>적용 규칙</th>
-                    <th>최근 조정</th>
-                    <th>조정</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {annualFeeSchedule.slice(0, 20).map((item) => (
-                    <AnnualFeeScheduleRow
-                      item={item}
-                      key={item.patentId}
-                      onSave={async (adjustedDueDate, reason) => {
-                        try {
-                          const updated = await adjustAnnualFeeSchedule(item.patentId, adjustedDueDate, reason);
-                          setAnnualFeeSchedule((prev) => prev.map((row) => (row.patentId === item.patentId ? updated : row)));
-                          setAnnualFeeMessage(`${item.managementNumber} 납부 예정일이 조정되었습니다.`);
-                        } catch (error) {
-                          setAnnualFeeMessage(error instanceof Error ? error.message : "납부 예정일 조정에 실패했습니다.");
-                        }
-                      }}
-                    />
-                  ))}
-                  {annualFeeSchedule.length === 0 ? (
-                    <tr>
-                      <td className="empty-table-cell" colSpan={7}>연차료 납부 예정일 데이터가 없습니다.</td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        </>
-      ) : null}
+      {activeSettingsSection === "annualFee" ? <AnnualFeeSettingsSection /> : null}
 
       {activeSettingsSection === "valuation" ? <ValuationCriteriaSection /> : null}
       {activeSettingsSection === "checklist" ? <ChecklistSettingsSection /> : null}
@@ -413,192 +249,5 @@ export function AdminSettingsPage() {
         />
       ) : null}
     </AppLayout>
-  );
-}
-
-/**
- * @relatedFR FR-LEGAL-24
- * @description I4(FEE-06): 국가별 연차료 규칙 한 행 — 기산일·일괄 연차·주기를 편집·저장한다.
- */
-function FeeRuleRow({
-  rule,
-  onSave,
-}: {
-  rule: FeeRule;
-  onSave: (country: string, payload: { basis: FeeRule["basis"]; initialLumpYears: number; cycleMonths: number }) => Promise<void>;
-}) {
-  const [basis, setBasis] = useState<FeeRule["basis"]>(rule.basis);
-  const [lumpYears, setLumpYears] = useState(rule.initialLumpYears);
-  const [cycleMonths, setCycleMonths] = useState(rule.cycleMonths);
-  const [isSaving, setIsSaving] = useState(false);
-
-  async function handleSave() {
-    setIsSaving(true);
-    try {
-      await onSave(rule.country, { basis, initialLumpYears: lumpYears, cycleMonths });
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  return (
-    <tr>
-      <td><strong>{rule.countryLabel}</strong> ({rule.country})</td>
-      <td>
-        <select aria-label={`${rule.country} 기산일`} onChange={(event) => setBasis(event.target.value as FeeRule["basis"])} value={basis}>
-          <option value="APPLICATION_DATE">출원일</option>
-          <option value="REGISTRATION_DATE">등록일</option>
-        </select>
-      </td>
-      <td>
-        <input
-          aria-label={`${rule.country} 일괄 납부 연차`}
-          max={10}
-          min={0}
-          onChange={(event) => setLumpYears(Number(event.target.value))}
-          type="number"
-          value={lumpYears}
-        />
-      </td>
-      <td>
-        <input
-          aria-label={`${rule.country} 납부 주기(개월)`}
-          max={120}
-          min={1}
-          onChange={(event) => setCycleMonths(Number(event.target.value))}
-          type="number"
-          value={cycleMonths}
-        />
-      </td>
-      <td className="table-subtext">{rule.ruleLabel}</td>
-      <td>
-        <Button disabled={isSaving} onClick={handleSave} type="button" variant="secondary">
-          {isSaving ? "저장 중" : "저장"}
-        </Button>
-      </td>
-    </tr>
-  );
-}
-
-function CountryExtensionRow({
-  ext,
-  onSave,
-}: {
-  ext: CountryExtension;
-  onSave: (country: string, months: number) => Promise<void>;
-}) {
-  const [months, setMonths] = useState(ext.extensionMonths);
-  const [isSaving, setIsSaving] = useState(false);
-  // SETTINGS-10: 저장 결과를 행 단위로 표시 — 여러 국가를 연속 저장해도 메시지가 섞이지 않는다.
-  const [saveMessage, setSaveMessage] = useState("");
-  const isDirty = months !== ext.extensionMonths;
-
-  async function save() {
-    setIsSaving(true);
-    setSaveMessage("");
-    try {
-      await onSave(ext.country, months);
-      setSaveMessage(`${months}개월로 저장됨`);
-    } catch (error) {
-      setSaveMessage(error instanceof Error ? error.message : "저장 실패");
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  return (
-    <tr>
-      <td><strong>{ext.label}</strong></td>
-      <td>
-        <input
-          max={120}
-          min={1}
-          onChange={(e) => setMonths(Number(e.target.value))}
-          style={{ width: "80px" }}
-          type="number"
-          value={months}
-        />
-      </td>
-      <td>
-        <Button disabled={isSaving || !isDirty} onClick={save} type="button" variant="secondary">
-          {isSaving ? "저장 중…" : "저장"}
-        </Button>
-        {saveMessage ? <span className="table-subtext">{saveMessage}</span> : null}
-      </td>
-    </tr>
-  );
-}
-
-function AnnualFeeScheduleRow({
-  item,
-  onSave,
-}: {
-  item: AnnualFeeScheduleItem;
-  onSave: (adjustedDueDate: string, reason: string) => Promise<void>;
-}) {
-  const [adjustedDueDate, setAdjustedDueDate] = useState(item.nextAnnualFeeDueDate ?? "");
-  const [reason, setReason] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const isDirty = adjustedDueDate && adjustedDueDate !== item.nextAnnualFeeDueDate;
-
-  async function save() {
-    setIsSaving(true);
-    await onSave(adjustedDueDate, reason).finally(() => setIsSaving(false));
-    setReason("");
-  }
-
-  return (
-    <tr>
-      <td>
-        <strong>{item.title}</strong>
-        <span className="table-subtext">{item.managementNumber}</span>
-      </td>
-      <td>
-        <span className={item.domesticPatent ? "badge badge-success" : "badge badge-neutral"}>
-          {item.domesticPatent ? "국내특허" : "해외특허"}
-        </span>
-        <span className="table-subtext">{item.country}</span>
-      </td>
-      <td>{item.annualFeeBaseDate ?? "-"}</td>
-      <td>
-        {/* FEE-06: 실효 납부일(effective)을 표시하고, 저장값(stored)이 과거라 굴려진 경우 원본을 함께 노출. */}
-        <strong>{item.effectiveAnnualFeeDueDate ?? item.nextAnnualFeeDueDate ?? "-"}</strong>
-        {item.adjustedAnnualFeeDueDate ? <span className="table-subtext">조정됨</span> : null}
-        {item.storedAnnualFeeDueDate
-          && item.effectiveAnnualFeeDueDate
-          && item.storedAnnualFeeDueDate !== item.effectiveAnnualFeeDueDate ? (
-          <span className="table-subtext">저장값 {item.storedAnnualFeeDueDate} → 재계산</span>
-        ) : null}
-      </td>
-      <td>
-        <span>{item.paymentRuleLabel ?? "-"}</span>
-        <span className="table-subtext">{item.annualFeeBasis === "REGISTRATION_DATE" ? "등록일 기준" : "출원일 기준"}</span>
-      </td>
-      <td>
-        {item.latestAdjustmentReason ? (
-          <>
-            <span>{item.latestAdjustmentReason}</span>
-            <span className="table-subtext">{item.adjustmentHistory[0]?.adjustedAt?.slice(0, 10)}</span>
-          </>
-        ) : "-"}
-      </td>
-      <td>
-        <div className="annual-fee-adjust-form">
-          <input
-            onChange={(event) => setAdjustedDueDate(event.target.value)}
-            type="date"
-            value={adjustedDueDate}
-          />
-          <input
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="조정 사유"
-            value={reason}
-          />
-          <Button disabled={isSaving || !isDirty || !reason.trim()} onClick={save} type="button" variant="secondary">
-            {isSaving ? "저장 중…" : "조정"}
-          </Button>
-        </div>
-      </td>
-    </tr>
   );
 }

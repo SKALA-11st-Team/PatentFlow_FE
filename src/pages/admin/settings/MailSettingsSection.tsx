@@ -25,7 +25,8 @@ interface MailSettingsSectionProps {
 /**
  * @relatedFR FR-LEGAL-12, FR-LEGAL-16, FR-LEGAL-23
  * @relatedUI UI-LEGAL-07
- * @description Google 계정 연동 메일 설정, 검토 요청 메일 발송 기준(개월), 사업부 회신 기한을 관리하는 설정 섹션.
+ * @description SETTINGS-12(항목8): 메일/회신 설정 — 카드 나열 대신 왼쪽 설명·오른쪽 입력의
+ * 컴팩트한 행 레이아웃으로 Google 연동, 발송 기준, 회신 기한을 관리한다.
  */
 export function MailSettingsSection({
   oauth2Status,
@@ -47,20 +48,25 @@ export function MailSettingsSection({
   onSaveResponseDeadline,
 }: MailSettingsSectionProps) {
   return (
-    <>
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>메일 발송 설정</h2>
-            <p>Gmail 발송은 Google 계정 연동으로만 지원됩니다.</p>
-          </div>
+    <section className="section">
+      <div className="section-header">
+        <div>
+          <h2>메일/회신 설정</h2>
+          <p>검토 요청 메일 발송 계정과 발송·회신 기준을 관리합니다.</p>
         </div>
+      </div>
 
-        <div className="settings-card" style={{ marginBottom: "1rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+      <div className="settings-row-list">
+        <div className="settings-row">
+          <div className="settings-row-info">
+            <strong>Google 계정 연동</strong>
+            <span>Gmail 발송은 Google 계정 연동으로만 지원되며, 연동된 계정으로 메일을 발송합니다.</span>
+            {mailMessage ? <span className="settings-row-message">{mailMessage}</span> : null}
+          </div>
+          <div className="settings-row-control">
             {oauth2Status.connected ? (
               <>
-                <span className="badge badge-success">Google 연동됨</span>
+                <span className="badge badge-success">연동됨</span>
                 <span className="form-helper-text">{oauth2Status.connectedEmail}</span>
                 <Button disabled={isDisconnecting} onClick={onDisconnect} type="button" variant="secondary">
                   {isDisconnecting ? "해제 중…" : "연동 해제"}
@@ -75,82 +81,65 @@ export function MailSettingsSection({
               </>
             )}
           </div>
-          <small className="form-helper-text" style={{ marginTop: "0.5rem", display: "block" }}>
-            연동된 Google 계정으로 메일을 발송합니다.
-          </small>
         </div>
 
-        {mailMessage ? <p className="notice notice-compact" style={{ margin: "0.5rem 0" }}>{mailMessage}</p> : null}
-      </section>
-
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>검토 요청 메일 발송 기준</h2>
-            {/* MAIL-09: 스케줄러는 분기 '활성화'만 자동 처리한다 — 검토 요청 메일은 관리자가 수동 발송한다(거짓 카피 정정). */}
-            <p>분기 시작일 N개월 전에 스케줄러가 자동으로 분기를 활성화합니다. 검토 요청 메일은 관리자가 검토 대상 화면에서 수동으로 발송합니다.</p>
+        <form className="settings-row" onSubmit={onSaveMailLeadMonths}>
+          <div className="settings-row-info">
+            <strong>검토 요청 메일 발송 기준</strong>
+            {/* MAIL-09: 스케줄러는 분기 '활성화'만 자동 처리한다 — 검토 요청 메일은 관리자가 수동 발송한다. */}
+            <span>
+              분기 시작일 N개월 전에 스케줄러가 자동으로 분기를 활성화합니다. 검토 요청 메일은 관리자가 특허 조회
+              화면에서 수동으로 발송합니다.
+            </span>
+            {mailLeadMessage ? <span className="settings-row-message">{mailLeadMessage}</span> : null}
           </div>
-        </div>
-        <form className="settings-card settings-form" onSubmit={onSaveMailLeadMonths}>
-          <label className="form-field" style={{ maxWidth: "180px" }}>
-            <span className="form-label-text">발송 기준 (개월)</span>
-            <input
-              max={24}
-              min={0}
-              onChange={(e) => setMailLeadMonthsInput(Number(e.target.value))}
-              style={{ maxWidth: "100px" }}
-              type="number"
-              value={mailLeadMonthsInput}
-            />
-            <small className="form-saved-value">현재 저장값: {mailLeadMonths}개월</small>
-          </label>
-          {mailLeadMessage ? <p className="notice notice-compact">{mailLeadMessage}</p> : null}
-          <div>
-            <Button disabled={isSavingMailLead || mailLeadMonthsInput === mailLeadMonths} type="submit">
+          <div className="settings-row-control">
+            <label className="settings-inline-input">
+              <input
+                aria-label="발송 기준 (개월)"
+                max={24}
+                min={0}
+                onChange={(e) => setMailLeadMonthsInput(Number(e.target.value))}
+                type="number"
+                value={mailLeadMonthsInput}
+              />
+              <span>개월 전</span>
+            </label>
+            <Button disabled={isSavingMailLead || mailLeadMonthsInput === mailLeadMonths} type="submit" variant="secondary">
               {isSavingMailLead ? "저장 중…" : "저장"}
             </Button>
           </div>
         </form>
-      </section>
 
-      <section className="section">
-        <div className="section-header">
-          <div>
-            <h2>사업부 회신 기한</h2>
-            <p>
-              분기 활성화(검토 시작) 후 사업부가 회신해야 하는 기한입니다.
-              활성화일 기준 「+ N개월 + M일」로 자동 계산됩니다.
-            </p>
+        <form className="settings-row" onSubmit={onSaveResponseDeadline}>
+          <div className="settings-row-info">
+            <strong>사업부 회신 기한</strong>
+            <span>분기 활성화(검토 시작) 후 사업부가 회신해야 하는 기한입니다. 활성화일 기준 「+ N개월 + M일」로 계산됩니다.</span>
+            {deadlineMessage ? <span className="settings-row-message">{deadlineMessage}</span> : null}
           </div>
-        </div>
-        <form className="settings-card settings-form" onSubmit={onSaveResponseDeadline}>
-          <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", flexWrap: "wrap" }}>
-            <label className="form-field" style={{ maxWidth: "120px" }}>
-              <span className="form-label-text">개월</span>
+          <div className="settings-row-control">
+            <label className="settings-inline-input">
               <input
+                aria-label="회신 기한 개월"
                 max={12}
                 min={0}
                 onChange={(e) => setResponseDeadlineInput((prev) => ({ ...prev, months: Number(e.target.value) }))}
-                style={{ maxWidth: "100px" }}
                 type="number"
                 value={responseDeadlineInput.months}
               />
+              <span>개월</span>
             </label>
-            <label className="form-field" style={{ maxWidth: "120px" }}>
-              <span className="form-label-text">일</span>
+            <label className="settings-inline-input">
               <input
+                aria-label="회신 기한 일"
                 max={30}
                 min={0}
                 onChange={(e) => setResponseDeadlineInput((prev) => ({ ...prev, days: Number(e.target.value) }))}
-                style={{ maxWidth: "100px" }}
                 type="number"
                 value={responseDeadlineInput.days}
               />
+              <span>일</span>
             </label>
-          </div>
-          <small className="form-saved-value">현재 저장값: 검토 시작 후 {responseDeadline.months}개월 {responseDeadline.days}일</small>
-          {deadlineMessage ? <p className="notice notice-compact">{deadlineMessage}</p> : null}
-          <div>
             <Button
               disabled={
                 isSavingDeadline ||
@@ -158,12 +147,13 @@ export function MailSettingsSection({
                   responseDeadlineInput.days === responseDeadline.days)
               }
               type="submit"
+              variant="secondary"
             >
               {isSavingDeadline ? "저장 중…" : "저장"}
             </Button>
           </div>
         </form>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

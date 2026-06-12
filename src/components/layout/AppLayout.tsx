@@ -59,10 +59,10 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
           label: "검토 업무",
           items: [
             { label: "대시보드", to: "/admin/dashboard" },
-            { label: "검토 대상", to: "/admin/review-targets" },
+            { label: "특허 조회", to: "/admin/review-targets" },
             { label: "특허관리", to: "/admin/patents" },
             { label: "AI 레포트 메일 발송", to: "/admin/mailing" },
-            { label: "감사 로그", to: "/admin/audit-logs" },
+            { label: "변경 이력", to: "/admin/audit-logs" },
           ],
         },
         ...(isLegalRole

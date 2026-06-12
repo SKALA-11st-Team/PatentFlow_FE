@@ -381,6 +381,8 @@ export interface CountryExtension {
   country: string;
   label: string;
   extensionMonths: number;
+  // SETTINGS-11(항목8): 유지 결정 회차별 연장 기간(1회차부터). 회차 설정이 없으면 단일값 1개.
+  extensionMonthsByRound: number[];
 }
 
 export async function getCountryExtensions(): Promise<CountryExtension[]> {
@@ -389,10 +391,16 @@ export async function getCountryExtensions(): Promise<CountryExtension[]> {
   return response.data ?? [];
 }
 
-export async function updateCountryExtension(country: string, extensionMonths: number): Promise<CountryExtension> {
+export async function updateCountryExtension(
+  country: string,
+  extensionMonthsByRound: number[],
+): Promise<CountryExtension> {
   const response = await requestJson<ApiEnvelope<CountryExtension>>(
     `/settings/country-extensions/${country}`,
-    { method: "PUT", body: JSON.stringify({ extensionMonths }) },
+    {
+      method: "PUT",
+      body: JSON.stringify({ extensionMonths: extensionMonthsByRound[0] ?? 12, extensionMonthsByRound }),
+    },
   );
   return response.data!;
 }

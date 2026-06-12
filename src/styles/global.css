@@ -2284,28 +2284,6 @@ tbody tr:hover {
   grid-template-columns: repeat(4, minmax(160px, 1fr));
 }
 
-.readonly-lock-banner {
-  align-items: flex-start;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  color: var(--color-text-muted);
-  display: grid;
-  gap: 4px;
-  margin-bottom: var(--spacing-md);
-  padding: var(--spacing-md);
-}
-
-.readonly-lock-banner strong {
-  color: var(--color-text-primary);
-  font-size: 14px;
-}
-
-.readonly-lock-banner span {
-  font-size: 13px;
-  line-height: 1.5;
-}
-
 .patent-edit-form label {
   color: var(--color-text-muted);
   display: grid;
@@ -3994,7 +3972,8 @@ tbody tr:hover {
 .valuation-criteria-grid {
   display: grid;
   gap: var(--spacing-lg);
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  /* 항목11: 카드가 너무 좁아지면 라벨이 줄바꿈되어 가독성이 떨어진다. */
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   margin-top: var(--spacing-lg);
 }
 
@@ -4025,16 +4004,19 @@ tbody tr:hover {
 
 .valuation-criteria-field span {
   color: var(--color-text-muted);
+  flex: 1;
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .valuation-criteria-field input {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
+  flex: none;
   font: inherit;
   padding: var(--spacing-xs) var(--spacing-sm);
   text-align: right;
-  width: 5.5rem;
+  width: 7rem;
 }
 
 .valuation-criteria-sum {
@@ -4425,6 +4407,40 @@ tbody tr:hover {
 
 .funnel-count { text-align: right; font-weight: 600; }
 
+/* 항목1: 타임라인 월/분기 단위 토글 */
+.dashboard-visual-card-head {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.timeline-unit-toggle {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+}
+
+.timeline-unit-toggle button {
+  background: none;
+  border: none;
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.7rem;
+}
+
+.timeline-unit-toggle button.selected {
+  background: var(--color-white);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-dark);
+}
+
 .timeline-bars {
   display: flex;
   align-items: flex-end;
@@ -4494,37 +4510,42 @@ tbody tr:hover {
 /* ── F5/I5: CSV·저장 필터 액션 ─────────────────────────────────────── */
 .csv-action-row { margin-bottom: 0.75rem; flex-wrap: wrap; }
 
-.csv-import-label {
-  display: inline-flex;
+/* 항목3: 등록 폼에서 선택해 둔 PDF 파일 표시 칩 */
+.pdf-file-chip {
   align-items: center;
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  background: var(--color-white);
-}
-
-.saved-filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.15rem;
+  background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: 999px;
-  padding: 0.1rem 0.3rem 0.1rem 0.6rem;
+  display: inline-flex;
   font-size: 0.8rem;
-  background: var(--color-bg-secondary);
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  max-width: 100%;
+  padding: 0.2rem 0.45rem 0.2rem 0.3rem;
+  width: fit-content;
 }
 
-.saved-filter-chip button {
-  border: none;
+.pdf-file-chip-icon {
+  background: var(--color-primary);
+  border-radius: 6px;
+  color: var(--color-white);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.35rem;
+}
+
+.pdf-file-chip button {
   background: none;
-  cursor: pointer;
-  font-size: 0.8rem;
+  border: none;
   color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  padding: 0 0.15rem;
 }
 
-.saved-filter-chip button:first-child:hover { color: var(--color-primary); }
+.pdf-file-chip button:hover { color: var(--color-error); }
 
 /* ── D4: 다크모드 ─────────────────────────────────────────────────── */
 .theme-toggle-button,
@@ -4583,4 +4604,263 @@ tbody tr:hover {
 
 @media (max-width: 520px) {
   .meta-grid, .patent-form-grid, .kpi-grid, .dashboard-visual-row { grid-template-columns: 1fr; }
+}
+
+
+/* ── 항목8: 설정 행 레이아웃(좌 설명 · 우 입력) ───────────────────── */
+.settings-row-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-row {
+  align-items: center;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: 1.5rem;
+  justify-content: space-between;
+  padding: 0.85rem 0.25rem;
+}
+
+.settings-row:first-child { border-top: none; }
+
+.settings-row-info {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.settings-row-info strong { font-size: 0.92rem; }
+
+.settings-row-info > span {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.settings-row-message {
+  color: var(--color-primary);
+  font-size: 0.8rem;
+}
+
+.settings-row-control {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 0.6rem;
+}
+
+.settings-inline-input {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.settings-inline-input input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  text-align: right;
+  width: 4.5rem;
+}
+
+.settings-inline-input span {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+/* ── 항목8: 회차별 연장 기간 ──────────────────────────────────────── */
+.extension-round-chips {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.extension-round-chip {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+
+.extension-rounds-modal,
+.schedule-detail-modal {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  gap: 1rem;
+  max-height: min(80vh, 640px);
+  overflow-y: auto;
+  padding: 1.5rem;
+  width: min(560px, calc(100vw - 2rem));
+}
+
+.extension-round-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.extension-round-row {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 56px auto minmax(0, 1fr) auto;
+}
+
+.extension-round-ordinal {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.extension-round-row label {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.extension-round-row input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  padding: 0.35rem 0.5rem;
+  text-align: right;
+  width: 4.5rem;
+}
+
+.extension-round-row label span {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.extension-round-preview {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.extension-round-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* ── 항목10: 납부 예정일 hover 액션 + 상세 모달 ───────────────────── */
+.hover-action-button {
+  background: var(--color-white);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0;
+  padding: 0.3rem 0.7rem;
+  transition: opacity var(--transition-fast);
+}
+
+.hover-action-row:hover .hover-action-button,
+.hover-action-button:focus-visible {
+  opacity: 1;
+}
+
+.hover-action-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.schedule-detail-grid {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.schedule-detail-grid > div {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 110px minmax(0, 1fr);
+}
+
+.schedule-detail-grid dt {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.schedule-detail-grid dd {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.schedule-detail-history h3,
+.schedule-detail-adjust h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.5rem;
+}
+
+.schedule-detail-history ul {
+  display: grid;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.schedule-detail-history li {
+  display: grid;
+  font-size: 0.85rem;
+  gap: 0.1rem;
+}
+
+.schedule-detail-history li span {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.dirty-row td { background: color-mix(in srgb, var(--color-primary) 4%, transparent); }
+
+.nowrap-cell { white-space: nowrap; }
+
+.rule-label-cell {
+  font-size: 0.78rem;
+  max-width: 260px;
+}
+
+/* ── 항목13: 분류 리스트 고정 높이 + 페이지네이션 ─────────────────── */
+.classification-list-fixed {
+  align-content: start;
+  min-height: 21rem;
+}
+
+/* ── 항목14: 행 내 아이콘 버튼 ────────────────────────────────────── */
+.icon-button {
+  align-items: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  width: 28px;
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-dark);
+}
+
+.icon-button-danger:hover:not(:disabled) { color: var(--color-error); }
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }

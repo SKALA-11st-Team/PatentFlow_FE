@@ -80,7 +80,7 @@ export function AdminReviewTargetPage() {
   const [contextFilterValue, setContextFilterValue] = useState(initialContextFilter.value);
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const [quarterFilter, setQuarterFilter] = useState<QuarterFilter>("ALL");
-  const [countryFilter, setCountryFilter] = useState("ALL");
+  const [countryFilter, setCountryFilter] = useState(() => searchParams.get("country")?.trim() || "ALL");
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const { errorMessage, isLoading, patents: patentList, setPatents: setPatentList } = usePatentList();
   const [selectedPatentIds, setSelectedPatentIds] = useState<string[]>([]);

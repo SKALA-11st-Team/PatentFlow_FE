@@ -30,8 +30,8 @@ interface PatentContextSummary {
   value: string;
 }
 
-type PatentContextDimensionKey = "BUSINESS_AREA" | "TECHNOLOGY_AREA" | "PRODUCT";
-type PatentContextQueryParam = "businessArea" | "technologyArea" | "productName";
+type PatentContextDimensionKey = "BUSINESS_AREA" | "TECHNOLOGY_AREA" | "PRODUCT" | "COUNTRY";
+type PatentContextQueryParam = "businessArea" | "technologyArea" | "productName" | "country";
 
 const businessAreaChartColors = ["#EA002C", "#009A93", "#F47725", "#5B5F97", "#2F80ED", "#8A5CF6", "#5A6B2F"];
 const contextCardPageSize = 8;
@@ -58,6 +58,14 @@ const patentContextDimensions: PatentContextDimension[] = [
     label: "관련 제품",
     queryParam: "productName",
     selectGroups: (distribution) => distribution.product,
+  },
+  // DASH-F4(항목2): TW·UAE 등 국가별 특허 묶음을 바로 조회할 수 있게 한다.
+  {
+    description: "출원 국가 기준으로 특허를 봅니다.",
+    key: "COUNTRY",
+    label: "출원 국가",
+    queryParam: "country",
+    selectGroups: (distribution) => distribution.country,
   },
 ];
 

@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../../components/common/Button";
+import { IconButton } from "../../../components/common/IconButton";
+import { PaginationControls } from "../../../components/common/PaginationControls";
 import {
   addClassification,
   deleteClassification,
@@ -50,6 +52,9 @@ export function ClassificationSettingsSection({
   );
 }
 
+// 항목13: 리스트가 길어져도 카드 높이가 틀어지지 않도록 페이지 크기를 고정한다.
+const CLASSIFICATION_PAGE_SIZE = 8;
+
 function ClassificationEditor({
   group,
   onAdd,
@@ -65,7 +70,18 @@ function ClassificationEditor({
   const [editingValue, setEditingValue] = useState("");
   const [editingNextValue, setEditingNextValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const title = group.type === "BUSINESS" ? "사업 분류" : "기술 분류";
+  const totalPages = Math.max(1, Math.ceil(group.values.length / CLASSIFICATION_PAGE_SIZE));
+  const pagedValues = group.values.slice(
+    (currentPage - 1) * CLASSIFICATION_PAGE_SIZE,
+    currentPage * CLASSIFICATION_PAGE_SIZE,
+  );
+
+  // 삭제 등으로 페이지 수가 줄면 마지막 페이지로 보정한다.
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   async function run(action: () => Promise<void>) {
     setIsSaving(true);
@@ -98,8 +114,8 @@ function ClassificationEditor({
           추가
         </Button>
       </div>
-      <div className="classification-list">
-        {group.values.map((value) => (
+      <div className="classification-list classification-list-fixed">
+        {pagedValues.map((value) => (
           <div className="classification-row" key={value}>
             {editingValue === value ? (
               <input
@@ -139,26 +155,36 @@ function ClassificationEditor({
                 </>
               ) : (
                 <>
-                  <Button
+                  {/* 항목14: 행 단위 동작은 아이콘 버튼으로 대체한다. */}
+                  <IconButton
                     disabled={isSaving}
+                    icon="edit"
+                    label={`${value} 수정`}
                     onClick={() => {
                       setEditingValue(value);
                       setEditingNextValue(value);
                     }}
-                    type="button"
-                    variant="secondary"
-                  >
-                    수정
-                  </Button>
-                  <Button disabled={isSaving} onClick={() => run(() => onDelete(value))} type="button" variant="secondary">
-                    삭제
-                  </Button>
+                  />
+                  <IconButton
+                    disabled={isSaving}
+                    icon="delete"
+                    label={`${value} 삭제`}
+                    onClick={() => run(() => onDelete(value))}
+                    tone="danger"
+                  />
                 </>
               )}
             </div>
           </div>
         ))}
       </div>
+      <PaginationControls
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        pageSize={CLASSIFICATION_PAGE_SIZE}
+        totalItems={group.values.length}
+        totalPages={totalPages}
+      />
     </div>
   );
 }
