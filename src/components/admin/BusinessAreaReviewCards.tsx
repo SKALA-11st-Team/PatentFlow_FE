@@ -61,7 +61,7 @@ const patentContextDimensions: PatentContextDimension[] = [
   },
   // DASH-F4(항목2): TW·UAE 등 국가별 특허 묶음을 바로 조회할 수 있게 한다.
   {
-    description: "출원 국가 기준으로 특허를 봅니다.",
+    description: "출원 국가 기준으로 특허 묶음을 확인합니다.",
     key: "COUNTRY",
     label: "출원 국가",
     queryParam: "country",
@@ -149,7 +149,9 @@ export function BusinessAreaReviewCards({
                 <span className="business-area-dot" style={{ background: summary.color }} />
                 <div>
                   <strong>{summary.value}</strong>
-                  {summary.relatedLabels.length > 0 ? <span>{summary.relatedLabels[0]}</span> : null}
+                  {activeDimension.key !== "COUNTRY" && summary.relatedLabels.length > 0 ? (
+                    <span>{summary.relatedLabels[0]}</span>
+                  ) : null}
                 </div>
                 <b>{summary.totalCount}</b>
               </button>

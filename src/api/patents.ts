@@ -124,6 +124,8 @@ type BackendPatentListItem = Omit<
   | "registrationDate"
   | "expectedExpirationDate"
   | "feeDueDate"
+  | "aiReportReadinessStatus"
+  | "aiReportFailureReason"
   | "originalPatentUrl"
 > & {
   applicationNumber: string | null;
@@ -137,6 +139,8 @@ type BackendPatentListItem = Omit<
   registrationDate: string | null;
   expectedExpirationDate: string | null;
   feeDueDate: string | null;
+  aiReportReadinessStatus?: PatentListItem["aiReportReadinessStatus"] | null;
+  aiReportFailureReason?: string | null;
   originalPatentUrl?: string | null;
 };
 
@@ -814,7 +818,7 @@ export async function suggestPatentContextFields(
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-BUS-01, UI-BUS-02
  * @description 백엔드 특허 목록 DTO의 null 허용 필드를 현재 화면 모델에 맞는 표시값으로 변환한다.
  */
-function mapBackendPatentListItem(patent: BackendPatentListItem): PatentListItem {
+export function mapBackendPatentListItem(patent: BackendPatentListItem): PatentListItem {
   return {
     ...patent,
     applicationNumber: patent.applicationNumber ?? "",
@@ -828,6 +832,8 @@ function mapBackendPatentListItem(patent: BackendPatentListItem): PatentListItem
     registrationDate: patent.registrationDate ?? "",
     expectedExpirationDate: patent.expectedExpirationDate ?? "",
     feeDueDate: patent.feeDueDate ?? "",
+    aiReportReadinessStatus: patent.aiReportReadinessStatus ?? "PENDING",
+    aiReportFailureReason: patent.aiReportFailureReason ?? null,
     originalPatentUrl: patent.originalPatentUrl ?? getOriginalPatentUrl(patent),
   };
 }

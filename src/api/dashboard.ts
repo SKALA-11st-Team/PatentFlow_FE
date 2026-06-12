@@ -8,6 +8,8 @@ export interface LegalDashboardSummary {
   // DASH-01: 이번 분기 검토 대상 수(KPI 분모 단일 출처).
   quarterlyTargetCount: number;
   pendingReview: number;
+  mailReadySuccessCount?: number;
+  aiReportFailedCount?: number;
   waitingBusinessResponse: number;
   businessResponseReceived: number;
   pendingFinalDecision: number;
@@ -52,7 +54,11 @@ export async function getLegalDashboardSummary(): Promise<LegalDashboardSummary>
   return {
     totalPatents: patents.length,
     quarterlyTargetCount: patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW").length,
-    pendingReview: patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY").length,
+    pendingReview: patents.filter((patent) =>
+      patent.reviewWorkflowStatus === "MAIL_READY" || patent.aiReportReadinessStatus === "FAILED",
+    ).length,
+    mailReadySuccessCount: patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY").length,
+    aiReportFailedCount: patents.filter((patent) => patent.aiReportReadinessStatus === "FAILED").length,
     waitingBusinessResponse: patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE").length,
     businessResponseReceived: patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED").length,
     pendingFinalDecision: patents.filter(
@@ -110,6 +116,8 @@ function createEmptyLegalDashboardSummary(): LegalDashboardSummary {
     totalPatents: 0,
     quarterlyTargetCount: 0,
     pendingReview: 0,
+    mailReadySuccessCount: 0,
+    aiReportFailedCount: 0,
     waitingBusinessResponse: 0,
     businessResponseReceived: 0,
     pendingFinalDecision: 0,

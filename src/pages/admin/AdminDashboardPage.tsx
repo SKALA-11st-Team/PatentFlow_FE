@@ -61,7 +61,6 @@ export function AdminDashboardPage() {
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
   const [quarterFilter, setQuarterFilter] = useState<QuarterFilter>("ALL");
   const [countryFilter, setCountryFilter] = useState("ALL");
-  const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const { errorMessage, isLoading, patents, setPatents } = usePatentList();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<LegalDashboardSummary | null>(null);
@@ -153,13 +152,14 @@ export function AdminDashboardPage() {
 
   const quarterlyTargets = patents.filter(isQuarterlyReviewTarget);
   const mailReady = patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
+  const aiReportFailed = patents.filter((patent) => patent.aiReportReadinessStatus === "FAILED");
   const waitingBusiness = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE");
   const businessResponseReceived = patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED");
   const actionRecorded = patents.filter((patent) => patent.legalActionResult !== null);
   // DASH-01: 모든 KPI를 BE 요약 단일 출처로 통일(클라이언트 재집계는 fallback) — 동일 화면 합 불일치 방지.
   const quarterlyTargetCount = dashboardSummary?.quarterlyTargetCount ?? quarterlyTargets.length;
   const totalPatentCount = dashboardSummary?.totalPatents ?? patents.length;
-  const mailReadyCount = dashboardSummary?.pendingReview ?? mailReady.length;
+  const mailReadyCount = dashboardSummary?.pendingReview ?? (mailReady.length + aiReportFailed.length);
   const waitingBusinessCount = dashboardSummary?.waitingBusinessResponse ?? waitingBusiness.length;
   const businessResponseReceivedCount = dashboardSummary?.businessResponseReceived ?? businessResponseReceived.length;
   const actionRecordedCount = dashboardSummary?.legalActionCompleted ?? actionRecorded.length;
@@ -172,10 +172,8 @@ export function AdminDashboardPage() {
       sortKey,
       quarterFilter,
       countryFilter,
-      dateRange.from,
-      dateRange.to,
     ),
-    [countryFilter, dateRange.from, dateRange.to, patents, quarterFilter, reviewScope, searchKeyword, sortKey, workflowFilter],
+    [countryFilter, patents, quarterFilter, reviewScope, searchKeyword, sortKey, workflowFilter],
   );
   const {
     currentPage,
@@ -237,11 +235,11 @@ export function AdminDashboardPage() {
           />
           <KpiCard
             denominator={quarterlyTargetCount}
-            helper="관리자 발송 필요"
+            helper="레포트 생성 완료/실패 포함"
             isLoading={isLoading && !dashboardSummary}
             label="메일 발송 대기"
             value={mailReadyCount}
-            to="/admin/review-targets?workflow=MAIL_READY"
+            to="/admin/review-targets?view=mail-readiness"
             tone="primary"
           />
           <KpiCard
@@ -367,14 +365,6 @@ export function AdminDashboardPage() {
             </select>
           </label>
           <label>
-            <span>조회 시작일</span>
-            <input onChange={(event) => setDateRange((range) => ({ ...range, from: event.target.value }))} type="date" value={dateRange.from} />
-          </label>
-          <label>
-            <span>조회 종료일</span>
-            <input onChange={(event) => setDateRange((range) => ({ ...range, to: event.target.value }))} type="date" value={dateRange.to} />
-          </label>
-          <label>
             <span>정렬</span>
             <select onChange={(event) => setSortKey(event.target.value as SortKey)} value={sortKey}>
               {Object.entries(sortLabels).map(([value, label]) => (
@@ -475,8 +465,6 @@ function getFilteredAndSortedPatents(
   sortKey: SortKey,
   quarterFilter: QuarterFilter,
   countryFilter: string,
-  dateFrom: string,
-  dateTo: string,
 ) {
   const normalizedKeyword = searchKeyword.trim().toLowerCase();
 
@@ -494,10 +482,8 @@ function getFilteredAndSortedPatents(
         (reviewScope === "NOT_IN_QUARTER" && patent.reviewWorkflowStatus === "NOT_IN_REVIEW");
       const matchesQuarter = quarterFilter === "ALL" || getQuarterFromDate(patent.feeDueDate) === quarterFilter;
       const matchesCountry = countryFilter === "ALL" || patent.country === countryFilter;
-      const matchesDateFrom = !dateFrom || patent.feeDueDate >= dateFrom;
-      const matchesDateTo = !dateTo || patent.feeDueDate <= dateTo;
 
-      return matchesKeyword && matchesWorkflow && matchesScope && matchesQuarter && matchesCountry && matchesDateFrom && matchesDateTo;
+      return matchesKeyword && matchesWorkflow && matchesScope && matchesQuarter && matchesCountry;
     })
     .sort((firstPatent, secondPatent) => comparePatents(firstPatent, secondPatent, sortKey));
 }

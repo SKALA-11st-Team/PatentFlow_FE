@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/valuation-criteria/prompts/{axis}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getValuationCriteriaPrompt"];
+        put: operations["updateValuationCriteriaPrompt"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/review-quarters/{quarterKey}": {
         parameters: {
             query?: never;
@@ -45,6 +61,22 @@ export interface paths {
         };
         get?: never;
         put: operations["updatePeriodTemplate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/fee-rules/{country}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateFeeRule"];
         post?: never;
         delete?: never;
         options?: never;
@@ -148,22 +180,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/settings/mail": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["getMailSettings"];
-        put: operations["updateMailSettings"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/departments/{departmentId}": {
         parameters: {
             query?: never;
@@ -260,6 +276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/patents/{patentId}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadPatentPdf"];
+        put?: never;
+        post: operations["uploadPatentPdf"];
+        delete: operations["deletePatentPdf"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/patents/{patentId}/final-decision": {
         parameters: {
             query?: never;
@@ -334,6 +366,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["sendMailing"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/mailings/patent-pdf-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolvePatentPdfLinks"];
         delete?: never;
         options?: never;
         head?: never;
@@ -516,6 +564,22 @@ export interface paths {
         patch: operations["editAiReport"];
         trace?: never;
     };
+    "/api/v1/patents/bulk/department": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["bulkAssignDepartment"];
+        trace?: never;
+    };
     "/api/v1/notifications/{notificationId}/read-state": {
         parameters: {
             query?: never;
@@ -596,6 +660,22 @@ export interface paths {
         patch: operations["adjustSchedule"];
         trace?: never;
     };
+    "/api/v1/settings/valuation-criteria/prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getValuationCriteriaPrompts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/valuation-criteria/history": {
         parameters: {
             query?: never;
@@ -660,6 +740,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/fee-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getFeeRules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/settings/country-extensions": {
         parameters: {
             query?: never;
@@ -692,6 +788,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/patents/{patentId}/pdf/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPatentPdfMeta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/patents/{patentId}/history": {
         parameters: {
             query?: never;
@@ -700,6 +812,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getPatentHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/patents/{patentId}/fee-schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPatentFeeSchedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/patents/{patentId}/family": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPatentFamily"];
         put?: never;
         post?: never;
         delete?: never;
@@ -884,6 +1028,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/legal/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAuditLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/departments": {
         parameters: {
             query?: never;
@@ -940,6 +1100,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getBusinessPatentDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business/patents/{patentId}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadBusinessPatentPdf"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business/patents/{patentId}/pdf/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getBusinessPatentPdfMeta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business/patents/{patentId}/fee-schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getBusinessPatentFeeSchedule"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/business/patents/{patentId}/family": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getBusinessPatentFamily"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1110,6 +1334,26 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        ValuationPromptUpdateRequest: {
+            markdown?: string;
+            reason?: string;
+            expectedChecksum?: string;
+        };
+        ApiResponseValuationPromptResponse: {
+            data?: components["schemas"]["ValuationPromptResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ValuationPromptResponse: {
+            axis?: string;
+            label?: string;
+            path?: string;
+            markdown?: string;
+            checksum?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         QuarterSettingRequest: {
             /** Format: date */
             startDate?: string;
@@ -1183,9 +1427,33 @@ export interface components {
             endDay?: number;
             label?: string;
         };
+        FeeRuleUpdateRequest: {
+            basis?: string;
+            /** Format: int32 */
+            initialLumpYears?: number;
+            /** Format: int32 */
+            cycleMonths?: number;
+        };
+        ApiResponseFeeRuleResponse: {
+            data?: components["schemas"]["FeeRuleResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        FeeRuleResponse: {
+            country?: string;
+            countryLabel?: string;
+            basis?: string;
+            /** Format: int32 */
+            initialLumpYears?: number;
+            /** Format: int32 */
+            cycleMonths?: number;
+            ruleLabel?: string;
+        };
         CountryExtensionRequest: {
             /** Format: int32 */
             extensionMonths?: number;
+            extensionMonthsByRound?: number[];
         };
         ApiResponseCountryExtensionResponse: {
             data?: components["schemas"]["CountryExtensionResponse"];
@@ -1198,6 +1466,7 @@ export interface components {
             label?: string;
             /** Format: int32 */
             extensionMonths?: number;
+            extensionMonthsByRound?: number[];
         };
         ClassificationRequest: {
             value: string;
@@ -1307,20 +1576,6 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
-        MailSettingsRequest: {
-            gmailUsername?: string;
-            gmailAppPassword?: string;
-        };
-        ApiResponseMailSettingsResponse: {
-            data?: components["schemas"]["MailSettingsResponse"];
-            message?: string;
-            /** Format: date-time */
-            timestamp?: string;
-        };
-        MailSettingsResponse: {
-            gmailUsername?: string;
-            isAppPasswordConfigured?: boolean;
-        };
         UpdateDepartmentRequest: {
             departmentName: string;
         };
@@ -1352,12 +1607,31 @@ export interface components {
             finishedAt?: string;
             message?: string;
             reportId?: string;
+            progressStage?: string;
+            progressStageLabel?: string;
         };
         ApiResponseAiReportJobResponse: {
             data?: components["schemas"]["AiReportJobResponse"];
             message?: string;
             /** Format: date-time */
             timestamp?: string;
+        };
+        ApiResponsePatentPdfMetaResponse: {
+            data?: components["schemas"]["PatentPdfMetaResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PatentPdfMetaResponse: {
+            patentId?: string;
+            exists?: boolean;
+            storageType?: string;
+            docName?: string;
+            /** Format: int64 */
+            contentLength?: number;
+            uploadedBy?: string;
+            /** Format: date-time */
+            createdAt?: string;
         };
         FinalDecisionRequest: {
             /** @enum {string} */
@@ -1600,6 +1874,7 @@ export interface components {
             managementNumber?: string;
             originalPatentUrl?: string;
             title?: string;
+            pdfDownloadUrl?: string;
         };
         BusinessReviewMailSendDraft: {
             body: string;
@@ -1630,6 +1905,22 @@ export interface components {
             failedCount?: number;
             /** Format: int32 */
             recordedCount?: number;
+        };
+        PatentPdfLinkRequest: {
+            patentIds: string[];
+        };
+        ApiResponseListPatentPdfLinkResponse: {
+            data?: components["schemas"]["PatentPdfLinkResponse"][];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        PatentPdfLinkResponse: {
+            patentId?: string;
+            pdfUrl?: string;
+            source?: string;
+            /** Format: date-time */
+            expiresAt?: string;
         };
         ApiResponseLoginResponse: {
             data?: components["schemas"]["LoginResponse"];
@@ -1750,6 +2041,20 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        BulkAssignDepartmentRequest: {
+            patentIds: string[];
+            departmentId: string;
+        };
+        ApiResponseBulkAssignDepartmentResponse: {
+            data?: components["schemas"]["BulkAssignDepartmentResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        BulkAssignDepartmentResponse: {
+            assignedPatentIds?: string[];
+            failedPatentIds?: string[];
+        };
         NotificationReadStateRequest: {
             isRead?: boolean;
         };
@@ -1826,10 +2131,22 @@ export interface components {
             latestAdjustmentReason?: string;
             /** Format: int32 */
             countryExtensionMonths?: number;
+            annualFeeBasis?: string;
+            paymentRuleLabel?: string;
+            /** Format: int32 */
+            initialLumpYears?: number;
+            /** Format: int32 */
+            nextDueYearNumber?: number;
             adjustmentHistory?: components["schemas"]["AnnualFeeAdjustmentHistoryResponse"][];
         };
         ApiResponseAnnualFeeScheduleItemResponse: {
             data?: components["schemas"]["AnnualFeeScheduleItemResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseListValuationPromptResponse: {
+            data?: components["schemas"]["ValuationPromptResponse"][];
             message?: string;
             /** Format: date-time */
             timestamp?: string;
@@ -1858,6 +2175,12 @@ export interface components {
         };
         ApiResponseListReviewPeriodTemplateResponse: {
             data?: components["schemas"]["ReviewPeriodTemplateResponse"][];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseListFeeRuleResponse: {
+            data?: components["schemas"]["FeeRuleResponse"][];
             message?: string;
             /** Format: date-time */
             timestamp?: string;
@@ -1930,6 +2253,9 @@ export interface components {
             businessOpinionDecision?: "MAINTAIN" | "ABANDON";
             /** @enum {string} */
             legalActionResult?: "MAINTAINED" | "ABANDONED";
+            /** @enum {string} */
+            aiReportReadinessStatus?: "READY" | "FAILED" | "PENDING";
+            aiReportFailureReason?: string;
             originalPatentUrl?: string;
             inReview?: boolean;
             currentQuarterKey?: string;
@@ -1949,14 +2275,56 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
-        ApiResponseListBusinessSubmissionVersionResponse: {
-            data?: components["schemas"]["BusinessSubmissionVersionResponse"][];
+        ApiResponsePatentFeeScheduleResponse: {
+            data?: components["schemas"]["PatentFeeScheduleResponse"];
             message?: string;
             /** Format: date-time */
             timestamp?: string;
         };
+        FeeScheduleEntry: {
+            yearLabel?: string;
+            /** Format: int32 */
+            yearNumber?: number;
+            lump?: boolean;
+            /** Format: date */
+            dueDate?: string;
+            /** Format: date */
+            reviewStartDate?: string;
+            status?: string;
+            adjusted?: boolean;
+            /** Format: int64 */
+            estimatedAmount?: number;
+            currency?: string;
+        };
+        FeeScheduleRecipient: {
+            departmentId?: string;
+            departmentName?: string;
+            managerName?: string;
+            managerEmail?: string;
+            ccEmails?: string[];
+        };
+        PatentFeeScheduleResponse: {
+            patentId?: string;
+            country?: string;
+            basis?: string;
+            /** Format: date */
+            basisDate?: string;
+            paymentRuleLabel?: string;
+            /** Format: int32 */
+            initialLumpYears?: number;
+            /** Format: int32 */
+            mailLeadMonths?: number;
+            recipient?: components["schemas"]["FeeScheduleRecipient"];
+            items?: components["schemas"]["FeeScheduleEntry"][];
+        };
         ApiResponseListPatentListItemResponse: {
             data?: components["schemas"]["PatentListItemResponse"][];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseListBusinessSubmissionVersionResponse: {
+            data?: components["schemas"]["BusinessSubmissionVersionResponse"][];
             message?: string;
             /** Format: date-time */
             timestamp?: string;
@@ -2056,6 +2424,10 @@ export interface components {
             /** Format: int32 */
             pendingReview?: number;
             /** Format: int32 */
+            mailReadySuccessCount?: number;
+            /** Format: int32 */
+            aiReportFailedCount?: number;
+            /** Format: int32 */
             waitingBusinessResponse?: number;
             /** Format: int32 */
             businessResponseReceived?: number;
@@ -2081,12 +2453,30 @@ export interface components {
             businessArea?: components["schemas"]["AreaGroupResponse"][];
             technologyArea?: components["schemas"]["AreaGroupResponse"][];
             product?: components["schemas"]["AreaGroupResponse"][];
+            country?: components["schemas"]["AreaGroupResponse"][];
         };
         AreaGroupResponse: {
             value?: string;
             /** Format: int32 */
             count?: number;
             relatedLabels?: string[];
+        };
+        ApiResponseListAuditLogEntryResponse: {
+            data?: components["schemas"]["AuditLogEntryResponse"][];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        AuditLogEntryResponse: {
+            id?: string;
+            type?: string;
+            patentId?: string;
+            managementNumber?: string;
+            patentTitle?: string;
+            actor?: string;
+            summary?: string;
+            /** Format: date-time */
+            occurredAt?: string;
         };
         ApiResponseListDepartmentResponse: {
             data?: components["schemas"]["DepartmentResponse"][];
@@ -2197,6 +2587,54 @@ export interface operations {
             };
         };
     };
+    getValuationCriteriaPrompt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                axis: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseValuationPromptResponse"];
+                };
+            };
+        };
+    };
+    updateValuationCriteriaPrompt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                axis: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValuationPromptUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseValuationPromptResponse"];
+                };
+            };
+        };
+    };
     updateQuarterSetting: {
         parameters: {
             query?: never;
@@ -2245,6 +2683,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseReviewPeriodTemplateResponse"];
+                };
+            };
+        };
+    };
+    updateFeeRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                country: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeeRuleUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseFeeRuleResponse"];
                 };
             };
         };
@@ -2495,50 +2959,6 @@ export interface operations {
             };
         };
     };
-    getMailSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseMailSettingsResponse"];
-                };
-            };
-        };
-    };
-    updateMailSettings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MailSettingsRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseMailSettingsResponse"];
-                };
-            };
-        };
-    };
     updateDepartment: {
         parameters: {
             query?: never;
@@ -2760,6 +3180,79 @@ export interface operations {
             };
         };
     };
+    downloadPatentPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    uploadPatentPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePatentPdfMetaResponse"];
+                };
+            };
+        };
+    };
+    deletePatentPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePatentPdfMetaResponse"];
+                };
+            };
+        };
+    };
     recordFinalDecision: {
         parameters: {
             query?: never;
@@ -2930,6 +3423,30 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseMailingSendResponse"];
+                };
+            };
+        };
+    };
+    resolvePatentPdfLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatentPdfLinkRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListPatentPdfLinkResponse"];
                 };
             };
         };
@@ -3278,6 +3795,30 @@ export interface operations {
             };
         };
     };
+    bulkAssignDepartment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkAssignDepartmentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBulkAssignDepartmentResponse"];
+                };
+            };
+        };
+    };
     updateReadState: {
         parameters: {
             query?: never;
@@ -3420,6 +3961,26 @@ export interface operations {
             };
         };
     };
+    getValuationCriteriaPrompts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListValuationPromptResponse"];
+                };
+            };
+        };
+    };
     getValuationCriteriaHistory: {
         parameters: {
             query?: never;
@@ -3502,6 +4063,26 @@ export interface operations {
             };
         };
     };
+    getFeeRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFeeRuleResponse"];
+                };
+            };
+        };
+    };
     getCountryExtensions: {
         parameters: {
             query?: never;
@@ -3542,6 +4123,28 @@ export interface operations {
             };
         };
     };
+    getPatentPdfMeta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePatentPdfMetaResponse"];
+                };
+            };
+        };
+    };
     getPatentHistory: {
         parameters: {
             query?: never;
@@ -3560,6 +4163,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListPatentHistoryResponse"];
+                };
+            };
+        };
+    };
+    getPatentFeeSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePatentFeeScheduleResponse"];
+                };
+            };
+        };
+    };
+    getPatentFamily: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListPatentListItemResponse"];
                 };
             };
         };
@@ -3816,6 +4463,30 @@ export interface operations {
             };
         };
     };
+    getAuditLogs: {
+        parameters: {
+            query?: {
+                type?: string;
+                patentId?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListAuditLogEntryResponse"];
+                };
+            };
+        };
+    };
     getDepartments_1: {
         parameters: {
             query?: never;
@@ -3902,6 +4573,94 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponsePatentDetailResponse"];
+                };
+            };
+        };
+    };
+    downloadBusinessPatentPdf: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    getBusinessPatentPdfMeta: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePatentPdfMetaResponse"];
+                };
+            };
+        };
+    };
+    getBusinessPatentFeeSchedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePatentFeeScheduleResponse"];
+                };
+            };
+        };
+    };
+    getBusinessPatentFamily: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListPatentListItemResponse"];
                 };
             };
         };

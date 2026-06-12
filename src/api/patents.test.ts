@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   getAverageScore,
   mapBackendAiEvaluationReport,
+  mapBackendPatentListItem,
   mapBackendEvaluationScores,
   getTotalScoreText,
   formatReportDisplayScore
@@ -9,6 +10,7 @@ import {
 import type { EvaluationScore } from "../types/patent";
 
 type BackendEvaluationScores = Parameters<typeof mapBackendEvaluationScores>[0];
+type BackendPatentListItem = Parameters<typeof mapBackendPatentListItem>[0];
 
 describe("patents API Utils", () => {
   describe("getAverageScore", () => {
@@ -47,6 +49,52 @@ describe("patents API Utils", () => {
       const mapped = mapBackendEvaluationScores(backendScores);
       expect(mapped).toHaveLength(4);
       expect(mapped.map((score) => score.category)).not.toContain("UNKNOWN_EXTRA_AXIS");
+    });
+  });
+
+  describe("mapBackendPatentListItem", () => {
+    const basePatent = {
+      patentId: "1",
+      managementNumber: "SKAX-001",
+      applicationNumber: "10-2026-0000001",
+      registrationNumber: "10-1234567",
+      title: "AI 기반 특허 평가 시스템",
+      draftTitle: null,
+      businessArea: "AI 플랫폼",
+      technologyArea: "특허 분석",
+      productName: "PatentFlow",
+      country: "KR",
+      coApplicants: null,
+      applicationDate: "2024-01-10",
+      registrationDate: "2025-01-10",
+      expectedExpirationDate: "2044-01-10",
+      departmentId: "dept-1",
+      departmentName: "AI사업부",
+      lifecycleStatus: "ACTIVE",
+      reviewWorkflowStatus: "REVIEW_QUARTER_STARTED",
+      feeDueDate: "2026-07-01",
+      reviewReason: "연차료 검토",
+      currentRecommendation: "HOLD",
+      businessOpinionDecision: null,
+      legalActionResult: null,
+    } satisfies BackendPatentListItem;
+
+    it("AI 레포트 실패 상태와 실패 사유를 목록 모델에 보존한다", () => {
+      const patent = mapBackendPatentListItem({
+        ...basePatent,
+        aiReportReadinessStatus: "FAILED",
+        aiReportFailureReason: "AI 평가 서비스 연결 실패",
+      });
+
+      expect(patent.aiReportReadinessStatus).toBe("FAILED");
+      expect(patent.aiReportFailureReason).toBe("AI 평가 서비스 연결 실패");
+    });
+
+    it("구 백엔드 응답처럼 레포트 준비 상태가 없으면 PENDING으로 보정한다", () => {
+      const patent = mapBackendPatentListItem(basePatent);
+
+      expect(patent.aiReportReadinessStatus).toBe("PENDING");
+      expect(patent.aiReportFailureReason).toBeNull();
     });
   });
 

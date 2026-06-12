@@ -24,6 +24,7 @@ export type {
 
 // I3: LEGAL — 검토 업무는 ADMIN과 동일, 운영(계정·설정)만 제한되는 역할.
 export type UserRole = "ADMIN" | "LEGAL" | "BUSINESS";
+export type AiReportReadinessStatus = "READY" | "FAILED" | "PENDING";
 
 /** I3: 관리자형 역할 여부 — 라우팅·API 경로 선택에서 ADMIN과 동일하게 취급한다. */
 export function isAdminLikeRole(role: string | null | undefined): boolean {
@@ -54,6 +55,8 @@ export interface PatentListItem {
   currentRecommendation: Recommendation;
   businessOpinionDecision: BusinessOpinionDecision | null;
   legalActionResult: LegalActionResult | null;
+  aiReportReadinessStatus?: AiReportReadinessStatus;
+  aiReportFailureReason?: string | null;
   originalPatentUrl?: string | null;
 }
 

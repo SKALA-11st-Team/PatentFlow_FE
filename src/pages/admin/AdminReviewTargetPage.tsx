@@ -362,7 +362,7 @@ export function AdminReviewTargetPage() {
               role="tab"
               type="button"
             >
-              발송 가능
+              레포트 생성 완료
             </button>
             <button
               aria-selected={mailReadinessTab === "FAILED"}
@@ -371,7 +371,7 @@ export function AdminReviewTargetPage() {
               role="tab"
               type="button"
             >
-              레포트 실패
+              실패
             </button>
           </div>
         ) : null}
