@@ -30,6 +30,8 @@ import { matchesReviewTargetScope, type ReviewTargetScope } from "../../utils/re
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC" | "DEPARTMENT_ASC";
 type ContextFilterKey = "businessArea" | "technologyArea" | "productName";
 type QuarterFilter = "ALL" | "Q1" | "Q2" | "Q3" | "Q4";
+type ReviewTargetView = "DEFAULT" | "MAIL_READINESS";
+type MailReadinessTab = "READY" | "FAILED";
 
 interface ContextFilterConfig {
   key: ContextFilterKey;
@@ -71,11 +73,13 @@ export function AdminReviewTargetPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialWorkflow = getInitialWorkflowFilter(searchParams.get("workflow"));
+  const viewMode = getReviewTargetView(searchParams.get("view"));
   const scope = getReviewTargetScope(searchParams.get("scope"));
   const effectiveInitialWorkflow = scope === "QUARTER" && initialWorkflow === "NOT_IN_REVIEW" ? "ALL" : initialWorkflow;
   const initialContextFilter = getInitialContextFilter(searchParams);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [workflowFilter, setWorkflowFilter] = useState<ReviewWorkflowFilter>(effectiveInitialWorkflow);
+  const [mailReadinessTab, setMailReadinessTab] = useState<MailReadinessTab>("READY");
   const [contextFilterKey, setContextFilterKey] = useState<ContextFilterKey>(initialContextFilter.key);
   const [contextFilterValue, setContextFilterValue] = useState(initialContextFilter.value);
   const [sortKey, setSortKey] = useState<SortKey>("DUE_DATE_ASC");
@@ -103,17 +107,28 @@ export function AdminReviewTargetPage() {
       getFilteredAndSortedReviewTargets(
         patentList,
         searchKeyword,
-        workflowFilter,
+        viewMode === "MAIL_READINESS" ? "ALL" : workflowFilter,
         contextFilterKey,
         contextFilterValue,
         scope,
         sortKey,
-        quarterFilter,
+        viewMode === "MAIL_READINESS" ? "ALL" : quarterFilter,
         countryFilter,
         dateRange.from,
         dateRange.to,
       ),
-    [contextFilterKey, contextFilterValue, countryFilter, dateRange.from, dateRange.to, patentList, quarterFilter, scope, searchKeyword, sortKey, workflowFilter],
+    [contextFilterKey, contextFilterValue, countryFilter, dateRange.from, dateRange.to, patentList, quarterFilter, scope, searchKeyword, sortKey, viewMode, workflowFilter],
+  );
+  const visiblePatents = useMemo(
+    () =>
+      viewMode === "MAIL_READINESS"
+        ? filteredPatents.filter((patent) =>
+            mailReadinessTab === "READY"
+              ? patent.reviewWorkflowStatus === "MAIL_READY" && (patent.aiReportReadinessStatus ?? "READY") === "READY"
+              : patent.aiReportReadinessStatus === "FAILED",
+          )
+        : filteredPatents,
+    [filteredPatents, mailReadinessTab, viewMode],
   );
   const {
     currentPage,
@@ -122,7 +137,7 @@ export function AdminReviewTargetPage() {
     setCurrentPage,
     totalItems,
     totalPages,
-  } = useClientPagination(filteredPatents, [contextFilterKey, contextFilterValue, scope, searchKeyword, sortKey, workflowFilter]);
+  } = useClientPagination(visiblePatents, [contextFilterKey, contextFilterValue, scope, searchKeyword, sortKey, workflowFilter, viewMode, mailReadinessTab]);
   const contextFilterOptions = useMemo(
     () =>
       Array.from(new Set(patentList.map((patent) => getDisplayValue(activeContextConfig.getValue(patent))))).sort(
@@ -130,11 +145,13 @@ export function AdminReviewTargetPage() {
       ),
     [activeContextConfig, patentList],
   );
-  const pageTitle = getReviewTargetPageTitle(scope, effectiveInitialWorkflow, contextFilterValue);
+  const pageTitle = viewMode === "MAIL_READINESS"
+    ? "메일 발송 대기"
+    : getReviewTargetPageTitle(scope, effectiveInitialWorkflow, contextFilterValue);
   const sectionTitle = getReviewTargetSectionTitle(scope, workflowFilter, activeContextConfig.label, contextFilterValue);
-  const isActionableMailList = workflowFilter === "MAIL_READY";
+  const isActionableMailList = viewMode === "MAIL_READINESS" ? mailReadinessTab === "READY" : workflowFilter === "MAIL_READY";
   const canSelectRows = isActionableMailList;
-  const shouldShowWorkflowColumn = workflowFilter === "ALL";
+  const shouldShowWorkflowColumn = workflowFilter === "ALL" || viewMode === "MAIL_READINESS";
   const workflowFilterOptions = getReviewTargetWorkflowFilterOptions(scope);
   const countryOptions = useMemo(() => getCountryOptions(patentList), [patentList]);
   const selectablePatentIds = useMemo(() => displayedPatents.map((patent) => patent.patentId), [displayedPatents]);
@@ -144,7 +161,8 @@ export function AdminReviewTargetPage() {
     5 +
     (canSelectRows ? 1 : 0) +
     (shouldShowWorkflowColumn ? 1 : 0) +
-    (isActionableMailList ? 2 : 0);
+    (isActionableMailList ? 2 : 0) +
+    (viewMode === "MAIL_READINESS" && mailReadinessTab === "FAILED" ? 1 : 0);
 
   function handleAssignSuccess(patentId: string, deptId: string, deptName: string) {
     setPatentList((prev) =>
@@ -300,32 +318,34 @@ export function AdminReviewTargetPage() {
       <section className="section">
         <div className="section-header">
           <div>
-            <h2>{sectionTitle}</h2>
-            <p>{errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : `${filteredPatents.length}건의 특허가 조회되었습니다.`)}</p>
+            <h2>{viewMode === "MAIL_READINESS" ? "메일 발송 대기 상세" : sectionTitle}</h2>
+            <p>{errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : `${visiblePatents.length}건의 특허가 조회되었습니다.`)}</p>
           </div>
           {canSelectRows ? (
             <div className="section-actions">
               <div className="inline-action-group">
                 <span className="selection-count">선택 {selectedPatentIds.length}건</span>
-                <select
-                  aria-label="일괄 배정할 사업부 선택"
-                  onChange={(event) => setBulkDepartmentId(event.target.value)}
-                  value={bulkDepartmentId}
-                >
-                  <option value="">부서 선택</option>
-                  {departments.map((dept) => (
-                    <option key={dept.departmentId} value={dept.departmentId}>
-                      {dept.departmentName}
-                    </option>
-                  ))}
-                </select>
+                <label className="inline-action-label">
+                  <span>배정할 사업부</span>
+                  <select
+                    onChange={(event) => setBulkDepartmentId(event.target.value)}
+                    value={bulkDepartmentId}
+                  >
+                    <option value="">사업부 선택</option>
+                    {departments.map((dept) => (
+                      <option key={dept.departmentId} value={dept.departmentId}>
+                        {dept.departmentName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <Button
                   disabled={selectedPatentIds.length === 0 || !bulkDepartmentId || isProcessing}
                   onClick={handleBulkAssignDepartment}
                   type="button"
                   variant="secondary"
                 >
-                  일괄 배정
+                  선택 항목 배정
                 </Button>
                 {isActionableMailList ? (
                   <Button disabled={selectedPatentIds.length === 0 || isProcessing} onClick={handleOpenMailPreview} type="button">
@@ -336,6 +356,28 @@ export function AdminReviewTargetPage() {
             </div>
           ) : null}
         </div>
+        {viewMode === "MAIL_READINESS" ? (
+          <div className="context-tabs review-target-status-tabs" aria-label="메일 발송 대기 상태" role="tablist">
+            <button
+              aria-selected={mailReadinessTab === "READY"}
+              className={mailReadinessTab === "READY" ? "selected" : ""}
+              onClick={() => setMailReadinessTab("READY")}
+              role="tab"
+              type="button"
+            >
+              발송 가능
+            </button>
+            <button
+              aria-selected={mailReadinessTab === "FAILED"}
+              className={mailReadinessTab === "FAILED" ? "selected" : ""}
+              onClick={() => setMailReadinessTab("FAILED")}
+              role="tab"
+              type="button"
+            >
+              레포트 실패
+            </button>
+          </div>
+        ) : null}
         <div className="review-target-filter-stack">
           <div className="filter-bar review-target-filter-bar">
             <label>
@@ -362,19 +404,21 @@ export function AdminReviewTargetPage() {
                 ))}
               </select>
             </label>
-            <label>
-              <span>검토 단계</span>
-              <select
-                onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowFilter)}
-                value={workflowFilter}
-              >
-                {workflowFilterOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option === "ALL" ? "전체" : reviewWorkflowStatusLabels[option]}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {viewMode === "DEFAULT" ? (
+              <label>
+                <span>검토 단계</span>
+                <select
+                  onChange={(event) => setWorkflowFilter(event.target.value as ReviewWorkflowFilter)}
+                  value={workflowFilter}
+                >
+                  {workflowFilterOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option === "ALL" ? "전체" : reviewWorkflowStatusLabels[option]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </div>
           <div className="filter-bar review-target-filter-bar review-target-filter-bar-secondary">
             <label>
@@ -386,16 +430,18 @@ export function AdminReviewTargetPage() {
                 value={searchKeyword}
               />
             </label>
-            <label>
-              <span>분기</span>
-              <select onChange={(event) => setQuarterFilter(event.target.value as QuarterFilter)} value={quarterFilter}>
-                <option value="ALL">전체</option>
-                <option value="Q1">1분기</option>
-                <option value="Q2">2분기</option>
-                <option value="Q3">3분기</option>
-                <option value="Q4">4분기</option>
-              </select>
-            </label>
+            {viewMode === "DEFAULT" ? (
+              <label>
+                <span>분기</span>
+                <select onChange={(event) => setQuarterFilter(event.target.value as QuarterFilter)} value={quarterFilter}>
+                  <option value="ALL">전체</option>
+                  <option value="Q1">1분기</option>
+                  <option value="Q2">2분기</option>
+                  <option value="Q3">3분기</option>
+                  <option value="Q4">4분기</option>
+                </select>
+              </label>
+            ) : null}
             <label>
               <span>국가</span>
               <select onChange={(event) => setCountryFilter(event.target.value)} value={countryFilter}>
@@ -404,14 +450,6 @@ export function AdminReviewTargetPage() {
                   <option key={country} value={country}>{country}</option>
                 ))}
               </select>
-            </label>
-            <label>
-              <span>조회 시작일</span>
-              <input onChange={(event) => setDateRange((range) => ({ ...range, from: event.target.value }))} type="date" value={dateRange.from} />
-            </label>
-            <label>
-              <span>조회 종료일</span>
-              <input onChange={(event) => setDateRange((range) => ({ ...range, to: event.target.value }))} type="date" value={dateRange.to} />
             </label>
             <label>
               <span>정렬</span>
@@ -451,6 +489,7 @@ export function AdminReviewTargetPage() {
                 {shouldShowWorkflowColumn ? <th>검토 단계</th> : null}
                 <th>담당 사업부</th>
                 <th>납부 예정일</th>
+                {viewMode === "MAIL_READINESS" && mailReadinessTab === "FAILED" ? <th>실패 사유</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -519,10 +558,13 @@ export function AdminReviewTargetPage() {
                     <td>
                       <DeadlineCell dueDate={patent.feeDueDate} />
                     </td>
+                    {viewMode === "MAIL_READINESS" && mailReadinessTab === "FAILED" ? (
+                      <td>{patent.aiReportFailureReason || "AI 레포트가 제한된 근거로 생성되었습니다."}</td>
+                    ) : null}
                   </tr>
                 );
               })}
-              {!isLoading && filteredPatents.length === 0 ? (
+              {!isLoading && visiblePatents.length === 0 ? (
                 <tr>
                   <td className="empty-table-cell" colSpan={tableColumnCount}>
                     조회 조건에 맞는 특허가 없습니다.
@@ -580,6 +622,15 @@ function getReviewTargetScope(scope: string | null): ReviewTargetScope {
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-02
+ * @description KPI query parameter를 메일 발송 대기 상세 조회 모드로 변환한다.
+ */
+function getReviewTargetView(view: string | null): ReviewTargetView {
+  return view === "mail-readiness" ? "MAIL_READINESS" : "DEFAULT";
+}
+
+/**
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02
+ * @relatedUI UI-LEGAL-02
  * @description 대시보드 관련 사업/기술/제품 query parameter를 검토 대상 컨텍스트 필터 초기값으로 변환한다.
  */
 function getInitialContextFilter(searchParams: URLSearchParams) {
@@ -606,8 +657,6 @@ function getFilteredAndSortedReviewTargets(
   sortKey: SortKey,
   quarterFilter: QuarterFilter,
   countryFilter: string,
-  dateFrom: string,
-  dateTo: string,
 ) {
   const normalizedKeyword = searchKeyword.trim().toLowerCase();
   const contextConfig = getContextFilterConfig(contextFilterKey);
@@ -631,10 +680,8 @@ function getFilteredAndSortedReviewTargets(
       const matchesScope = matchesReviewTargetScope(patent.reviewWorkflowStatus, scope);
       const matchesQuarter = quarterFilter === "ALL" || getQuarterFromDate(patent.feeDueDate) === quarterFilter;
       const matchesCountry = countryFilter === "ALL" || patent.country === countryFilter;
-      const matchesDateFrom = !dateFrom || patent.feeDueDate >= dateFrom;
-      const matchesDateTo = !dateTo || patent.feeDueDate <= dateTo;
 
-      return matchesKeyword && matchesWorkflow && matchesContext && matchesScope && matchesQuarter && matchesCountry && matchesDateFrom && matchesDateTo;
+      return matchesKeyword && matchesWorkflow && matchesContext && matchesScope && matchesQuarter && matchesCountry;
     })
     .sort((firstPatent, secondPatent) => comparePatents(firstPatent, secondPatent, sortKey));
 }
