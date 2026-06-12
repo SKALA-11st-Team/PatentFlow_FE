@@ -44,6 +44,7 @@ const emptyAreaDistribution: AreaDistribution = {
   businessArea: [],
   technologyArea: [],
   product: [],
+  country: [],
 };
 
 /**
@@ -584,17 +585,55 @@ function ReviewFunnelCard({ stages }: { stages: Array<{ label: string; count: nu
  * @description D1: 향후 12개월 연차료 도래 타임라인 — 월별 납부 예정 건수를 미니 막대로 보여준다.
  */
 function FeeTimelineCard({ patents }: { patents: PatentListItem[] }) {
+  // 항목1: 실제 연차료 납부는 분기 단위로 검토되므로 월/분기 두 단위로 볼 수 있어야 한다.
+  const [unit, setUnit] = useState<"MONTH" | "QUARTER">("MONTH");
   const now = new Date();
-  const buckets = Array.from({ length: 12 }, (_, offset) => {
+  const monthlyBuckets = Array.from({ length: 12 }, (_, offset) => {
     const month = new Date(now.getFullYear(), now.getMonth() + offset, 1);
     const key = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
     const count = patents.filter((patent) => patent.feeDueDate?.startsWith(key)).length;
     return { key, label: `${month.getMonth() + 1}월`, count };
   });
+  const currentQuarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+  const quarterlyBuckets = Array.from({ length: 4 }, (_, offset) => {
+    const start = new Date(now.getFullYear(), currentQuarterStartMonth + offset * 3, 1);
+    const quarter = Math.floor(start.getMonth() / 3) + 1;
+    const monthKeys = Array.from({ length: 3 }, (_, monthOffset) => {
+      const month = new Date(start.getFullYear(), start.getMonth() + monthOffset, 1);
+      return `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
+    });
+    const count = patents.filter((patent) =>
+      monthKeys.some((key) => patent.feeDueDate?.startsWith(key)),
+    ).length;
+    return { key: `${start.getFullYear()}-Q${quarter}`, label: `${quarter}분기`, count };
+  });
+  const buckets = unit === "MONTH" ? monthlyBuckets : quarterlyBuckets;
   const max = Math.max(1, ...buckets.map((bucket) => bucket.count));
   return (
     <div className="dashboard-visual-card">
-      <h3>연차료 도래 타임라인 (12개월)</h3>
+      <div className="dashboard-visual-card-head">
+        <h3>연차료 도래 타임라인 ({unit === "MONTH" ? "12개월" : "4분기"})</h3>
+        <div aria-label="타임라인 단위" className="timeline-unit-toggle" role="tablist">
+          <button
+            aria-selected={unit === "MONTH"}
+            className={unit === "MONTH" ? "selected" : ""}
+            onClick={() => setUnit("MONTH")}
+            role="tab"
+            type="button"
+          >
+            월
+          </button>
+          <button
+            aria-selected={unit === "QUARTER"}
+            className={unit === "QUARTER" ? "selected" : ""}
+            onClick={() => setUnit("QUARTER")}
+            role="tab"
+            type="button"
+          >
+            분기
+          </button>
+        </div>
+      </div>
       <div className="timeline-bars">
         {buckets.map((bucket) => (
           <div className="timeline-col" key={bucket.key} title={`${bucket.key} · ${bucket.count}건`}>

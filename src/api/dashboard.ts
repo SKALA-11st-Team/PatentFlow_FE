@@ -34,6 +34,8 @@ export interface AreaDistribution {
   businessArea: AreaGroup[];
   technologyArea: AreaGroup[];
   product: AreaGroup[];
+  // DASH-F4(항목2): 출원 국가별 분포 — BE 미배포 등으로 누락되면 빈 배열로 보정한다.
+  country: AreaGroup[];
 }
 
 /**
@@ -73,7 +75,8 @@ export async function getAreaDistribution(query: PatentListQuery = {}): Promise<
         reviewWorkflowStatus: query.reviewWorkflowStatus,
       })}`,
     );
-    return response.data ?? createEmptyAreaDistribution();
+    const distribution = response.data ?? createEmptyAreaDistribution();
+    return { ...distribution, country: distribution.country ?? [] };
   }
 
   return computeAreaDistribution(patents);
@@ -125,7 +128,7 @@ function createEmptyBusinessDashboardSummary(): BusinessDashboardSummary {
 }
 
 function createEmptyAreaDistribution(): AreaDistribution {
-  return { totalCount: 0, businessArea: [], technologyArea: [], product: [] };
+  return { totalCount: 0, businessArea: [], technologyArea: [], product: [], country: [] };
 }
 
 // mock 모드용 클라이언트 집계 — BE DashboardSummaryService.getAreaDistribution 과 동일 규칙(보조 라벨 매핑·정규화).
@@ -135,6 +138,7 @@ function computeAreaDistribution(patentList: PatentListItem[]): AreaDistribution
     businessArea: groupArea(patentList, (patent) => patent.businessArea, (patent) => patent.departmentName),
     technologyArea: groupArea(patentList, (patent) => patent.technologyArea, (patent) => patent.businessArea),
     product: groupArea(patentList, (patent) => patent.productName, (patent) => patent.technologyArea),
+    country: groupArea(patentList, (patent) => patent.country, (patent) => patent.businessArea),
   };
 }
 

@@ -27,8 +27,6 @@ export function AdminPatentEditPage() {
   const [isSuggestingContext, setIsSuggestingContext] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
-  // PATENT-06: 외부 서지 정보는 기본 잠금(외부 원문 기준)이나, 잘못된 값 정정을 위해 등록 화면과 동일한 수동 편집 토글을 제공한다.
-  const [isManualMetadataEditEnabled, setIsManualMetadataEditEnabled] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -179,17 +177,6 @@ export function AdminPatentEditPage() {
         description="테이블 row에서 선택한 특허입니다. 수정 후 저장하면 특허관리 목록에 반영됩니다."
       >
         <form className="patent-edit-form" onSubmit={handleSavePatent}>
-          <div className="readonly-lock-banner" role="note">
-            <strong>외부 서지 정보 {isManualMetadataEditEnabled ? "수동 정정 중" : "잠금"}</strong>
-            <span>특허명, 출원국, 출원일, 등록일, 번호 정보는 외부 조회 원문 기준으로 고정됩니다. 회사 컨텍스트와 관리번호만 수정할 수 있습니다.</span>
-            <Button
-              onClick={() => setIsManualMetadataEditEnabled((enabled) => !enabled)}
-              type="button"
-              variant="secondary"
-            >
-              {isManualMetadataEditEnabled ? "잠금" : "잘못된 값 수동 정정"}
-            </Button>
-          </div>
           <div className="context-suggestion-row">
             <div>
               <strong>관련 분야 AI 추천</strong>
@@ -208,35 +195,35 @@ export function AdminPatentEditPage() {
             </label>
             <label>
               특허명
-              <input aria-label="특허명, 외부 서지 정보" name="title" onChange={handleFormChange} readOnly={!isManualMetadataEditEnabled} value={form.title} />
+              <input name="title" onChange={handleFormChange} value={form.title} />
             </label>
             <label>
               출원국
-              <input aria-label="출원국, 외부 서지 정보" name="country" onChange={handleFormChange} readOnly={!isManualMetadataEditEnabled} value={form.country} />
+              <input name="country" onChange={handleFormChange} value={form.country} />
             </label>
             <label>
               출원일
-              <input aria-label="출원일, 외부 서지 정보" name="applicationDate" onChange={handleFormChange} readOnly={!isManualMetadataEditEnabled} type="date" value={form.applicationDate} />
+              <input name="applicationDate" onChange={handleFormChange} type="date" value={form.applicationDate} />
             </label>
             <label>
               등록일
-              <input aria-label="등록일, 외부 서지 정보" name="registrationDate" onChange={handleFormChange} readOnly={!isManualMetadataEditEnabled} type="date" value={form.registrationDate} />
+              <input name="registrationDate" onChange={handleFormChange} type="date" value={form.registrationDate} />
             </label>
             <label>
               출원번호
-              <input aria-label="출원번호, 외부 서지 정보" name="applicationNumber" onChange={handleFormChange} readOnly={!isManualMetadataEditEnabled} value={form.applicationNumber} />
+              <input name="applicationNumber" onChange={handleFormChange} value={form.applicationNumber} />
             </label>
             <label>
               등록번호
-              <input aria-label="등록번호, 외부 서지 정보" name="registrationNumber" onChange={handleFormChange} readOnly={!isManualMetadataEditEnabled} value={form.registrationNumber ?? ""} />
+              <input name="registrationNumber" onChange={handleFormChange} value={form.registrationNumber ?? ""} />
             </label>
             <label>
               공동출원인명
-              <input aria-label="공동출원인명, 외부 서지 정보" name="coApplicants" onChange={handleFormChange} placeholder="없으면 비워둠" readOnly={!isManualMetadataEditEnabled} value={form.coApplicants} />
+              <input name="coApplicants" onChange={handleFormChange} placeholder="없으면 비워둠" value={form.coApplicants} />
             </label>
             <label>
               예상 소멸일
-              <input aria-label="예상 소멸일, 외부 서지 정보" name="expectedExpirationDate" onChange={handleFormChange} readOnly={!isManualMetadataEditEnabled} type="date" value={form.expectedExpirationDate} />
+              <input name="expectedExpirationDate" onChange={handleFormChange} type="date" value={form.expectedExpirationDate} />
             </label>
             <label>
               관련사업 분야
