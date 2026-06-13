@@ -13,11 +13,7 @@ import { recommendationLabels, reviewWorkflowStatusLabels } from "../../constant
 import type { MailingDeliveryStatus, MailingHistoryItem } from "../../types/mailing";
 import type { PatentFeeSchedule, PatentHistoryItem, PatentLifecycleStatus, PatentListItem, PatentPdfMeta, UserRole } from "../../types/patent";
 import { formatDate, usePatentDetail } from "./patent-detail/PatentDetailHooks";
-import {
-  AiReportSection,
-  AiReportStructuredContent,
-  RawMarkdownBlock,
-} from "./patent-detail/AiReportSection";
+import { AiReportSection } from "./patent-detail/AiReportSection";
 import { AiReportEditModal } from "./patent-detail/AiReportEditModal";
 import { useAiReportEditing } from "./patent-detail/useAiReportEditing";
 import {
@@ -144,6 +140,97 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     );
   }
 
+  // FR-LEGAL-06/18: 레포트가 이미 존재하고 최종 판단 전이면 관리자·사업부 모두 재생성 가능.
+  const canRegenerateAiReport =
+    !patent.finalDecisionRecord.decisionId &&
+    (["MAIL_READY", "WAITING_BUSINESS_RESPONSE", "BUSINESS_RESPONSE_RECEIVED"] as const).includes(
+      patent.reviewWorkflowStatus as "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED",
+    );
+
+  // BUS-DETAIL-ORDER: 사업부/관리자 공통 섹션을 재사용 변수로 정의해 역할별 순서만 다르게 배치한다.
+  const aiReportSection = (
+    <AiReportSection
+      report={
+        aiReportEditing.isShowingOriginal && aiReportEditing.originalReport
+          ? aiReportEditing.originalReport
+          : patent.aiEvaluationReport
+      }
+      editControls={
+        isAdmin
+          ? {
+              canEdit: !patent.finalDecisionRecord.decisionId,
+              isShowingOriginal: aiReportEditing.isShowingOriginal,
+              isSavingEdit: aiReportEditing.isSavingEdit,
+              editMessage: aiReportEditing.isEditModalOpen ? "" : aiReportEditing.editMessage,
+              onOpenEditModal: () => aiReportEditing.setIsEditModalOpen(true),
+              onToggleOriginal: aiReportEditing.handleToggleOriginal,
+              onRevertEdit: aiReportEditing.handleRevertEdit,
+            }
+          : undefined
+      }
+      regenerateControls={{
+        canRegenerate: canRegenerateAiReport,
+        isRegenerating: isWorkflowActionProcessing,
+        message: workflowActionMessage,
+        onRegenerate: handleRequestAiReport,
+      }}
+    />
+  );
+
+  const summarySection = (
+    <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
+      <div className="summary-stack">
+        <SummaryBlock title="요약" content={patent.summary.summaryText} />
+        <SummaryBlock title="해결 과제" content={patent.summary.problemSolved} />
+        <div>
+          <h3>핵심 기술 포인트</h3>
+          <ul className="clean-list">
+            {patent.summary.coreTechnicalPoints.map((point) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        </div>
+        <SummaryBlock title="권리범위 요약" content={patent.summary.claimsSummary} />
+      </div>
+    </Section>
+  );
+
+  // FR-BUS-05: 사업부 의견 작성 시 AI 권고와 기존 의사결정 기록을 함께 참고한다(레포트 전문은 위 AI 레포트 섹션이 담당).
+  const businessOpinionWorkbench = (
+    <div className="business-review-workbench">
+      <Section title="검토 참고 자료" description="AI 권고와 기존 의사결정 기록을 참고하여 사업부 의견을 작성합니다.">
+        <div className="business-reference-stack">
+          <div className="report-callout">
+            <strong>{recommendationLabels[patent.aiEvaluationReport.recommendation]}</strong>
+            <p>{patent.aiEvaluationReport.recommendationText}</p>
+          </div>
+          <div className="history-mini-list">
+            {patentHistoryItems.slice(0, 4).map((item) => (
+              <div key={item.historyId}>
+                <strong>{item.title}</strong>
+                <span>{item.description}</span>
+              </div>
+            ))}
+            {patentHistoryItems.length === 0 ? (
+              <p className="empty-state">{patentHistoryMessage || "기존 의사결정 기록이 없습니다."}</p>
+            ) : null}
+          </div>
+        </div>
+      </Section>
+      <BusinessOpinionSection
+        isAdmin={isAdmin}
+        role={role}
+        hasSubmittedBusinessChecklist={hasSubmittedBusinessChecklist}
+        displayedBusinessOpinionLabel={displayedBusinessOpinionLabel}
+        displayedBusinessOpinionComment={displayedBusinessOpinionComment}
+        checklistTotal={checklistTotal}
+        businessChecklistSubmission={businessChecklistSubmission}
+        businessChecklistItems={businessChecklistItems}
+        onOpenChecklist={() => setIsChecklistOpen(true)}
+      />
+    </div>
+  );
+
   return (
     <AppLayout
       role={role}
@@ -189,123 +276,65 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta label="출원번호" value={patent.applicationNumber} />
           <Meta label="등록번호" value={patent.registrationNumber ?? "N/A"} />
           <Meta label="공동출원인" value={patent.coApplicants} />
-          <Meta label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} />
+          {/* BUS-FEE-01: 연차료는 법무팀 업무 영역이므로 사업부 화면에서는 납부 예정일을 노출하지 않는다. */}
+          {isAdmin ? <Meta label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} /> : null}
           <Meta label="관련사업 분야" value={patent.businessArea} />
           <Meta label="관련기술 분야" value={patent.technologyArea} />
           <Meta label="관련제품" value={patent.productName} />
           <Meta label="예상 소멸일" value={patent.expectedExpirationDate} />
         </div>
-        {feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
+        {/* BUS-FEE-01: 연차료 일정/추정액은 사업부 화면에서 숨긴다(법무팀 전용). */}
+        {isAdmin && feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
         {familyPatents.length > 0 ? <PatentFamilyCard isAdmin={isAdmin} members={familyPatents} /> : null}
       </section>
 
-      <div className="detail-followup-grid">
-        {isAdmin ? (
-          <>
-            <BusinessOpinionSection
-              isAdmin={isAdmin}
-              role={role}
-              hasSubmittedBusinessChecklist={hasSubmittedBusinessChecklist}
-              displayedBusinessOpinionLabel={displayedBusinessOpinionLabel}
-              displayedBusinessOpinionComment={displayedBusinessOpinionComment}
-              checklistTotal={checklistTotal}
-              businessChecklistSubmission={businessChecklistSubmission}
-              businessChecklistItems={businessChecklistItems}
-              onOpenChecklist={() => setIsChecklistOpen(true)}
-            />
-            <FinalDecisionSection
-              patentDetail={patent}
-              decisionMessage={decisionMessage}
-              workflowActionMessage={workflowActionMessage}
-              canRecordFinalDecision={canRecordFinalDecision}
-              canSendBusinessReviewMail={canSendBusinessReviewMail}
-              isApplyingDecision={isApplyingDecision}
-              isWorkflowActionProcessing={isWorkflowActionProcessing}
-              coApplicantConsentMessage={coApplicantConsentMessage}
-              isApplyingCoApplicantConsent={isApplyingCoApplicantConsent}
-              onRequestAiReport={handleRequestAiReport}
-              onOpenMailPreview={handleOpenMailPreview}
-              onOpenMailHistory={handleOpenMailHistory}
-              onOpenFinalDecisionModal={openFinalDecisionModal}
-              onOpenCoApplicantConsentModal={openCoApplicantConsentModal}
-            />
-          </>
-        ) : (
-          <div className="business-review-workbench">
-            <Section title="검토 참고 자료" description="기존 의사결정 기록과 AI 레포트 요약을 함께 확인합니다.">
-              <div className="business-reference-stack">
-                <div className="report-callout">
-                  <strong>{recommendationLabels[patent.aiEvaluationReport.recommendation]}</strong>
-                  <p>{patent.aiEvaluationReport.recommendationText}</p>
-                </div>
-                {patent.aiEvaluationReport.rawMarkdown ? (
-                  <RawMarkdownBlock content={patent.aiEvaluationReport.rawMarkdown} title="AI 특허 평가 레포트 전문" />
-                ) : (
-                  <AiReportStructuredContent report={patent.aiEvaluationReport} />
-                )}
-                <div className="history-mini-list">
-                  {patentHistoryItems.slice(0, 4).map((item) => (
-                    <div key={item.historyId}>
-                      <strong>{item.title}</strong>
-                      <span>{item.description}</span>
-                    </div>
-                  ))}
-                  {patentHistoryItems.length === 0 ? <p className="empty-state">{patentHistoryMessage || "기존 의사결정 기록이 없습니다."}</p> : null}
-                </div>
-              </div>
-            </Section>
-            <BusinessOpinionSection
-              isAdmin={isAdmin}
-              role={role}
-              hasSubmittedBusinessChecklist={hasSubmittedBusinessChecklist}
-              displayedBusinessOpinionLabel={displayedBusinessOpinionLabel}
-              displayedBusinessOpinionComment={displayedBusinessOpinionComment}
-              checklistTotal={checklistTotal}
-              businessChecklistSubmission={businessChecklistSubmission}
-              businessChecklistItems={businessChecklistItems}
-              onOpenChecklist={() => setIsChecklistOpen(true)}
-            />
-          </div>
-        )}
-      </div>
+      {/* 관리자 전용: 사업부 의견 + 최종 판단 패널. 사업부는 의견 작성을 AI 레포트 아래(detail-main)로 배치한다. */}
+      {isAdmin ? (
+        <div className="detail-followup-grid">
+          <BusinessOpinionSection
+            isAdmin={isAdmin}
+            role={role}
+            hasSubmittedBusinessChecklist={hasSubmittedBusinessChecklist}
+            displayedBusinessOpinionLabel={displayedBusinessOpinionLabel}
+            displayedBusinessOpinionComment={displayedBusinessOpinionComment}
+            checklistTotal={checklistTotal}
+            businessChecklistSubmission={businessChecklistSubmission}
+            businessChecklistItems={businessChecklistItems}
+            onOpenChecklist={() => setIsChecklistOpen(true)}
+          />
+          <FinalDecisionSection
+            patentDetail={patent}
+            decisionMessage={decisionMessage}
+            workflowActionMessage={workflowActionMessage}
+            canRecordFinalDecision={canRecordFinalDecision}
+            canSendBusinessReviewMail={canSendBusinessReviewMail}
+            isApplyingDecision={isApplyingDecision}
+            isWorkflowActionProcessing={isWorkflowActionProcessing}
+            coApplicantConsentMessage={coApplicantConsentMessage}
+            isApplyingCoApplicantConsent={isApplyingCoApplicantConsent}
+            onRequestAiReport={handleRequestAiReport}
+            onOpenMailPreview={handleOpenMailPreview}
+            onOpenMailHistory={handleOpenMailHistory}
+            onOpenFinalDecisionModal={openFinalDecisionModal}
+            onOpenCoApplicantConsentModal={openCoApplicantConsentModal}
+          />
+        </div>
+      ) : null}
 
       <div className="detail-main">
-        <AiReportSection
-          report={
-            aiReportEditing.isShowingOriginal && aiReportEditing.originalReport
-              ? aiReportEditing.originalReport
-              : patent.aiEvaluationReport
-          }
-          editControls={
-            isAdmin
-              ? {
-                  canEdit: !patent.finalDecisionRecord.decisionId,
-                  isShowingOriginal: aiReportEditing.isShowingOriginal,
-                  isSavingEdit: aiReportEditing.isSavingEdit,
-                  editMessage: aiReportEditing.isEditModalOpen ? "" : aiReportEditing.editMessage,
-                  onOpenEditModal: () => aiReportEditing.setIsEditModalOpen(true),
-                  onToggleOriginal: aiReportEditing.handleToggleOriginal,
-                  onRevertEdit: aiReportEditing.handleRevertEdit,
-                }
-              : undefined
-          }
-        />
-
-        <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
-            <div className="summary-stack">
-              <SummaryBlock title="요약" content={patent.summary.summaryText} />
-              <SummaryBlock title="해결 과제" content={patent.summary.problemSolved} />
-              <div>
-                <h3>핵심 기술 포인트</h3>
-                <ul className="clean-list">
-                  {patent.summary.coreTechnicalPoints.map((point) => (
-                    <li key={point}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-              <SummaryBlock title="권리범위 요약" content={patent.summary.claimsSummary} />
-            </div>
-        </Section>
+        {/* BUS-DETAIL-ORDER: 사업부는 특허 이해 요약 → AI 레포트 → 사업부 의견 작성 순서로 본다. */}
+        {isAdmin ? (
+          <>
+            {aiReportSection}
+            {summarySection}
+          </>
+        ) : (
+          <>
+            {summarySection}
+            {aiReportSection}
+            {businessOpinionWorkbench}
+          </>
+        )}
 
         <BusinessSubmissionHistoryDetail patent={patent} />
 

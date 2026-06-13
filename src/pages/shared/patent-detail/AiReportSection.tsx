@@ -106,27 +106,41 @@ interface AiReportEditControls {
  * @description AI 특허 평가 레포트(종합 점수, 권고, 핵심 근거, 판단 근거, 항목별 평가)를 표시하는 섹션.
  *     관리자(법무팀)에게는 레포트 수정/AI 원본 보기/되돌리기 컨트롤이 노출된다(FR-LEGAL-09).
  */
+interface AiReportRegenerateControls {
+  // FR-LEGAL-06/18: 관리자(법무팀)와 사업부 모두 AI 레포트를 재생성할 수 있다.
+  canRegenerate: boolean;
+  isRegenerating: boolean;
+  message: string;
+  onRegenerate: () => void;
+}
+
 export function AiReportSection({
   report,
   editControls,
+  regenerateControls,
 }: {
   report: PatentDetail["aiEvaluationReport"];
   editControls?: AiReportEditControls;
+  regenerateControls?: AiReportRegenerateControls;
 }) {
+  const showRegenerate = Boolean(regenerateControls?.canRegenerate);
   return (
     <Section
       title="AI 특허 평가 레포트"
       description="특허 유지 검토에 참고할 수 있는 AI 생성 평가 레포트입니다."
     >
-      {editControls ? (
+      {editControls || showRegenerate ? (
         <div className="ai-report-edit-toolbar">
-          {editControls.editMessage ? <span className="ai-report-edit-message">{editControls.editMessage}</span> : null}
-          {report.edited || editControls.isShowingOriginal ? (
+          {editControls?.editMessage ? <span className="ai-report-edit-message">{editControls.editMessage}</span> : null}
+          {regenerateControls?.message && !editControls?.editMessage ? (
+            <span className="ai-report-edit-message">{regenerateControls.message}</span>
+          ) : null}
+          {editControls && (report.edited || editControls.isShowingOriginal) ? (
             <Button onClick={editControls.onToggleOriginal} type="button" variant="secondary">
               {editControls.isShowingOriginal ? "수정본 보기" : "AI 원본 보기"}
             </Button>
           ) : null}
-          {report.edited && !editControls.isShowingOriginal && editControls.canEdit ? (
+          {editControls && report.edited && !editControls.isShowingOriginal && editControls.canEdit ? (
             <Button
               disabled={editControls.isSavingEdit}
               onClick={editControls.onRevertEdit}
@@ -136,7 +150,17 @@ export function AiReportSection({
               수정 되돌리기
             </Button>
           ) : null}
-          {!editControls.isShowingOriginal && editControls.canEdit ? (
+          {showRegenerate ? (
+            <Button
+              disabled={regenerateControls?.isRegenerating}
+              onClick={regenerateControls?.onRegenerate}
+              type="button"
+              variant="secondary"
+            >
+              {regenerateControls?.isRegenerating ? "AI 레포트 재생성 중…" : "AI 레포트 재생성"}
+            </Button>
+          ) : null}
+          {editControls && !editControls.isShowingOriginal && editControls.canEdit ? (
             <Button disabled={editControls.isSavingEdit} onClick={editControls.onOpenEditModal} type="button">
               레포트 수정
             </Button>

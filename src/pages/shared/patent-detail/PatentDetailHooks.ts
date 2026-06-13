@@ -332,7 +332,10 @@ export function usePatentDetail(role: UserRole) {
         return;
       }
 
-      const updated = await getPatentDetail(patent.patentId);
+      // 사업부 사용자는 ADMIN 전용 /patents/{id}가 403이므로 역할에 맞는 상세 API로 재조회한다.
+      const updated = isAdmin
+        ? await getPatentDetail(patent.patentId)
+        : await getBusinessPatentDetail(patent.patentId);
       if (updated) {
         setPatent(updated);
         refreshPatentHistory(updated.patentId);
