@@ -143,10 +143,11 @@ export function AnnualFeeSettingsSection() {
           <div className="table-wrap">
             <table>
               <thead>
+                {/* FEE-EXT-01: 균일하던 '최초 연장 기간(1회차)' 컬럼은 정보가치가 없어 제거하고,
+                    회차별 연장 기간을 한 컬럼에 모아 국가별 차이를 한눈에 보여준다. 상세 편집은 모달이 담당. */}
                 <tr>
                   <th>국가</th>
-                  <th>최초 연장 기간 (1회차)</th>
-                  <th>반복 연장 기간 (2회차+)</th>
+                  <th>연장 기간 (회차별)</th>
                   <th style={{ width: 48 }} />
                 </tr>
               </thead>
@@ -154,22 +155,21 @@ export function AnnualFeeSettingsSection() {
                 {extensions.map((extension) => {
                   const rounds = extensionDrafts[extension.country] ?? normalizeRounds(extension);
                   const isDirty = dirtyExtensionCountries.includes(extension.country);
-                  const firstRound = rounds[0];
-                  const repeatRounds = rounds.slice(1);
                   return (
                     <tr className={isDirty ? "dirty-row" : undefined} key={extension.country}>
                       <td><strong>{extension.label}</strong></td>
                       <td>
-                        <span className="extension-round-chip extension-round-chip-first">{firstRound}개월</span>
-                        {isDirty ? <span className="badge badge-warning" style={{ marginLeft: "0.4rem" }}>변경됨</span> : null}
-                      </td>
-                      <td>
                         <div className="extension-round-chips">
-                          {repeatRounds.length > 0
-                            ? repeatRounds.map((months, i) => (
-                                <span className="extension-round-chip" key={i}>{i + 2}회차 {months}개월</span>
-                              ))
-                            : <span className="table-subtext">없음 (1회차 값 반복)</span>}
+                          {rounds.map((months, i) => (
+                            <span
+                              className={`extension-round-chip${i === 0 ? " extension-round-chip-first" : ""}`}
+                              key={i}
+                            >
+                              {i + 1}회차 {months}개월
+                            </span>
+                          ))}
+                          {rounds.length === 1 ? <span className="table-subtext">이후 회차도 동일 적용</span> : null}
+                          {isDirty ? <span className="badge badge-warning" style={{ marginLeft: "0.4rem" }}>변경됨</span> : null}
                         </div>
                       </td>
                       <td>
@@ -183,7 +183,7 @@ export function AnnualFeeSettingsSection() {
                   );
                 })}
                 {extensions.length === 0 ? (
-                  <tr><td className="empty-table-cell" colSpan={4}>연장 기간 설정을 불러오지 못했습니다.</td></tr>
+                  <tr><td className="empty-table-cell" colSpan={3}>연장 기간 설정을 불러오지 못했습니다.</td></tr>
                 ) : null}
               </tbody>
             </table>

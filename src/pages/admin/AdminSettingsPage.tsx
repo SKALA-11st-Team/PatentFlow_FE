@@ -49,12 +49,11 @@ export function AdminSettingsPage() {
   const [mailMessage, setMailMessage] = useState("");
   const [mailLeadMonths, setMailLeadMonths] = useState(2);
   const [mailLeadMonthsInput, setMailLeadMonthsInput] = useState(2);
-  const [isSavingMailLead, setIsSavingMailLead] = useState(false);
-  const [mailLeadMessage, setMailLeadMessage] = useState("");
   const [responseDeadline, setResponseDeadline] = useState<ResponseDeadline>({ months: 1, days: 0 });
   const [responseDeadlineInput, setResponseDeadlineInput] = useState<ResponseDeadline>({ months: 1, days: 0 });
-  const [isSavingDeadline, setIsSavingDeadline] = useState(false);
-  const [deadlineMessage, setDeadlineMessage] = useState("");
+  // SETTINGS-12: 메일 발송 기준·회신 기한 저장 버튼을 하나로 통일한다(행별 저장 제거).
+  const [isSavingMailSettings, setIsSavingMailSettings] = useState(false);
+  const [mailSettingsMessage, setMailSettingsMessage] = useState("");
   const [allQuarters, setAllQuarters] = useState<QuarterSetting[]>([]);
   const [reviewPeriodTemplates, setReviewPeriodTemplates] = useState<ReviewPeriodTemplate[]>([]);
   const [classifications, setClassifications] = useState<ClassificationGroup[]>([]);
@@ -108,35 +107,34 @@ export function AdminSettingsPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  async function handleSaveMailLeadMonths(event: React.FormEvent) {
+  // SETTINGS-12: 메일 발송 기준·회신 기한을 한 번에 저장한다(변경된 항목만 호출).
+  async function handleSaveMailSettings(event: React.FormEvent) {
     event.preventDefault();
-    setIsSavingMailLead(true);
-    setMailLeadMessage("");
-    try {
-      const updated = await updateMailLeadMonths(mailLeadMonthsInput);
-      setMailLeadMonths(updated);
-      setMailLeadMonthsInput(updated);
-      setMailLeadMessage("메일 발송 기준이 저장되었습니다.");
-    } catch (error) {
-      setMailLeadMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
-    } finally {
-      setIsSavingMailLead(false);
+    const mailLeadChanged = mailLeadMonthsInput !== mailLeadMonths;
+    const deadlineChanged =
+      responseDeadlineInput.months !== responseDeadline.months ||
+      responseDeadlineInput.days !== responseDeadline.days;
+    if (!mailLeadChanged && !deadlineChanged) {
+      return;
     }
-  }
-
-  async function handleSaveResponseDeadline(event: React.FormEvent) {
-    event.preventDefault();
-    setIsSavingDeadline(true);
-    setDeadlineMessage("");
+    setIsSavingMailSettings(true);
+    setMailSettingsMessage("");
     try {
-      const updated = await updateResponseDeadline(responseDeadlineInput.months, responseDeadlineInput.days);
-      setResponseDeadline(updated);
-      setResponseDeadlineInput(updated);
-      setDeadlineMessage("회신 기한이 저장되었습니다.");
+      if (mailLeadChanged) {
+        const updated = await updateMailLeadMonths(mailLeadMonthsInput);
+        setMailLeadMonths(updated);
+        setMailLeadMonthsInput(updated);
+      }
+      if (deadlineChanged) {
+        const updated = await updateResponseDeadline(responseDeadlineInput.months, responseDeadlineInput.days);
+        setResponseDeadline(updated);
+        setResponseDeadlineInput(updated);
+      }
+      setMailSettingsMessage("메일/회신 설정이 저장되었습니다.");
     } catch (error) {
-      setDeadlineMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
+      setMailSettingsMessage(error instanceof Error ? error.message : "저장에 실패했습니다.");
     } finally {
-      setIsSavingDeadline(false);
+      setIsSavingMailSettings(false);
     }
   }
 
@@ -215,15 +213,12 @@ export function AdminSettingsPage() {
           mailLeadMonths={mailLeadMonths}
           mailLeadMonthsInput={mailLeadMonthsInput}
           setMailLeadMonthsInput={setMailLeadMonthsInput}
-          isSavingMailLead={isSavingMailLead}
-          mailLeadMessage={mailLeadMessage}
-          onSaveMailLeadMonths={handleSaveMailLeadMonths}
           responseDeadline={responseDeadline}
           responseDeadlineInput={responseDeadlineInput}
           setResponseDeadlineInput={setResponseDeadlineInput}
-          isSavingDeadline={isSavingDeadline}
-          deadlineMessage={deadlineMessage}
-          onSaveResponseDeadline={handleSaveResponseDeadline}
+          isSavingMailSettings={isSavingMailSettings}
+          mailSettingsMessage={mailSettingsMessage}
+          onSaveMailSettings={handleSaveMailSettings}
         />
       ) : null}
 
