@@ -61,7 +61,7 @@ export function isMockApiEnabled() {
  * @description Spring Boot API 연동 시 공통 JSON 요청과 에러 처리를 담당한다.
  */
 export async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-  return requestJsonInternal<T>(path, init, true);
+  return requestJsonInternal<T>(path, init, true, true);
 }
 
 /**
@@ -96,7 +96,12 @@ export async function requestBlob(path: string, allowRefresh = true): Promise<Bl
   return response.blob();
 }
 
-async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefresh: boolean): Promise<T> {
+async function requestJsonInternal<T>(
+  path: string,
+  init: RequestInit,
+  allowRefresh: boolean,
+  allowCsrfRetry = false,
+): Promise<T> {
   const method = init.method?.toUpperCase() ?? "GET";
   const headers = new Headers(init.headers);
 
@@ -138,7 +143,19 @@ async function requestJsonInternal<T>(path: string, init: RequestInit, allowRefr
       redirectToLogin();
       throw refreshError;
     }
-    return requestJsonInternal<T>(path, init, false);
+    return requestJsonInternal<T>(path, init, false, allowCsrfRetry);
+  }
+
+  // BE-14: CSRF 토큰이 stale하면 BE가 403 CSRF_TOKEN_INVALID로 응답한다.
+  // /auth/csrf로 신선한 XSRF-TOKEN 쿠키를 받아 정확히 1회만 재시도한다(쿠키는 위에서 매번 재독).
+  // 권한 부족 등 다른 403은 재시도하지 않는다.
+  if (response.status === 403 && allowCsrfRetry && !["GET", "HEAD", "OPTIONS", "TRACE"].includes(method)) {
+    const errorEnvelope = await parseErrorEnvelope(response);
+    if (errorEnvelope?.code === "CSRF_TOKEN_INVALID") {
+      await primeCsrfTokenOnce();
+      return requestJsonInternal<T>(path, init, allowRefresh, false);
+    }
+    throw new ApiRequestError(response.status, response.statusText, errorEnvelope);
   }
 
   if (!response.ok) {
@@ -173,6 +190,22 @@ function refreshAccessTokenOnce(): Promise<void> {
       });
   }
   return inFlightRefresh;
+}
+
+// BE-14: 동시 다발 CSRF 재발급도 refresh처럼 single-flight로 직렬화한다.
+let inFlightCsrfPrime: Promise<void> | null = null;
+
+function primeCsrfTokenOnce(): Promise<void> {
+  if (!inFlightCsrfPrime) {
+    inFlightCsrfPrime = fetch(`${API_BASE_URL}/auth/csrf`, { credentials: "include" })
+      .then(() => undefined)
+      // 프라이밍 실패는 삼킨다 — 이어지는 재시도가 실제 실패를 드러낸다.
+      .catch(() => undefined)
+      .finally(() => {
+        inFlightCsrfPrime = null;
+      });
+  }
+  return inFlightCsrfPrime;
 }
 
 function redirectToLogin() {
