@@ -22,6 +22,24 @@ export function QuarterCompletionDonut({
 }: QuarterCompletionDonutProps) {
   const percent = getCompletionPercent(completed, total);
   const denominatorLabel = `${completed} / ${total}건`;
+  // DASH-EMPTY: 검토 대상이 0건이면 0/0건·0% 대신 명확한 빈 상태 문구를 보여준다.
+  const isEmpty = !isLoading && total <= 0;
+
+  if (isEmpty) {
+    return (
+      <article
+        className="quarter-donut-card quarter-donut-empty"
+        aria-label={`${quarterLabel ?? getCurrentQuarterLabel()} ${label}: 검토할 특허가 없습니다`}
+      >
+        <span>{quarterLabel ?? getCurrentQuarterLabel()}</span>
+        <div className="quarter-donut-empty-body">
+          <strong>{label}</strong>
+          <p className="empty-state">검토할 특허가 없습니다</p>
+          <small>{helper}</small>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <article

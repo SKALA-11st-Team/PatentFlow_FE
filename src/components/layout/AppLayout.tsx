@@ -85,10 +85,6 @@ export function AppLayout({ children, role, title, description }: AppLayoutProps
             { label: "제출 이력", to: "/business/submissions" },
           ],
         },
-        {
-          label: "운영",
-          items: [{ label: "설정", to: "/business/settings" }],
-        },
       ];
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   // D4: 다크모드 — localStorage(patentflow.theme) 영속, documentElement[data-theme]로 적용.
