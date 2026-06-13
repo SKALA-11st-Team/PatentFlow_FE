@@ -14,6 +14,7 @@ import { BusinessAreaReviewCards } from "../../components/admin/BusinessAreaRevi
 import { DepartmentAssigner } from "../../components/admin/DepartmentAssigner";
 import { ErrorNotice } from "../../components/common/ErrorNotice";
 import { KpiCard } from "../../components/common/KpiCard";
+import { Modal } from "../../components/common/Modal";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
 import { QuarterCompletionDonut } from "../../components/dashboard/QuarterCompletionDonut";
@@ -28,7 +29,15 @@ import {
 } from "../../constants/status";
 import type { PatentListItem } from "../../types/patent";
 import { isQuarterlyReviewTarget } from "../../utils/reviewWorkflow";
-import { estimateAnnualFeeKrw, getNextAnnualFeeDueDate } from "../../utils/annualFee";
+import {
+  DOCUMENTED_FX_RATES,
+  FX_CURRENCY_LABELS,
+  estimateAnnualFee,
+  estimateAnnualFeeKrw,
+  getNextAnnualFeeDueDate,
+  type CurrencyCode,
+} from "../../utils/annualFee";
+import { getExchangeRates, type ExchangeRateInfo } from "../../api/exchangeRate";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
 type DashboardScope = "ALL" | "QUARTER" | "NOT_IN_QUARTER";
@@ -69,6 +78,20 @@ export function AdminDashboardPage() {
   const [activeQuarter, setActiveQuarter] = useState<QuarterSetting | null>(null);
   const [dashboardErrorMessage, setDashboardErrorMessage] = useState("");
   const [departmentErrorMessage, setDepartmentErrorMessage] = useState("");
+  // D1-EXT: 분기별 예상 연차료 외화 환산용 실시간 환율(실패 시 문서 기준 폴백).
+  const [exchangeRate, setExchangeRate] = useState<ExchangeRateInfo | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getExchangeRates().then((info) => {
+      if (isMounted) {
+        setExchangeRate(info);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     getDepartments()
@@ -254,7 +277,7 @@ export function AdminDashboardPage() {
             denominator={quarterlyTargetCount}
             helper="사업부 의견 확인 필요"
             isLoading={isLoading && !dashboardSummary}
-            label="처리 결과 입력"
+            label="사업부 응답 완료"
             value={businessResponseReceivedCount}
             to="/admin/review-targets?workflow=BUSINESS_RESPONSE_RECEIVED"
             tone="warning"
@@ -265,7 +288,7 @@ export function AdminDashboardPage() {
             isLoading={isLoading && !dashboardSummary}
             label="처리 완료"
             value={actionRecordedCount}
-            to="/admin/review-targets?scope=all"
+            to="/admin/review-targets?workflow=LEGAL_ACTION_RECORDED"
             tone="success"
           />
         </div>
@@ -291,7 +314,7 @@ export function AdminDashboardPage() {
 
       {/* D1-EXT: 분기별 예상 연차료 — 추가 API 없이 로드된 patents 기반으로 집계한다 */}
       <section className="section">
-        <QuarterlyFeeChartCard patents={patents} />
+        <QuarterlyFeeChartCard patents={patents} exchangeRate={exchangeRate} />
       </section>
 
       <BusinessAreaReviewCards
@@ -571,14 +594,45 @@ function ReviewFunnelCard({ stages }: { stages: Array<{ label: string; count: nu
   );
 }
 
+const FEE_COUNTRY_LABELS: Record<string, string> = {
+  KR: "한국 (KR)",
+  US: "미국 (US)",
+  JP: "일본 (JP)",
+  CN: "중국 (CN)",
+  EP: "유럽 (EP)",
+  기타: "기타",
+};
+
+const FX_DISPLAY_CURRENCIES: CurrencyCode[] = ["USD", "JPY", "CNY", "EUR"];
+
+interface FeeCountryBreakdownRow {
+  country: string;
+  label: string;
+  currency: CurrencyCode;
+  nativeAmount: number;
+  krw: number;
+  count: number;
+}
+
 /**
  * @relatedFR FR-LEGAL-24
  * @relatedUI UI-LEGAL-01
- * @description D1-EXT: 다음 4분기 연차료 예상 총액 — 기존 patents 배열 기반 KRW 추정치 바 차트.
+ * @description D1-EXT: 다음 4분기 연차료 예상 총액 — 국가별 기준(FEE-06)·실시간 환율로 환산한 KRW 추정치 바 차트.
+ * '?' 도움말에서 국가별 기준, 적용 환율, 총합 = 원화분 + 국가별 외화분 분해를 확인할 수 있다.
  */
-function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
+function QuarterlyFeeChartCard({
+  patents,
+  exchangeRate,
+}: {
+  patents: PatentListItem[];
+  exchangeRate: ExchangeRateInfo | null;
+}) {
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const rates = exchangeRate?.rates ?? DOCUMENTED_FX_RATES;
   const now = new Date();
   const quarterStart = Math.floor(now.getMonth() / 3) * 3;
+  // 4개 분기에 도래하는 특허의 월 키 집합 — 차트(분기별)와 분해(국가별)가 동일 모집단을 보도록 union을 구한다.
+  const inRangeMonthKeys = new Set<string>();
   const buckets = Array.from({ length: 4 }, (_, offset) => {
     const start = new Date(now.getFullYear(), quarterStart + offset * 3, 1);
     const q = Math.floor(start.getMonth() / 3) + 1;
@@ -587,15 +641,53 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
       const m = new Date(start.getFullYear(), start.getMonth() + mo, 1);
       return `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
     });
+    monthKeys.forEach((k) => inRangeMonthKeys.add(k));
     const totalKrw = patents
       .filter((p) => {
         // feeDueDate가 없는 경우 출원일/등록일 기준으로 다음 납부 예정일을 계산해 fallback 사용
         const dueDate = p.feeDueDate || getNextAnnualFeeDueDate(p.applicationDate, now, p.registrationDate);
         return monthKeys.some((k) => dueDate.startsWith(k));
       })
-      .reduce((sum, p) => sum + estimateAnnualFeeKrw(p.country, p.registrationDate, p.applicationDate), 0);
+      .reduce((sum, p) => sum + estimateAnnualFeeKrw(p.country, p.registrationDate, p.applicationDate, rates), 0);
     return { key: `${start.getFullYear()}-Q${q}`, label: `${yy}년 ${q}분기`, totalKrw };
   });
+
+  // 국가별 분해: 4개 분기에 도래하는 특허를 국가(통화)별로 외화 금액·원화 환산·건수로 집계한다.
+  const dueOf = (p: PatentListItem) =>
+    p.feeDueDate || getNextAnnualFeeDueDate(p.applicationDate, now, p.registrationDate);
+  const inRangePatents = patents.filter((p) =>
+    [...inRangeMonthKeys].some((k) => dueOf(p).startsWith(k)),
+  );
+  const breakdownMap = new Map<string, FeeCountryBreakdownRow>();
+  for (const p of inRangePatents) {
+    const estimate = estimateAnnualFee(p.country, p.registrationDate, p.applicationDate);
+    const rate = rates[estimate.currency] ?? DOCUMENTED_FX_RATES[estimate.currency];
+    const krw = Math.round(estimate.nativeAmount * rate);
+    const cc = (p.country ?? "").toUpperCase();
+    const country = ["KR", "US", "JP", "CN", "EP"].includes(cc) ? cc : "기타";
+    const existing = breakdownMap.get(country);
+    if (existing) {
+      existing.nativeAmount += estimate.nativeAmount;
+      existing.krw += krw;
+      existing.count += 1;
+    } else {
+      breakdownMap.set(country, {
+        country,
+        label: FEE_COUNTRY_LABELS[country] ?? country,
+        currency: estimate.currency,
+        nativeAmount: estimate.nativeAmount,
+        krw,
+        count: 1,
+      });
+    }
+  }
+  const breakdown = [...breakdownMap.values()].sort((a, b) => b.krw - a.krw);
+  const grandTotalKrw = breakdown.reduce((sum, row) => sum + row.krw, 0);
+  const domesticKrw = breakdown
+    .filter((row) => row.currency === "KRW")
+    .reduce((sum, row) => sum + row.krw, 0);
+  const foreignKrw = grandTotalKrw - domesticKrw;
+
   const max = Math.max(1, ...buckets.map((b) => b.totalKrw));
   const W = 400, H = 90;
   const PX = 30, PT = 22, PB = 20;
@@ -613,7 +705,18 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
     <div className="dashboard-visual-card">
       <div className="dashboard-visual-card-head">
         <h3>분기별 예상 연차료</h3>
-        <span className="table-subtext">추정치 (참고용)</span>
+        <div className="fee-chart-head-meta">
+          <span className="table-subtext">추정치 (참고용)</span>
+          <button
+            aria-label="분기별 예상 연차료 산정 기준 보기"
+            className="fee-help-button"
+            onClick={() => setIsHelpOpen(true)}
+            title="국가별 기준·환율·총합 분해 보기"
+            type="button"
+          >
+            ?
+          </button>
+        </div>
       </div>
       <svg
         className="fee-chart-svg"
@@ -669,6 +772,96 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
           </g>
         ))}
       </svg>
+
+      {isHelpOpen ? (
+        <Modal
+          ariaLabel="분기별 예상 연차료 산정 기준"
+          className="settings-modal fee-help-modal"
+          onClose={() => setIsHelpOpen(false)}
+        >
+          <div className="modal-header">
+            <div>
+              <h2>분기별 예상 연차료 산정 기준</h2>
+              <p className="form-helper-text">
+                다음 4개 분기에 납부가 도래하는 특허의 추정 연차료입니다. 실제 납부액과 다를 수 있는 참고용 추정치입니다.
+              </p>
+            </div>
+            <button
+              aria-label="닫기"
+              className="modal-close-button"
+              onClick={() => setIsHelpOpen(false)}
+              type="button"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="fee-help-body">
+            <section className="fee-help-section">
+              <h3>국가별 연차료 기준 (FEE-06)</h3>
+              <ul className="clean-list">
+                <li><strong>KR</strong> · 등록일 기준 — 1~3년차 설정등록료 일괄, 4년차부터 매년 누진 (KRW)</li>
+                <li><strong>US</strong> · 등록일 기준 — 3.5 / 7.5 / 11.5년 유지료 (소규모 법인 기준, USD)</li>
+                <li><strong>JP·CN·EP</strong> · 출원일 기준 — 연차별 누진 (각 JPY·CNY·EUR)</li>
+                <li><strong>기타</strong> · 출원일 기준 — 연 300,000원 플랫 추정 (KRW)</li>
+              </ul>
+            </section>
+
+            <section className="fee-help-section">
+              <h3>적용 환율</h3>
+              <p className="form-helper-text">
+                출처: {exchangeRate?.source ?? "문서 기준 환율"}
+                {exchangeRate?.asOf ? ` · 기준 ${exchangeRate.asOf}` : ""}
+                {exchangeRate?.isFallback ? " · 실시간 조회 실패로 문서 기준 환율 적용" : ""}
+              </p>
+              <table className="fee-help-table">
+                <thead>
+                  <tr><th>통화</th><th>1단위당 KRW</th></tr>
+                </thead>
+                <tbody>
+                  {FX_DISPLAY_CURRENCIES.map((code) => (
+                    <tr key={code}>
+                      <td>{FX_CURRENCY_LABELS[code]}</td>
+                      <td>{rates[code].toLocaleString("ko-KR", { maximumFractionDigits: 2 })}원</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+
+            <section className="fee-help-section">
+              <h3>총합 분해</h3>
+              <div className="fee-help-totals">
+                <div><span>총 추정액</span><strong>{grandTotalKrw.toLocaleString("ko-KR")}원</strong></div>
+                <div><span>원화분 (KR·기타)</span><strong>{domesticKrw.toLocaleString("ko-KR")}원</strong></div>
+                <div><span>외화분 합계 (KRW 환산)</span><strong>{foreignKrw.toLocaleString("ko-KR")}원</strong></div>
+              </div>
+              <table className="fee-help-table">
+                <thead>
+                  <tr><th>국가</th><th>건수</th><th>외화 금액</th><th>원화 환산</th></tr>
+                </thead>
+                <tbody>
+                  {breakdown.map((row) => (
+                    <tr key={row.country}>
+                      <td>{row.label}</td>
+                      <td>{row.count}건</td>
+                      <td>
+                        {row.currency === "KRW"
+                          ? "—"
+                          : `${row.nativeAmount.toLocaleString("ko-KR")} ${row.currency}`}
+                      </td>
+                      <td>{row.krw.toLocaleString("ko-KR")}원</td>
+                    </tr>
+                  ))}
+                  {breakdown.length === 0 ? (
+                    <tr><td className="empty-table-cell" colSpan={4}>도래 예정 연차료가 없습니다.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </section>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
 }
