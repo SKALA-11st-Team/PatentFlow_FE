@@ -356,7 +356,10 @@ function getSubmissionLogs(
 }
 
 function getNextDecisionQuarter(feeDueDate: string) {
-  const [year, month] = feeDueDate.split("-").map(Number);
+  const [year, month] = (feeDueDate ?? "").split("-").map(Number);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+    return "N/A";
+  }
   return `${year}년 ${Math.ceil(month / 3)}분기`;
 }
 

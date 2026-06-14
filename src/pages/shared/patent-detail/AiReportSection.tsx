@@ -12,6 +12,17 @@ import {
 import type { PatentDetail } from "../../../types/patent";
 import { formatDate, formatReportDisplayScore } from "./PatentDetailHooks";
 
+// 외부 근거 URL은 http(s)만 링크로 허용한다(javascript:/data: 등 위험 프로토콜 차단).
+function safeExternalUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const protocol = new URL(url).protocol;
+    return protocol === "https:" || protocol === "http:" ? url : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AiReportStructuredContent({ report }: { report: PatentDetail["aiEvaluationReport"] }) {
   return (
     <div className="score-list">
@@ -28,8 +39,13 @@ export function AiReportStructuredContent({ report }: { report: PatentDetail["ai
                     {detail.source ? (
                       <>
                         {" "}
-                        {detail.source.url ? (
-                          <a className="inline-source-link" href={detail.source.url} rel="noreferrer" target="_blank">
+                        {safeExternalUrl(detail.source.url) ? (
+                          <a
+                            className="inline-source-link"
+                            href={safeExternalUrl(detail.source.url) ?? undefined}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
                             출처 {detail.source.title}
                           </a>
                         ) : (

@@ -106,7 +106,7 @@ export function AdminMailingPage() {
       setIsSendConfirmOpen(false);
       setMessage(
         result.updatedCount > 0
-          ? `${mailDrafts.length}통의 메일로 ${result.updatedCount}건의 사업부 검토 요청을 발송 처리했습니다.`
+          ? `${mailDrafts.length}통의 메일을 발송하고 ${result.updatedCount}건의 특허를 사업부 검토 요청 처리했습니다.`
           : "메일 발송 처리할 선택 건이 없습니다.",
       );
     } catch (error) {

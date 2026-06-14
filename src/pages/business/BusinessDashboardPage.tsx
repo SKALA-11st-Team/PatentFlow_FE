@@ -329,16 +329,24 @@ function getFilteredAndSortedPatents(
  * @relatedUI UI-BUS-01
  * @description 사업부 의견 요청 특허 목록의 정렬 순서를 계산한다.
  */
+// 빈 feeDueDate(미설정)는 정렬 방향과 무관하게 항상 목록 말단으로 보낸다.
+function compareFeeDueDate(first: string, second: string, descending = false) {
+  if (!first && !second) return 0;
+  if (!first) return 1;
+  if (!second) return -1;
+  return descending ? second.localeCompare(first) : first.localeCompare(second);
+}
+
 function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListItem, sortKey: SortKey) {
   if (sortKey === "DUE_DATE_DESC") {
-    return secondPatent.feeDueDate.localeCompare(firstPatent.feeDueDate);
+    return compareFeeDueDate(firstPatent.feeDueDate, secondPatent.feeDueDate, true);
   }
 
   if (sortKey === "TITLE_ASC") {
     return firstPatent.title.localeCompare(secondPatent.title, "ko");
   }
 
-  return firstPatent.feeDueDate.localeCompare(secondPatent.feeDueDate);
+  return compareFeeDueDate(firstPatent.feeDueDate, secondPatent.feeDueDate);
 }
 
 /**

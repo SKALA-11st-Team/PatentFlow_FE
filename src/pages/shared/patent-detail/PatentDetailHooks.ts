@@ -104,7 +104,7 @@ export function createEmptyBusinessChecklistDraft(patentId: string): BusinessChe
 export function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSubmission) {
   return Boolean(
     submission.responses.length > 0 &&
-      submission.responses.every((response) => response.score !== null && response.score > 0) &&
+      submission.responses.every((response) => response.score !== null && response.score >= 1 && response.score <= 4) &&
       Number.isFinite(submission.qualitativeScore) &&
       submission.finalOpinion,
   );

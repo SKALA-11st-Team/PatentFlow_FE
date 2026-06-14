@@ -160,7 +160,10 @@ export function BusinessSubmissionHistoryPage() {
  * @description 다음 연차료 납부 기한 기준으로 사업부가 다시 판단해야 할 분기를 표시한다.
  */
 function getNextDecisionQuarter(feeDueDate: string) {
-  const [year, month] = feeDueDate.split("-").map(Number);
+  const [year, month] = (feeDueDate ?? "").split("-").map(Number);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) {
+    return "N/A";
+  }
   return `${year}년 ${Math.ceil(month / 3)}분기`;
 }
 
