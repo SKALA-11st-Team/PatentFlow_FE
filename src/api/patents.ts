@@ -1011,13 +1011,15 @@ export function formatReportDisplayScore(report: AiEvaluationReport) {
 }
 
 export function getTotalScoreText(scores: EvaluationScore[], averageScore: number | undefined, rawTotalScore?: number) {
-  const scoreTotal = rawTotalScore ?? getScoreTotal(scores);
+  // Agent 권위: 종합 점수는 핵심 3축(권리성·기술성·시장성) 합(max 300)이며 사업 연계성은 합산에서 제외한다.
+  const coreScores = scores.filter((score) => score.category !== "BUSINESS_ALIGNMENT");
+  const scoreTotal = rawTotalScore ?? getScoreTotal(coreScores);
 
   if (averageScore === undefined || scoreTotal === undefined) {
     return undefined;
   }
 
-  const maxScore = scores.length > 0 ? scores.length * 100 : 400;
+  const maxScore = coreScores.length > 0 ? coreScores.length * 100 : 300;
   return `${scoreTotal}/${maxScore}점, 평균 ${averageScore}점`;
 }
 

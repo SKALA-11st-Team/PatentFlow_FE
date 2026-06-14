@@ -241,15 +241,16 @@ function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recom
         evidenceSummary: "AI 평가 생성 후 상세 근거 확인이 필요한 항목입니다.",
         score: null,
       }));
-  // CONTRACT-02: totalScore=축별 점수(0~100) 원문 합(4축이면 0~400), averageScore=0~100 평균.
-  // 이는 FE 표시 계층(patents.ts getTotalScoreText의 maxScore=scores.length*100)과 동일한 척도이며,
-  // Agent/BE 응답 필드 total_score(권리성·기술성·시장성 3축 합, 0~300)와는 다른 척도다.
-  const scoredValues = scores.flatMap((score) => (score.score == null ? [] : [score.score]));
+  // CONTRACT-02: Agent 권위에 맞춰 종합 점수는 핵심 3축(권리성·기술성·시장성) 합(0~300),
+  // 평균은 그 3축 평균(0~100)이다. 사업 연계성(BUSINESS_ALIGNMENT)은 축 점수로 표시하되 합산에서 제외한다.
+  const scoredValues = scores.flatMap((score) =>
+    score.category === "BUSINESS_ALIGNMENT" || score.score == null ? [] : [score.score],
+  );
   const scoreSum = scoredValues.reduce((sum, score) => sum + score, 0);
   const averageScore = scoredValues.length
     ? Number((scoreSum / scoredValues.length).toFixed(1))
     : patent.aiEvaluationReport.averageScore;
-  const maxScore = scores.length * 100;
+  const maxScore = scoredValues.length * 100;
 
   return {
     ...patent.aiEvaluationReport,

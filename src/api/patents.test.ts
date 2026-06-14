@@ -119,7 +119,7 @@ describe("patents API Utils", () => {
         { category: "BUSINESS_ALIGNMENT", score: 0, evidenceSummary: "" },
       ] satisfies EvaluationScore[];
 
-      expect(getTotalScoreText(scores, 0, 0)).toBe("0/400점, 평균 0점");
+      expect(getTotalScoreText(scores, 0, 0)).toBe("0/300점, 평균 0점");
     });
   });
 
