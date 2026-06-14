@@ -2056,7 +2056,7 @@ export interface components {
             legalActionResult?: "MAINTAINED" | "ABANDONED";
             patentId?: string;
             /** @enum {string} */
-            reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+            reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED" | "LEGAL_ACTION_RECORDED";
         };
         LegalDashboardSummaryResponse: {
             /** Format: int32 */
@@ -2257,7 +2257,7 @@ export interface components {
             registrationNumber?: string;
             reviewReason?: string;
             /** @enum {string} */
-            reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+            reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED" | "LEGAL_ACTION_RECORDED";
             summary?: components["schemas"]["PatentSummaryResponse"];
             technologyArea?: string;
             title?: string;
@@ -2327,7 +2327,7 @@ export interface components {
             registrationNumber?: string;
             reviewReason?: string;
             /** @enum {string} */
-            reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+            reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED" | "LEGAL_ACTION_RECORDED";
             technologyArea?: string;
             title?: string;
         };
@@ -3122,7 +3122,7 @@ export interface operations {
                 page?: number;
                 size?: number;
                 keyword?: string;
-                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED" | "LEGAL_ACTION_RECORDED";
             };
             header?: never;
             path?: never;
@@ -3325,7 +3325,7 @@ export interface operations {
                 country?: string;
                 dateFrom?: string;
                 dateTo?: string;
-                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED" | "LEGAL_ACTION_RECORDED";
             };
             header?: never;
             path?: never;
@@ -3584,7 +3584,7 @@ export interface operations {
                 size?: number;
                 keyword?: string;
                 departmentId?: string;
-                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED" | "LEGAL_ACTION_RECORDED";
                 sort?: string;
                 quarter?: string;
                 country?: string;
@@ -3736,7 +3736,7 @@ export interface operations {
                 country?: string;
                 dateFrom?: string;
                 dateTo?: string;
-                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED";
+                reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED" | "LEGAL_ACTION_RECORDED";
             };
             header?: never;
             path?: never;

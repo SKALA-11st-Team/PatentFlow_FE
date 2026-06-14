@@ -16,6 +16,7 @@ export const REVIEW_WORKFLOW_STATUSES = [
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
+  "LEGAL_ACTION_RECORDED",
 ] as const;
 
 export type ReviewWorkflowStatus = (typeof REVIEW_WORKFLOW_STATUSES)[number];
@@ -125,6 +126,7 @@ export const reviewWorkflowStatusLabels: Record<ReviewWorkflowStatus, string> = 
   MAIL_READY: "레포트 생성 완료 · 메일 발송 대기",
   WAITING_BUSINESS_RESPONSE: "사업부 응답 대기",
   BUSINESS_RESPONSE_RECEIVED: "사업부 응답 완료",
+  LEGAL_ACTION_RECORDED: "처리 완료",
 };
 
 export const reviewWorkflowShortLabels: Record<ReviewWorkflowStatus, string> = {
@@ -133,6 +135,7 @@ export const reviewWorkflowShortLabels: Record<ReviewWorkflowStatus, string> = {
   MAIL_READY: "발송 대기",
   WAITING_BUSINESS_RESPONSE: "회신 대기",
   BUSINESS_RESPONSE_RECEIVED: "회신 완료",
+  LEGAL_ACTION_RECORDED: "처리 완료",
 };
 
 export const recommendationLabels: Record<Recommendation, string> = {
@@ -273,6 +276,7 @@ export const workflowStageActions: Record<ReviewWorkflowStatus, string> = {
   MAIL_READY: "메일 발송",
   WAITING_BUSINESS_RESPONSE: "사업부 확인",
   BUSINESS_RESPONSE_RECEIVED: "결과 입력",
+  LEGAL_ACTION_RECORDED: "처리 완료",
 };
 
 export const workflowBottleneckDescriptions: Record<ReviewWorkflowStatus, string> = {
@@ -281,6 +285,7 @@ export const workflowBottleneckDescriptions: Record<ReviewWorkflowStatus, string
   MAIL_READY: "관리자가 사업부 검토 요청 메일을 발송해야 합니다.",
   WAITING_BUSINESS_RESPONSE: "사업부 회신 독려와 제출 여부 확인이 필요합니다.",
   BUSINESS_RESPONSE_RECEIVED: "제출된 사업부 의견을 확인하고 유지/포기 처리 결과 입력이 필요합니다.",
+  LEGAL_ACTION_RECORDED: "법무 처리 결과가 기록되어 이번 분기 검토가 완료되었습니다.",
 };
 
 export const workflowUrgencyRank: Record<ReviewWorkflowStatus, number> = {
@@ -289,6 +294,7 @@ export const workflowUrgencyRank: Record<ReviewWorkflowStatus, number> = {
   MAIL_READY: 1,
   WAITING_BUSINESS_RESPONSE: 2,
   BUSINESS_RESPONSE_RECEIVED: 4,
+  LEGAL_ACTION_RECORDED: 98,
 };
 
 export const reviewWorkflowTone: Record<ReviewWorkflowStatus, StatusTone> = {
@@ -297,6 +303,7 @@ export const reviewWorkflowTone: Record<ReviewWorkflowStatus, StatusTone> = {
   MAIL_READY: "primary",
   WAITING_BUSINESS_RESPONSE: "warning",
   BUSINESS_RESPONSE_RECEIVED: "success",
+  LEGAL_ACTION_RECORDED: "success",
 };
 
 export function getReviewWorkflowTone(status: ReviewWorkflowStatus) {

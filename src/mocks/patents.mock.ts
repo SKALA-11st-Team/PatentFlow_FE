@@ -370,6 +370,7 @@ function getReviewReason(status: ReviewWorkflowStatus, feeDueDate: string) {
     MAIL_READY: "AI 특허 평가 레포트가 생성되었고 관리자 메일 발송 명령이 필요합니다.",
     WAITING_BUSINESS_RESPONSE: "메일과 레포트를 발송했고 사업부서 담당자의 응답을 기다리고 있습니다.",
     BUSINESS_RESPONSE_RECEIVED: "사업부서 담당자의 응답이 제출되어 최종 처리 결과 입력이 필요합니다.",
+    LEGAL_ACTION_RECORDED: "법무 처리 결과가 기록되어 이번 분기 검토가 완료되었습니다.",
   };
   return reasonMap[status];
 }
