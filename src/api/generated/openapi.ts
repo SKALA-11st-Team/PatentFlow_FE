@@ -1044,6 +1044,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings/ai-report-regen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getAiReportRegenSetting"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateAiReportRegenSetting"];
+        trace?: never;
+    };
     "/api/v1/settings/business-checklist-items": {
         parameters: {
             query?: never;
@@ -1410,7 +1426,7 @@ export interface components {
             missingInformation?: string[];
             rawMarkdown?: string;
             /** @enum {string} */
-            recommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
+            recommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "CONDITIONAL_MAINTAIN";
             recommendationReason?: string;
             reportId?: string;
             scores?: components["schemas"]["EvaluationScoreResponse"][];
@@ -1446,9 +1462,12 @@ export interface components {
             keyEvidence?: string;
             rawMarkdown?: string;
             /** @enum {string} */
-            recommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
+            recommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "CONDITIONAL_MAINTAIN";
             recommendationText?: string;
             scores?: components["schemas"]["ScoreOverride"][];
+        };
+        AiReportRegenSettingResponse: {
+            businessAllowed?: boolean;
         };
         AnnualFeeAdjustmentHistoryResponse: {
             /** Format: date-time */
@@ -1510,6 +1529,12 @@ export interface components {
         };
         ApiResponseAiReportJobResponse: {
             data?: components["schemas"]["AiReportJobResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseAiReportRegenSettingResponse: {
+            data?: components["schemas"]["AiReportRegenSettingResponse"];
             message?: string;
             /** Format: date-time */
             timestamp?: string;
@@ -2002,7 +2027,7 @@ export interface components {
         };
         BusinessSubmissionVersionResponse: {
             /** @enum {string} */
-            aiRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
+            aiRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "CONDITIONAL_MAINTAIN";
             /** Format: date-time */
             aiReportCreatedAt?: string;
             /** Format: int32 */
@@ -2346,7 +2371,7 @@ export interface components {
             coApplicants?: string;
             country?: string;
             /** @enum {string} */
-            currentRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
+            currentRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "CONDITIONAL_MAINTAIN";
             departmentId?: string;
             departmentName?: string;
             draftTitle?: string;
@@ -2417,7 +2442,7 @@ export interface components {
             country?: string;
             currentQuarterKey?: string;
             /** @enum {string} */
-            currentRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "HOLD";
+            currentRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "CONDITIONAL_MAINTAIN";
             departmentId?: string;
             departmentName?: string;
             draftTitle?: string;
@@ -4426,6 +4451,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseAiReportJobResponse"];
+                };
+            };
+        };
+    };
+    getAiReportRegenSetting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseAiReportRegenSettingResponse"];
+                };
+            };
+        };
+    };
+    updateAiReportRegenSetting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiReportRegenSettingResponse"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseAiReportRegenSettingResponse"];
                 };
             };
         };

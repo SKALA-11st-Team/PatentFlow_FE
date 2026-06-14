@@ -93,7 +93,7 @@ function getSubmissionScore(recommendation: Recommendation, version: number) {
     MAINTAIN: 80,
     REVIEW_AGAIN: 64,
     ABANDON: 48,
-    HOLD: 60,
+    CONDITIONAL_MAINTAIN: 60,
   };
 
   return Math.min(95, baseScore[recommendation] + version * 2);

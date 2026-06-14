@@ -430,7 +430,7 @@ function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRo
     MAINTAIN: `${productText} 관련 기술성, 권리성, 유지 비용 대비 가치가 확인되어 유지 권고가 타당한 AI 특허 평가 레포트입니다.`,
     REVIEW_AGAIN: "권리성, 기술성, 시장성, 사업 연계성 중 일부 근거 보완이 필요한 AI 특허 평가 레포트입니다.",
     ABANDON: "권리성 또는 사업 연계성 보완 근거가 부족해 포기 검토가 가능한 AI 특허 평가 레포트입니다.",
-    HOLD: "권리성, 시장성, 사업 연계성 일부 정보가 부족해 추가 정보 확인이 필요한 AI 특허 평가 레포트입니다.",
+    CONDITIONAL_MAINTAIN: "권리성·기술성 기반은 확인되나 일부 근거 보완을 전제로 조건부 유지가 적절한 AI 특허 평가 레포트입니다.",
   };
 
   return textMap[recommendation];
@@ -476,7 +476,7 @@ function getTotalScore(recommendation: Recommendation, index: number) {
     MAINTAIN: 82,
     REVIEW_AGAIN: 68,
     ABANDON: 45,
-    HOLD: 60,
+    CONDITIONAL_MAINTAIN: 60,
   };
 
   return Math.min(95, baseScore[recommendation] + (index % 7));

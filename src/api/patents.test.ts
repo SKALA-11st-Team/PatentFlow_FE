@@ -74,7 +74,7 @@ describe("patents API Utils", () => {
       reviewWorkflowStatus: "REVIEW_QUARTER_STARTED",
       feeDueDate: "2026-07-01",
       reviewReason: "연차료 검토",
-      currentRecommendation: "HOLD",
+      currentRecommendation: "REVIEW_AGAIN",
       businessOpinionDecision: null,
       legalActionResult: null,
     } satisfies BackendPatentListItem;
@@ -128,7 +128,7 @@ describe("patents API Utils", () => {
       const report = mapBackendAiEvaluationReport({
         reportId: "R-1",
         createdAt: "2026-06-08T00:00:00Z",
-        recommendation: "HOLD",
+        recommendation: "REVIEW_AGAIN",
         recommendationReason: "근거 제한",
         totalScore: 0,
         averageScore: 0,

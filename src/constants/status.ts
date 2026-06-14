@@ -21,7 +21,7 @@ export const REVIEW_WORKFLOW_STATUSES = [
 
 export type ReviewWorkflowStatus = (typeof REVIEW_WORKFLOW_STATUSES)[number];
 
-export const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "HOLD"] as const;
+export const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "CONDITIONAL_MAINTAIN"] as const;
 
 export type Recommendation = (typeof RECOMMENDATIONS)[number];
 
@@ -142,14 +142,14 @@ export const recommendationLabels: Record<Recommendation, string> = {
   MAINTAIN: "유지 권고",
   REVIEW_AGAIN: "추가 정보 필요",
   ABANDON: "포기 검토",
-  HOLD: "조건부 유지",
+  CONDITIONAL_MAINTAIN: "조건부 유지",
 };
 
 export const recommendationTone: Record<Recommendation, StatusTone> = {
   MAINTAIN: "success",
   REVIEW_AGAIN: "warning",
   ABANDON: "danger",
-  HOLD: "warning",
+  CONDITIONAL_MAINTAIN: "warning",
 };
 
 /**
@@ -174,7 +174,7 @@ export const RECOMMENDATION_FILTER_OPTIONS = [
   },
   {
     label: recommendationLabels.REVIEW_AGAIN,
-    recommendations: ["REVIEW_AGAIN", "HOLD"],
+    recommendations: ["REVIEW_AGAIN", "CONDITIONAL_MAINTAIN"],
     value: "REVIEW_AGAIN_OR_HOLD",
   },
   {

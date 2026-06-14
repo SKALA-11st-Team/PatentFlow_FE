@@ -230,7 +230,7 @@ function getMockGeneratedRecommendation(patent: PatentDetail): Recommendation {
     return "REVIEW_AGAIN";
   }
 
-  return patent.currentRecommendation === "HOLD" ? "REVIEW_AGAIN" : patent.currentRecommendation;
+  return patent.currentRecommendation === "CONDITIONAL_MAINTAIN" ? "REVIEW_AGAIN" : patent.currentRecommendation;
 }
 
 function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recommendation): AiEvaluationReport {
@@ -267,7 +267,7 @@ function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recom
 function getGeneratedMockRecommendationText(recommendation: Recommendation) {
   const textMap: Record<Recommendation, string> = {
     ABANDON: "AI 평가 결과 사업 연계성과 유지 필요성 근거가 부족해 포기 검토가 필요합니다.",
-    HOLD: "AI 평가 결과 일부 근거가 부족해 추가 확인 후 판단하는 것이 적절합니다.",
+    CONDITIONAL_MAINTAIN: "AI 평가 결과 권리성·기술성 기반은 확인되나 일부 근거 보완을 전제로 조건부 유지가 적절합니다.",
     MAINTAIN: "AI 평가 결과 권리성, 기술성, 사업 연계성 근거가 확인되어 유지 검토가 가능합니다.",
     REVIEW_AGAIN: "AI 평가 결과 일부 평가 근거 보완 후 다시 검토하는 것이 적절합니다.",
   };

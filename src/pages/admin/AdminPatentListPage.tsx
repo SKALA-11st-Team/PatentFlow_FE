@@ -725,7 +725,7 @@ function createListItemFromForm(form: PatentFormState, patentId: string): Patent
     reviewWorkflowStatus: "NOT_IN_REVIEW",
     feeDueDate: getNextAnnualFeeDueDate(form.applicationDate, undefined, form.registrationDate),
     reviewReason: "관리자가 등록한 특허입니다. 검토 분기 도래 시 AI 평가 대상에 포함됩니다.",
-    currentRecommendation: "HOLD",
+    currentRecommendation: "REVIEW_AGAIN",
     businessOpinionDecision: null,
     legalActionResult: null,
   };
