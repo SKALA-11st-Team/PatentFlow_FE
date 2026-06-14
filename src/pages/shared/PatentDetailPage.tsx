@@ -289,6 +289,17 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                 }
               : undefined
           }
+          regenerateControls={
+            isAdmin &&
+            !patent.finalDecisionRecord.decisionId &&
+            patent.reviewWorkflowStatus !== "REVIEW_QUARTER_STARTED"
+              ? {
+                  isRegenerating: isWorkflowActionProcessing,
+                  regenerateMessage: workflowActionMessage,
+                  onRegenerate: handleRequestAiReport,
+                }
+              : undefined
+          }
         />
 
         <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
