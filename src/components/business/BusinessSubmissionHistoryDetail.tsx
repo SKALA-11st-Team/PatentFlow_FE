@@ -270,6 +270,25 @@ function EvaluationHistoryModal({
         <strong>{submission.checklistTotal}점</strong>
         <small>정성 평가 {submission.qualitativeScore}점을 포함한 사업부 제출 기준 점수입니다.</small>
       </div>
+      {submission.evaluatedAt || submission.qualitativeMemo || submission.additionalNeeds ? (
+        <div className="submission-memo-block">
+          {submission.evaluatedAt ? (
+            <p>
+              <strong>평가일</strong> {submission.evaluatedAt}
+            </p>
+          ) : null}
+          {submission.qualitativeMemo ? (
+            <p>
+              <strong>정성 평가 메모</strong> {submission.qualitativeMemo}
+            </p>
+          ) : null}
+          {submission.additionalNeeds ? (
+            <p>
+              <strong>추가 확인 필요</strong> {submission.additionalNeeds}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="evaluation-history-list">
         {submission.checklistScores.map((score) => {
           const checklistItem = businessChecklistItems.find((item) => item.id === score.itemId);

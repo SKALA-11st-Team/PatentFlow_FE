@@ -24,4 +24,8 @@ export interface BusinessSubmissionVersion {
   checklistTotal: number;
   checklistScores: BusinessSubmissionChecklistScore[];
   qualitativeScore: number;
+  // 사업부 자유 입력 — 제출 당시 값으로 영속화된다(과거/시드 제출에는 없을 수 있어 선택적).
+  qualitativeMemo?: string | null;
+  additionalNeeds?: string | null;
+  evaluatedAt?: string | null;
 }

@@ -2010,6 +2010,7 @@ export interface components {
             score?: number;
         };
         BusinessSubmissionVersionResponse: {
+            additionalNeeds?: string;
             /** @enum {string} */
             aiRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "CONDITIONAL_MAINTAIN";
             /** Format: date-time */
@@ -2021,8 +2022,10 @@ export interface components {
             checklistTotal?: number;
             /** @enum {string} */
             decision?: "MAINTAIN" | "ABANDON";
+            evaluatedAt?: string;
             /** @enum {string} */
             finalOpinion?: "MAINTAIN" | "ABANDON";
+            qualitativeMemo?: string;
             /** Format: int32 */
             qualitativeScore?: number;
             reason?: string;
