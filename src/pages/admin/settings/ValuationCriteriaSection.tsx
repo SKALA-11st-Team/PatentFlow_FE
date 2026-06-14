@@ -3,11 +3,14 @@ import { getApiErrorMessage } from "../../../api/client";
 import { MarkdownView } from "../../../components/common/MarkdownView";
 import {
   DEFAULT_VALUATION_CRITERIA,
+  getAiReportRegenSetting,
   getValuationCriteria,
   getValuationCriteriaHistory,
   getValuationPrompts,
+  updateAiReportRegenSetting,
   updateValuationCriteria,
   updateValuationPrompt,
+  type AiReportRegenSetting,
   type ValuationCriteria,
   type ValuationCriteriaPayload,
   type ValuationCriteriaVersion,
@@ -62,6 +65,9 @@ export function ValuationCriteriaSection() {
   const [isSaving, setIsSaving] = useState(false);
   const [savingPromptAxis, setSavingPromptAxis] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [regenSetting, setRegenSetting] = useState<AiReportRegenSetting>({ businessAllowed: false });
+  const [isSavingRegen, setIsSavingRegen] = useState(false);
+  const [regenMessage, setRegenMessage] = useState("");
 
   const applyCriteria = (next: ValuationCriteria) => {
     setCriteria(next);
@@ -82,12 +88,13 @@ export function ValuationCriteriaSection() {
 
   useEffect(() => {
     let isMounted = true;
-    Promise.all([getValuationCriteria(), getValuationCriteriaHistory(), getValuationPrompts()])
-      .then(([current, versions, nextPrompts]) => {
+    Promise.all([getValuationCriteria(), getValuationCriteriaHistory(), getValuationPrompts(), getAiReportRegenSetting()])
+      .then(([current, versions, nextPrompts, regen]) => {
         if (!isMounted) return;
         applyCriteria(current);
         setHistory(versions);
         applyPrompts(nextPrompts);
+        setRegenSetting(regen);
       })
       .catch((error) => {
         if (isMounted) setMessage(getApiErrorMessage(error, "가치평가 기준을 불러오지 못했습니다."));
@@ -326,6 +333,38 @@ export function ValuationCriteriaSection() {
         ) : (
           <p className="empty-table-cell">Agent md 기준을 불러오지 못했습니다.</p>
         )}
+      </div>
+
+      <div className="settings-row">
+        <label className="settings-label">
+          <strong>사업부 AI 레포트 재생성 허용</strong>
+          <small>활성화 시 사업부 사용자도 특허 상세 화면에서 AI 레포트를 재생성할 수 있습니다.</small>
+        </label>
+        <div className="settings-control">
+          <label className="toggle-label">
+            <input
+              checked={regenSetting.businessAllowed}
+              disabled={isSavingRegen}
+              onChange={async (event) => {
+                const next = event.target.checked;
+                setIsSavingRegen(true);
+                setRegenMessage("");
+                try {
+                  const updated = await updateAiReportRegenSetting(next);
+                  setRegenSetting(updated);
+                  setRegenMessage(next ? "사업부 재생성 허용으로 변경되었습니다." : "ADMIN/LEGAL 전용으로 변경되었습니다.");
+                } catch (error) {
+                  setRegenMessage(getApiErrorMessage(error, "설정 저장에 실패했습니다."));
+                } finally {
+                  setIsSavingRegen(false);
+                }
+              }}
+              type="checkbox"
+            />
+            {regenSetting.businessAllowed ? "허용" : "비허용 (ADMIN/LEGAL 전용)"}
+          </label>
+          {regenMessage ? <span className="settings-message">{regenMessage}</span> : null}
+        </div>
       </div>
 
       {history.length ? (

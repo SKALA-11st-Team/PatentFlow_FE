@@ -142,7 +142,7 @@ export const recommendationLabels: Record<Recommendation, string> = {
   MAINTAIN: "유지 권고",
   REVIEW_AGAIN: "추가 정보 필요",
   ABANDON: "포기 검토",
-  HOLD: "추가 정보 필요",
+  HOLD: "조건부 유지",
 };
 
 export const recommendationTone: Record<Recommendation, StatusTone> = {

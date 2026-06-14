@@ -337,6 +337,33 @@ export async function deleteChecklistItem(itemId: string): Promise<void> {
   await requestJson<ApiEnvelope<void>>(`/settings/business-checklist-items/${itemId}`, { method: "DELETE" });
 }
 
+// ── AI 레포트 재생성 권한 설정 ───────────────────────────────
+// 기본 false — ADMIN/LEGAL만 재생성. true 시 BUSINESS도 허용.
+
+export interface AiReportRegenSetting {
+  businessAllowed: boolean;
+}
+
+let mockAiReportRegenSetting: AiReportRegenSetting = { businessAllowed: false };
+
+export async function getAiReportRegenSetting(): Promise<AiReportRegenSetting> {
+  if (!isBackendApiEnabled()) return { ...mockAiReportRegenSetting };
+  const response = await requestJson<ApiEnvelope<AiReportRegenSetting>>("/settings/ai-report-regen");
+  return response.data ?? { businessAllowed: false };
+}
+
+export async function updateAiReportRegenSetting(businessAllowed: boolean): Promise<AiReportRegenSetting> {
+  if (!isBackendApiEnabled()) {
+    mockAiReportRegenSetting = { businessAllowed };
+    return { ...mockAiReportRegenSetting };
+  }
+  const response = await requestJson<ApiEnvelope<AiReportRegenSetting>>(
+    "/settings/ai-report-regen",
+    { method: "PATCH", body: JSON.stringify({ businessAllowed }) },
+  );
+  return response.data ?? { businessAllowed };
+}
+
 export interface MailOAuth2Status {
   connected: boolean;
   connectedEmail: string | null;
@@ -361,8 +388,28 @@ export async function redirectToGoogleOAuth2(): Promise<void> {
   if (url) window.location.href = url;
 }
 
+// mock 모드에서 사업부 대시보드의 회신 기한·접근 윈도우 배너가 렌더되도록 시드된 활성 분기를 돌려준다.
+// 회신 기한(submissionDeadline)은 invitations.mock의 회신 기한과 동일하게 둔다(결정론).
+const MOCK_ACTIVE_QUARTER: QuarterSetting = {
+  quarterKey: "2026-Q3",
+  year: 2026,
+  quarterNumber: 3,
+  quarterLabel: "2026년 3분기",
+  startDate: "2026-07-01",
+  endDate: "2026-09-30",
+  activated: true,
+  activatedAt: "2026-05-01T09:00:00+09:00",
+  ended: false,
+  endedAt: null,
+  targetPatentCount: 12,
+  submissionDeadline: "2026-07-31",
+  businessResponseDueDate: "2026-07-31",
+  mailLeadMonths: 2,
+  scheduledMailSendDate: "2026-05-01",
+};
+
 export async function getActiveQuarter(): Promise<QuarterSetting | null> {
-  if (!isBackendApiEnabled()) return null;
+  if (!isBackendApiEnabled()) return { ...MOCK_ACTIVE_QUARTER };
   const response = await requestJson<ApiEnvelope<QuarterSetting>>(
     "/settings/review-quarters/active",
   );

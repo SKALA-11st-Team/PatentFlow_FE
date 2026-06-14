@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { getAiReportRegenSetting } from "../../api/settings";
 import { Link } from "react-router-dom";
 import { downloadPatentPdf, getPatentFamily, getPatentFeeSchedule, getPatentPdfMeta } from "../../api/patents";
 import { AppLayout } from "../../components/layout/AppLayout";
@@ -100,6 +101,11 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
       aiReportSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [aiReportScrollTrigger]);
+
+  const [aiReportRegenBusinessAllowed, setAiReportRegenBusinessAllowed] = useState(false);
+  useEffect(() => {
+    getAiReportRegenSetting().then((s) => setAiReportRegenBusinessAllowed(s.businessAllowed)).catch(() => {});
+  }, []);
 
   // FEE-06: 연차료 일정은 BE fee-schedule API가 단일 출처 — 국가 규칙·검토 시작일·수신처 포함.
   const [feeSchedule, setFeeSchedule] = useState<PatentFeeSchedule | null>(null);
@@ -299,6 +305,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
               : undefined
           }
           regenerateControls={
+            (role !== "BUSINESS" || aiReportRegenBusinessAllowed) &&
             !patent.finalDecisionRecord?.decisionId &&
             patent.reviewWorkflowStatus !== "REVIEW_QUARTER_STARTED"
               ? {
