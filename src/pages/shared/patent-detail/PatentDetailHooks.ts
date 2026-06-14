@@ -144,6 +144,7 @@ export function usePatentDetail(role: UserRole) {
   const [patentHistoryMessage, setPatentHistoryMessage] = useState("");
   const [isWorkflowActionProcessing, setIsWorkflowActionProcessing] = useState(false);
   const [workflowActionMessage, setWorkflowActionMessage] = useState("");
+  const [aiReportScrollTrigger, setAiReportScrollTrigger] = useState(0);
   const checklistTotal = getBusinessChecklistTotal(businessChecklistSubmission);
   const canRecordFinalDecision = patent ? isFinalDecisionRecordable(patent) : false;
   const canSendBusinessReviewMail = patent?.reviewWorkflowStatus === "MAIL_READY";
@@ -336,6 +337,7 @@ export function usePatentDetail(role: UserRole) {
       if (updated) {
         setPatent(updated);
         refreshPatentHistory(updated.patentId);
+        setAiReportScrollTrigger((n) => n + 1);
       }
       setWorkflowActionMessage(
         completedJob?.status === "DEGRADED"
@@ -407,6 +409,7 @@ export function usePatentDetail(role: UserRole) {
     handleConfirmSendMails: mailWorkflow.handleConfirmSendMails,
     handleRecordFinalDecision: finalDecision.handleRecordFinalDecision,
     handleRequestAiReport,
+    aiReportScrollTrigger,
     openFinalDecisionModal: finalDecision.openFinalDecisionModal,
   };
 }
