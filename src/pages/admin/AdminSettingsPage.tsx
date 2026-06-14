@@ -150,6 +150,8 @@ export function AdminSettingsPage() {
       setClassificationMessage("분류 설정이 저장되었습니다.");
     } catch (error) {
       setClassificationMessage(error instanceof Error ? error.message : "분류 설정 저장에 실패했습니다.");
+      // 실패를 호출자(ClassificationEditor)에 전파해 성공 분기(입력 초기화·편집 종료)가 실행되지 않도록 한다.
+      throw error;
     }
   }
 

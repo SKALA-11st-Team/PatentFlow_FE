@@ -31,7 +31,8 @@ interface ScoreDraft {
   evidenceSummary: string;
 }
 
-// 점수(0~100)로 등급 미리보기를 산출한다 — 기준 변경 시 BE가 최종 등급을 재검증한다.
+// 점수(0~100)로 축별 등급(A/B/C/D)을 미리보기 산출한다. 컷오프 80/60/40은 Agent의
+// 축 등급 산정(grade_for_score)과 동일하며, 전송 시 BE는 이 grade 값을 그대로 저장한다.
 function previewGrade(score: number): string {
   if (score >= 80) return "A";
   if (score >= 60) return "B";

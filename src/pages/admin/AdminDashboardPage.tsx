@@ -543,7 +543,8 @@ function formatPercent(value: number, total: number) {
     return "0%";
   }
 
-  return `${Math.round((value / total) * 100)}%`;
+  // 분자(전체 누적 처리 완료)와 분모(분기 한정 대상)의 모집단이 달라 100%를 넘을 수 있으므로 표시값을 클램프한다.
+  return `${Math.min(100, Math.round((value / total) * 100))}%`;
 }
 
 /**

@@ -121,8 +121,8 @@ function formatNotificationTime(createdAt: string) {
  * @description 알림 목록을 오늘, 지난주, 그 이전으로 묶는다.
  */
 function getGroupedNotifications(notifications: AppNotification[]) {
-  const sortedNotifications = [...notifications].sort((first, second) =>
-    second.createdAt.localeCompare(first.createdAt),
+  const sortedNotifications = [...notifications].sort(
+    (first, second) => new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
   );
   const groups = [
     { label: "오늘", notifications: [] as AppNotification[] },

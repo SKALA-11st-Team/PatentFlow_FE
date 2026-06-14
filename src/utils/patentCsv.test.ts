@@ -37,4 +37,34 @@ describe("patentCsv (F5)", () => {
     expect(csv).toContain('"쉼표,제목"');
     expect(csv.split("\n")[0]).toContain("managementNumber");
   });
+
+  it("내보낸 CSV를 다시 가져오면 출원일·등록일·공동출원인·만료일·제품명이 보존된다", () => {
+    const patent = {
+      managementNumber: "P2026-KR9",
+      title: "라운드트립 특허",
+      country: "KR",
+      applicationDate: "2024-02-03",
+      registrationDate: "2025-05-06",
+      applicationNumber: "10-2024-000999",
+      registrationNumber: "10-2025-111222",
+      coApplicants: "협력사",
+      expectedExpirationDate: "2044-02-03",
+      businessArea: "Data Platform",
+      technologyArea: "AI",
+      productName: "PatentFlow",
+    } as unknown as PatentListItem;
+
+    const csv = patentsToCsv([patent]);
+    const result = parsePatentCsv(csv);
+
+    expect(result.errors).toHaveLength(0);
+    expect(result.rows).toHaveLength(1);
+    const payload = result.rows[0].payload;
+    expect(payload.applicationDate).toBe("2024-02-03");
+    expect(payload.registrationDate).toBe("2025-05-06");
+    expect(payload.coApplicants).toBe("협력사");
+    expect(payload.expectedExpirationDate).toBe("2044-02-03");
+    expect(payload.productName).toBe("PatentFlow");
+    expect(payload.registrationNumber).toBe("10-2025-111222");
+  });
 });

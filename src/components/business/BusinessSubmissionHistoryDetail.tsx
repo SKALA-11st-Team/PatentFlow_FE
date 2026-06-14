@@ -116,6 +116,7 @@ export function BusinessSubmissionHistoryDetail({ patent }: { patent: PatentDeta
                     </article>
                   </div>
                   <div className="submission-report-preview">
+                    <span className="submission-report-preview-label">현재 AI 레포트 축별 점수</span>
                     {patent.aiEvaluationReport.scores.map((score) => (
                         <span key={score.category}>
                           {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
@@ -224,6 +225,7 @@ function AiReportModal({
           {recommendationLabels[submission.aiRecommendation]}
         </Badge>
       </div>
+      <p className="eyebrow">현재 AI 레포트 축별 점수 (제출 당시 스냅샷 미보존)</p>
       <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
       <div className="score-list">
         {patent.aiEvaluationReport.scores.map((score) => (

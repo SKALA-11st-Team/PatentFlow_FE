@@ -11,7 +11,7 @@ export interface UserItem {
   id: string;
   email: string;        // 로그인 ID
   username: string;     // 실제 이름
-  role: "ADMIN" | "BUSINESS";
+  role: "ADMIN" | "LEGAL" | "BUSINESS";
   departmentId: string | null;
   departmentName: string | null;
   createdAt: string;
@@ -19,7 +19,7 @@ export interface UserItem {
 
 export interface CreateUserRequest {
   email: string;        // 로그인 ID — 이메일 형식 필수
-  role: "ADMIN" | "BUSINESS";
+  role: "ADMIN" | "LEGAL" | "BUSINESS";
   departmentId: string | null;
   departmentName: string | null;
   username: string;     // 실제 이름
@@ -31,6 +31,8 @@ export interface ResetPasswordResult {
   userId: string;
   email: string;          // 임시 비밀번호를 발송한 수신 이메일 = 로그인 ID (구 username 필드)
   temporaryPassword: string;
+  emailSent?: boolean;    // 임시 비밀번호 메일 발송 성공 여부 (mock 응답에는 없을 수 있음)
+  message?: string;       // 메일 발송 결과 안내문
 }
 
 export async function getUsers(): Promise<UserItem[]> {

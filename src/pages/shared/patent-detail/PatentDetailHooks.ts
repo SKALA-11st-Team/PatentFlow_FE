@@ -333,10 +333,17 @@ export function usePatentDetail(role: UserRole) {
         return;
       }
 
-      const updated = await getPatentDetail(patent.patentId);
+      // 사업부 사용자는 ADMIN 전용 /patents/{id}가 403이므로 역할에 맞는 상세 API로 재조회한다.
+      // 과거에는 항상 getPatentDetail을 호출해 재생성이 성공해도 403이 catch로 잡혀 실패로 표시됐다.
+      const updated = isAdmin
+        ? await getPatentDetail(patent.patentId)
+        : await getBusinessPatentDetail(patent.patentId);
       if (updated) {
         setPatent(updated);
-        refreshPatentHistory(updated.patentId);
+        // /patents/{id}/history도 ADMIN 전용 — BUSINESS는 보장된 403 호출을 생략한다.
+        if (isAdmin) {
+          refreshPatentHistory(updated.patentId);
+        }
         setAiReportScrollTrigger((n) => n + 1);
       }
       setWorkflowActionMessage(

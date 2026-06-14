@@ -227,6 +227,10 @@ export function AnnualFeeSettingsSection() {
                 {feeRules.map((rule) => {
                   const draft = feeRuleDrafts[rule.country] ?? toFeeRuleDraft(rule);
                   const isDirty = dirtyFeeRuleCountries.includes(rule.country);
+                  // BE AnnualFeeScheduleService.ruleFor가 고정 유지료 일정(maintenanceMonths)을
+                  // 내장한 국가는 기산일·일괄 연차 오버라이드를 무시한다. 편집을 허용하면 저장은
+                  // 되지만 응답에서 원복되는 silent no-op이 되므로 입력을 잠근다.
+                  const isFixedRule = hasFixedSchedule(rule.country);
                   const updateDraft = (patch: Partial<FeeRuleDraft>) =>
                     setFeeRuleDrafts((prev) => ({ ...prev, [rule.country]: { ...draft, ...patch } }));
                   return (
@@ -239,6 +243,7 @@ export function AnnualFeeSettingsSection() {
                       <td>
                         <select
                           aria-label={`${rule.country} 기산일`}
+                          disabled={isFixedRule}
                           onChange={(event) => updateDraft({ basis: event.target.value as FeeRule["basis"] })}
                           value={draft.basis}
                         >
@@ -249,6 +254,7 @@ export function AnnualFeeSettingsSection() {
                       <td>
                         <input
                           aria-label={`${rule.country} 일괄 납부 연차`}
+                          disabled={isFixedRule}
                           max={10}
                           min={0}
                           onChange={(event) => updateDraft({ initialLumpYears: Number(event.target.value) })}
@@ -256,7 +262,12 @@ export function AnnualFeeSettingsSection() {
                           value={draft.initialLumpYears}
                         />
                       </td>
-                      <td className="rule-label-cell">{rule.ruleLabel}</td>
+                      <td className="rule-label-cell">
+                        {rule.ruleLabel}
+                        {isFixedRule ? (
+                          <span className="table-subtext">고정 유지료 일정 — 기산일·일괄 연차 변경 불가</span>
+                        ) : null}
+                      </td>
                     </tr>
                   );
                 })}
@@ -293,6 +304,15 @@ interface FeeRuleDraft {
 
 function toFeeRuleDraft(rule: FeeRule): FeeRuleDraft {
   return { basis: rule.basis, initialLumpYears: rule.initialLumpYears, cycleMonths: rule.cycleMonths };
+}
+
+// BE AnnualFeeScheduleService.ruleFor가 고정 유지료 일정을 내장해 기산일·일괄 연차
+// 오버라이드를 적용하지 않는 국가. US는 등록일 기준 3.5/7.5/11.5년 유지료 일정으로 고정.
+// (BE가 별도 플래그를 노출하지 않아 국가 코드로 식별한다.)
+const FIXED_SCHEDULE_COUNTRIES = new Set(["US"]);
+
+function hasFixedSchedule(country: string): boolean {
+  return FIXED_SCHEDULE_COUNTRIES.has(country.trim().toUpperCase());
 }
 
 function normalizeRounds(extension: CountryExtension): number[] {

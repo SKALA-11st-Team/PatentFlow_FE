@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { getApiErrorMessage } from "../../api/client";
 import type { Department } from "../../api/departments";
 import { assignPatentDepartment } from "../../api/patents";
+import { useToast } from "../common/toastContext";
 
 interface DepartmentAssignerProps {
   patentId: string;
@@ -27,6 +29,7 @@ export function DepartmentAssigner({
   const [isEditing, setIsEditing] = useState(false);
   const [assigningDeptId, setAssigningDeptId] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
+  const { showToast } = useToast();
 
   async function handleAssign() {
     if (!assigningDeptId) return;
@@ -37,6 +40,9 @@ export function DepartmentAssigner({
       onAssignSuccess(assigningDeptId, assigned?.departmentName ?? assigningDeptId);
       setIsEditing(false);
       setAssigningDeptId("");
+    } catch (error) {
+      // 배정 실패 시 편집 모드를 유지하고 사용자에게 실패를 알린다.
+      showToast(getApiErrorMessage(error, "사업부 배정에 실패했습니다."), "error");
     } finally {
       setIsAssigning(false);
     }

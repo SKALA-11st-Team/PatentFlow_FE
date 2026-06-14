@@ -262,6 +262,39 @@ export function AiReportSection({
           </ul>
         </div>
       ) : null}
+      {report.missingInformation?.length ? (
+        <div className="report-block">
+          <h3>정보 부족 · 추가 확인 필요</h3>
+          <ul className="clean-list">
+            {report.missingInformation.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {report.externalSources?.length ? (
+        <div className="report-block">
+          <h3>외부 근거</h3>
+          <ul className="clean-list">
+            {report.externalSources.map((source) =>
+              safeExternalUrl(source.url) ? (
+                <li key={`${source.title}-${source.url ?? ""}`}>
+                  <a
+                    className="inline-source-link"
+                    href={safeExternalUrl(source.url) ?? undefined}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {source.title}
+                  </a>
+                </li>
+              ) : (
+                <li key={`${source.title}-${source.url ?? ""}`}>{source.title}</li>
+              ),
+            )}
+          </ul>
+        </div>
+      ) : null}
       {report.rawMarkdown ? (
         <RawMarkdownBlock content={report.rawMarkdown} title="AI 특허 평가 레포트 전문" />
       ) : null}

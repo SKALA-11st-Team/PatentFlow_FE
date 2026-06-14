@@ -85,6 +85,12 @@ export interface BulkMailingResult {
   skippedPatentIds?: string[];
   updatedCount: number;
   updatedPatentIds: string[];
+  // BE MailingSendResponse 정합화: 부분 발송 실패/연동 미설정 기록을 발송 화면에서 노출하기 위한 신호.
+  // sentCount=실발송, failedCount=SMTP 실패(FAILED 이력), recordedCount=Google 계정 미연동으로 발송 없이 기록만.
+  mailingBatchId?: string;
+  sentCount?: number;
+  failedCount?: number;
+  recordedCount?: number;
 }
 
 export interface FinalDecisionPayload {
@@ -893,7 +899,9 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
   const rawTotalScore = typeof report.totalScore === "number" ? report.totalScore : getScoreTotal(scores) ?? 0;
   const averageScore = typeof report.averageScore === "number"
     ? report.averageScore
-    : scoreAverage ?? (rawTotalScore > 0 ? Math.round((rawTotalScore / 4) * 10) / 10 : undefined);
+    // BE PatentWorkflowService.averageScore 폴백과 정합: totalScore는 핵심 평가축(권리성·기술성·시장성) 3축 합이므로
+    // 평균 환산도 3으로 나눈다(이전 /4는 BE /3과 어긋나 동일 입력에서 평균을 약 25% 과소 산정했다).
+    : scoreAverage ?? (rawTotalScore > 0 ? Math.round((rawTotalScore / 3) * 10) / 10 : undefined);
 
   return {
     evaluationId: report.reportId,

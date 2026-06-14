@@ -250,6 +250,12 @@ export function AdminUsersPage() {
 
   async function handleChangePassword(event: FormEvent) {
     event.preventDefault();
+    if (passwordForm.newPassword.length < 10) {
+      // BE ChangePasswordRequest의 @Size(min=10)와 일치시켜 모호한 서버 400 대신 명확히 안내한다.
+      setPwModalMessage("새 비밀번호는 10자 이상이어야 합니다.");
+      setIsPwModalError(true);
+      return;
+    }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setPwModalMessage("새 비밀번호가 일치하지 않습니다.");
       setIsPwModalError(true);

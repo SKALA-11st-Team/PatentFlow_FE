@@ -241,7 +241,9 @@ function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recom
         evidenceSummary: "AI 평가 생성 후 상세 근거 확인이 필요한 항목입니다.",
         score: null,
       }));
-  // CONTRACT-02: totalScore=0~400 원문 합, averageScore=0~100 평균으로 라이브 응답과 동일한 척도를 유지한다.
+  // CONTRACT-02: totalScore=축별 점수(0~100) 원문 합(4축이면 0~400), averageScore=0~100 평균.
+  // 이는 FE 표시 계층(patents.ts getTotalScoreText의 maxScore=scores.length*100)과 동일한 척도이며,
+  // Agent/BE 응답 필드 total_score(권리성·기술성·시장성 3축 합, 0~300)와는 다른 척도다.
   const scoredValues = scores.flatMap((score) => (score.score == null ? [] : [score.score]));
   const scoreSum = scoredValues.reduce((sum, score) => sum + score, 0);
   const averageScore = scoredValues.length
@@ -461,7 +463,9 @@ export function createFallbackFinalDecisionResult(patentId: string, payload: Fin
     },
     legalActionResult: payload.legalActionResult,
     patentId,
-    reviewWorkflowStatus: "NOT_IN_REVIEW",
+    // 법무 최종판단 기록 후 워크플로우 종착 상태는 LEGAL_ACTION_RECORDED('처리 완료')다.
+    // BE PatentWorkflowService(withFinalDecision/withPatchedFinalDecision)와 정합시킨다.
+    reviewWorkflowStatus: "LEGAL_ACTION_RECORDED",
   };
 }
 

@@ -156,7 +156,7 @@ export function FinalDecisionSection({
                       ? "처리 중..."
                       : patentDetail.businessOpinion.opinion === "ABANDON"
                         ? "포기 처리"
-                        : "납부 완료"}
+                        : "유지 처리"}
                   </Button>
                   {isJointApplication && !isCoApplicantAgreed ? (
                     <p className="notice">공동출원인 합의(합의 완료) 후 유지/포기 처리를 진행할 수 있습니다.</p>
@@ -213,8 +213,8 @@ export function FinalDecisionModal({
     <Modal ariaLabel="최종 처리 결과 입력" className="business-checklist-modal" onClose={onClose}>
       <div className="modal-header">
         <div>
-          <p className="eyebrow">{legalActionResult === "ABANDONED" ? "포기 처리" : "납부 완료"}</p>
-          <h2>{legalActionResult === "ABANDONED" ? "포기 처리 확인" : "납부 완료 확인"}</h2>
+          <p className="eyebrow">{legalActionResult === "ABANDONED" ? "포기 처리" : "유지 처리"}</p>
+          <h2>{legalActionResult === "ABANDONED" ? "포기 처리 확인" : "유지 처리 확인"}</h2>
           <p>{patentTitle}</p>
         </div>
         <button aria-label="최종 처리 결과 닫기" className="modal-close-button" onClick={onClose} type="button">
@@ -235,7 +235,7 @@ export function FinalDecisionModal({
           취소
         </Button>
         <Button disabled={isSubmitting} onClick={onSubmit} type="button">
-          {isSubmitting ? "처리 중..." : legalActionResult === "ABANDONED" ? "포기 처리" : "납부 완료"}
+          {isSubmitting ? "처리 중..." : legalActionResult === "ABANDONED" ? "포기 처리" : "유지 처리"}
         </Button>
       </div>
     </Modal>
