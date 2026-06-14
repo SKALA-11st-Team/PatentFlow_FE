@@ -214,7 +214,6 @@ Frontend work should reflect these fixed requirements.
 - FR-LEGAL-12: 부서별 수신자 및 메일링 매핑 등록·수정
 - FR-LEGAL-13: 메일 발송 전 미리보기
 - FR-LEGAL-14: 메일 발송 이력 저장 및 조회
-- FR-LEGAL-15: 포기 특허 매각 후보 분류 및 조회
 - FR-LEGAL-16: 운영 기준 설정
 - FR-LEGAL-17: 특허 리스트 일괄 등록/업로드
 - FR-LEGAL-18: AI 작업 진행 상태 조회
@@ -524,22 +523,21 @@ Current FE status values must match `src/constants/status.ts`.
 Use these source arrays and derived union types instead of duplicating ad hoc string values in page components:
 
 ```ts
-const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "SOLD", "EXPIRED"] as const;
+const PATENT_LIFECYCLE_STATUSES = ["ACTIVE", "ABANDONED", "EXPIRED"] as const;
 
 const REVIEW_WORKFLOW_STATUSES = [
-  "NOT_IN_REVIEW_QUARTER",
+  "NOT_IN_REVIEW",
   "REVIEW_QUARTER_STARTED",
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "LEGAL_ACTION_RECORDED",
 ] as const;
 
-const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "SALES_CANDIDATE", "HOLD"] as const;
+const RECOMMENDATIONS = ["MAINTAIN", "REVIEW_AGAIN", "ABANDON", "HOLD"] as const;
 
 const BUSINESS_OPINION_DECISIONS = ["MAINTAIN", "ABANDON"] as const;
 
-const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED", "SOLD"] as const;
+const LEGAL_ACTION_RESULTS = ["MAINTAINED", "ABANDONED"] as const;
 
 const EVALUATION_CATEGORIES = ["RIGHTS", "TECHNOLOGY", "MARKET", "BUSINESS_ALIGNMENT"] as const;
 ```
@@ -550,24 +548,20 @@ Current Korean display labels:
 |---|---|---|
 | PatentLifecycleStatus | `ACTIVE` | 보유 중 |
 | PatentLifecycleStatus | `ABANDONED` | 포기 완료 |
-| PatentLifecycleStatus | `SOLD` | 매각 완료 |
 | PatentLifecycleStatus | `EXPIRED` | 소멸 |
-| ReviewWorkflowStatus | `NOT_IN_REVIEW_QUARTER` | 검토 분기 아님 |
+| ReviewWorkflowStatus | `NOT_IN_REVIEW` | 검토 분기 아님 |
 | ReviewWorkflowStatus | `REVIEW_QUARTER_STARTED` | 리포트 생성 대기 |
 | ReviewWorkflowStatus | `MAIL_READY` | 레포트 생성 완료 · 메일 발송 대기 |
 | ReviewWorkflowStatus | `WAITING_BUSINESS_RESPONSE` | 사업부 응답 대기 |
 | ReviewWorkflowStatus | `BUSINESS_RESPONSE_RECEIVED` | 사업부 응답 완료 |
-| ReviewWorkflowStatus | `LEGAL_ACTION_RECORDED` | 처리 완료 |
 | Recommendation | `MAINTAIN` | 유지 권고 |
 | Recommendation | `REVIEW_AGAIN` | 추가 정보 필요 |
 | Recommendation | `ABANDON` | 포기 검토 |
-| Recommendation | `SALES_CANDIDATE` | 포기 검토 |
 | Recommendation | `HOLD` | 추가 정보 필요 |
 | BusinessOpinionDecision | `MAINTAIN` | 유지 |
 | BusinessOpinionDecision | `ABANDON` | 포기 |
 | LegalActionResult | `MAINTAINED` | 유지 처리 |
 | LegalActionResult | `ABANDONED` | 포기 처리 |
-| LegalActionResult | `SOLD` | 매각 처리 |
 | EvaluationCategory | `RIGHTS` | 권리성 |
 | EvaluationCategory | `TECHNOLOGY` | 기술성 |
 | EvaluationCategory | `MARKET` | 시장성 |
@@ -581,7 +575,6 @@ const REVIEW_WORKFLOW_PROGRESS_STATUSES = [
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "LEGAL_ACTION_RECORDED",
 ] as const;
 ```
 
@@ -645,7 +638,7 @@ UI ID namespaces:
 | Namespace | 사용자 | 설명 |
 |---|---|---|
 | `UI-COM-NN` | 공통 | 로그인, 공통 레이아웃, 알림처럼 관리자와 사업부서팀이 함께 쓰는 UI |
-| `UI-LEGAL-NN` | 관리자 / Legal Team | 관리자 대시보드, 검토 대상, 특허관리, 특허 상세, 메일링, 매각 후보, 설정 UI |
+| `UI-LEGAL-NN` | 관리자 / Legal Team | 관리자 대시보드, 검토 대상, 특허관리, 특허 상세, 메일링, 설정 UI |
 | `UI-BUS-NN` | 사업부서팀 | 사업부 대시보드, 의견 요청, 특허 상세, 제출 이력, 설정 UI |
 
 Current official UI IDs:
@@ -661,7 +654,6 @@ Current official UI IDs:
 | `UI-LEGAL-04` | 특허 상세 | 관리자 | 특허 요약, AI 레포트, 근거, 권고안, 최종 판단 확인 |
 | `UI-LEGAL-04-1` | 특허 상세-1 | 관리자 | 특허 상세의 보조/확장 화면 또는 발표용 세부 화면 |
 | `UI-LEGAL-05` | 메일링 | 관리자 | 사업부 검토 요청 메일 미리보기, 발송, 발송 이력 조회 |
-| `UI-LEGAL-06` | 매각 후보 관리 | 관리자 | 포기/매각 대상 특허 후보 목록과 처리 상태 조회 |
 | `UI-LEGAL-07` | 관리자 설정 | 관리자 | 운영 기준, 평가 기준, 부서/메일링 설정 관리 |
 | `UI-LEGAL-08` | 사용자 관리 | 관리자 | 관리자와 사업부 사용자 계정/부서 권한 관리 |
 | `UI-BUS-01` | 사업부서 대시보드 | 사업부서 | 부서에 배정받은 연차료 검토 특허 리스트와 현황 확인 |
@@ -746,7 +738,6 @@ Use this mapping as the default traceability guide.
 | FR-LEGAL-12 | 부서별 수신자 및 메일링 매핑 등록·수정 | `UI-LEGAL-05`, `UI-LEGAL-07`, `UI-LEGAL-08` |
 | FR-LEGAL-13 | 메일 발송 전 미리보기 | `UI-LEGAL-05` |
 | FR-LEGAL-14 | 메일 발송 이력 저장 및 조회 | `UI-LEGAL-04`, `UI-LEGAL-05` |
-| FR-LEGAL-15 | 포기 특허 매각 후보 분류 및 조회 | `UI-LEGAL-04`, `UI-LEGAL-06` |
 | FR-COM-01 | 역할별 메뉴·화면·기능 분리 제공 | `UI-COM-01`, `UI-COM-02` |
 | FR-LEGAL-16 | 운영 기준 설정 | `UI-LEGAL-07`, `UI-LEGAL-08` |
 | FR-LEGAL-17 | 특허 리스트 일괄 등록/업로드 | `UI-LEGAL-02`, `UI-LEGAL-03` |

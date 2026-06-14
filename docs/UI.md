@@ -15,7 +15,6 @@
 | `UI-LEGAL-04` | 특허 상세 | 관리자 | 특허 요약, AI 레포트, 근거, 권고안, 최종 판단 확인 | `/admin/patents/:patentId` |
 | `UI-LEGAL-04-1` | 특허 상세-1 | 관리자 | 특허 상세의 보조/확장 화면 또는 발표용 세부 화면 | `src/pages/shared/PatentDetailPage.tsx` 내부 상세 섹션 |
 | `UI-LEGAL-05` | 메일링 | 관리자 | 사업부 검토 요청 메일 미리보기, 발송, 발송 이력 조회 | `/admin/mailing` |
-| `UI-LEGAL-06` | 매각 후보 관리 | 관리자 | 포기/매각 대상 특허 후보 목록과 처리 상태 조회 | `/admin/sales-candidates` |
 | `UI-LEGAL-07` | 관리자 설정 | 관리자 | 운영 기준, 회신 기한, 메일 발송 기준, 평가 기준, 부서/메일링, 사업/기술 분류 설정 관리 | `/admin/settings` |
 | `UI-LEGAL-08` | 사용자 관리 | 관리자 | 관리자와 사업부 사용자 계정/부서 권한 관리 | `/admin/users` |
 | `UI-BUS-01` | 사업부서 대시보드 | 사업부서 | 부서에 배정받은 연차료 검토 특허 리스트와 현황 확인 | `/business/dashboard` |
@@ -45,7 +44,6 @@
 | `FR-LEGAL-12` | 부서별 수신자 및 메일링 매핑 등록·수정 | `UI-LEGAL-05`, `UI-LEGAL-07`, `UI-LEGAL-08` |
 | `FR-LEGAL-13` | 메일 발송 전 미리보기 | `UI-LEGAL-05` |
 | `FR-LEGAL-14` | 메일 발송 이력 저장 및 조회 | `UI-LEGAL-04`, `UI-LEGAL-05` |
-| `FR-LEGAL-15` | 포기 특허 매각 후보 분류 및 조회 | `UI-LEGAL-04`, `UI-LEGAL-06` |
 | `FR-LEGAL-16` | 운영 기준 설정 | `UI-LEGAL-07`, `UI-LEGAL-08` |
 | `FR-LEGAL-17` | 특허 리스트 일괄 등록/업로드 | `UI-LEGAL-02`, `UI-LEGAL-03` |
 | `FR-LEGAL-18` | AI 작업 진행 상태 조회 | `UI-LEGAL-04`, `UI-BUS-02` |
@@ -80,12 +78,11 @@
 
 ```ts
 [
-  "NOT_IN_REVIEW_QUARTER",
+  "NOT_IN_REVIEW",
   "REVIEW_QUARTER_STARTED",
   "MAIL_READY",
   "WAITING_BUSINESS_RESPONSE",
   "BUSINESS_RESPONSE_RECEIVED",
-  "LEGAL_ACTION_RECORDED",
 ]
 ```
 
