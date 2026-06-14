@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Badge } from "../../../components/common/Badge";
 import { Button } from "../../../components/common/Button";
 import { MarkdownView } from "../../../components/common/MarkdownView";
@@ -137,6 +137,21 @@ export function AiReportSection({
   editControls?: AiReportEditControls;
   regenerateControls?: AiReportRegenerateControls;
 }) {
+  const [pendingRegenConfirm, setPendingRegenConfirm] = useState(false);
+
+  function handleRegenerateClick() {
+    if (report.edited) {
+      setPendingRegenConfirm(true);
+    } else {
+      regenerateControls?.onRegenerate();
+    }
+  }
+
+  function handleConfirmRegenerate() {
+    setPendingRegenConfirm(false);
+    regenerateControls?.onRegenerate();
+  }
+
   return (
     <Section
       title="AI 특허 평가 레포트"
@@ -168,15 +183,22 @@ export function AiReportSection({
               레포트 수정
             </Button>
           ) : null}
-          {regenerateControls ? (
+          {regenerateControls && !pendingRegenConfirm ? (
             <Button
               disabled={regenerateControls.isRegenerating}
-              onClick={regenerateControls.onRegenerate}
+              onClick={handleRegenerateClick}
               type="button"
               variant="secondary"
             >
               {regenerateControls.isRegenerating ? "재생성 중..." : "AI 레포트 재생성"}
             </Button>
+          ) : null}
+          {pendingRegenConfirm ? (
+            <span className="regen-confirm-inline">
+              <span className="ai-report-edit-message">법무 수정 내용의 기준 원본이 교체됩니다. 계속하시겠습니까?</span>
+              <Button onClick={handleConfirmRegenerate} type="button" variant="secondary">확인</Button>
+              <Button onClick={() => setPendingRegenConfirm(false)} type="button" variant="secondary">취소</Button>
+            </span>
           ) : null}
         </div>
       ) : null}
