@@ -97,7 +97,6 @@ export interface AiEvaluationReport {
   totalScoreText?: string;
   averageScore?: number;
   finalGrade?: string | null;
-  finalIndicator?: string | null;
   degraded?: boolean;
   failureReason?: string | null;
   keyEvidence?: string;

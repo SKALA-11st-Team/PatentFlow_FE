@@ -55,7 +55,7 @@ export interface ContractGuards {
   aiEvaluationReport: AssertSchemaKeys<
     Schemas["AiEvaluationReportResponse"],
     | "reportId" | "createdAt" | "recommendation" | "recommendationReason" | "totalScore" | "averageScore"
-    | "finalGrade" | "finalIndicator" | "degraded" | "failureReason" | "scores" | "missingInformation"
+    | "finalGrade" | "degraded" | "failureReason" | "scores" | "missingInformation"
     | "keyEvidence" | "judgementGrounds" | "businessCheckRequests" | "externalSources" | "rawMarkdown" | "markdownFilePath"
   >;
   // src/api/patents.ts — mapBackendEvaluationScores(636)

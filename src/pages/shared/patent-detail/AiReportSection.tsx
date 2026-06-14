@@ -152,7 +152,6 @@ export function AiReportSection({
           <strong>{formatReportDisplayScore(report)}</strong>
           {report.totalScoreText ? <small>원문 점수 {report.totalScoreText}</small> : null}
           {report.finalGrade ? <small>종합 등급 {report.finalGrade}</small> : null}
-          {report.finalIndicator ? <small>{report.finalIndicator}</small> : null}
           <small>작성일 {formatDate(report.createdAt)}</small>
           {report.edited && report.editedAt ? (
             <small>

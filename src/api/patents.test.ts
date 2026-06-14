@@ -133,7 +133,6 @@ describe("patents API Utils", () => {
         totalScore: 0,
         averageScore: 0,
         finalGrade: "D",
-        finalIndicator: "추가 확인 필요",
         degraded: true,
         failureReason: "외부 근거 일부 누락",
         scores: [
@@ -145,7 +144,6 @@ describe("patents API Utils", () => {
       expect(report.totalScore).toBe(0);
       expect(report.totalScoreText).toBe("0/100점, 평균 0점");
       expect(report.finalGrade).toBe("D");
-      expect(report.finalIndicator).toBe("추가 확인 필요");
       expect(report.degraded).toBe(true);
       expect(report.failureReason).toBe("외부 근거 일부 누락");
       expect(report.scores[0].grade).toBe("D");
@@ -225,7 +223,6 @@ describe("ORCH-06/AIREPORT-02 리치 근거 풀스루", () => {
       totalScore: 300,
       averageScore: 75,
       finalGrade: "B",
-      finalIndicator: "유지 권고",
       degraded: false,
       failureReason: null,
       scores: [

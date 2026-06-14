@@ -160,7 +160,6 @@ interface BackendPatentDetail extends BackendPatentListItem {
     totalScore: number | null;
     averageScore?: number | null;
     finalGrade?: string | null;
-    finalIndicator?: string | null;
     degraded?: boolean | null;
     failureReason?: string | null;
     scores: Array<{
@@ -905,7 +904,6 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
     totalScoreText: getTotalScoreText(scores, averageScore, rawTotalScore),
     averageScore,
     finalGrade: report.finalGrade ?? null,
-    finalIndicator: report.finalIndicator ?? null,
     degraded: Boolean(report.degraded),
     failureReason: report.failureReason ?? null,
     // ORCH-06/AIREPORT-02: 리포트 레벨 리치 근거를 화면 모델로 풀스루한다(그동안 항상 빈 값이던 필드).

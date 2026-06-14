@@ -1340,7 +1340,6 @@ export interface components {
             externalSources?: components["schemas"]["SourceResponse"][];
             failureReason?: string;
             finalGrade?: string;
-            finalIndicator?: string;
             judgementGrounds?: string[];
             keyEvidence?: string;
             markdownFilePath?: string;
