@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getInvitations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/settings/mail/oauth2/google": {
         parameters: {
             query?: never;
@@ -127,6 +143,22 @@ export interface paths {
         put: operations["updateUser"];
         post?: never;
         delete: operations["deleteUser"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{userId}/invitation/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resendInvitation"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -444,6 +476,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["getDepartments_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["validate"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1480,6 +1544,12 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponseBusinessInvitationStatusResponse: {
+            data?: components["schemas"]["BusinessInvitationStatusResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         ApiResponseBusinessSubmissionVersionResponse: {
             data?: components["schemas"]["BusinessSubmissionVersionResponse"];
             message?: string;
@@ -1523,6 +1593,12 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
+        ApiResponseInvitationValidationResponse: {
+            data?: components["schemas"]["InvitationValidationResponse"];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         ApiResponseLegalDashboardSummaryResponse: {
             data?: components["schemas"]["LegalDashboardSummaryResponse"];
             message?: string;
@@ -1543,6 +1619,12 @@ export interface components {
         };
         ApiResponseListBusinessChecklistItemResponse: {
             data?: components["schemas"]["BusinessChecklistItemResponse"][];
+            message?: string;
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseListBusinessInvitationStatusResponse: {
+            data?: components["schemas"]["BusinessInvitationStatusResponse"][];
             message?: string;
             /** Format: date-time */
             timestamp?: string;
@@ -1871,6 +1953,25 @@ export interface components {
             /** Format: int32 */
             totalAssigned?: number;
         };
+        BusinessInvitationStatusResponse: {
+            /** Format: date-time */
+            acceptedAt?: string;
+            accountStatus?: string;
+            departmentId?: string;
+            departmentName?: string;
+            email?: string;
+            /** Format: date-time */
+            expiresAt?: string;
+            invitationStatus?: string;
+            /** Format: date-time */
+            invitedAt?: string;
+            /** Format: date-time */
+            lastAccessAt?: string;
+            /** Format: date */
+            responseDeadline?: string;
+            userId?: string;
+            username?: string;
+        };
         BusinessOpinionResponse: {
             /** @enum {string} */
             decision?: "MAINTAIN" | "ABANDON";
@@ -2057,6 +2158,17 @@ export interface components {
             patentId?: string;
             /** @enum {string} */
             reviewWorkflowStatus?: "NOT_IN_REVIEW" | "REVIEW_QUARTER_STARTED" | "MAIL_READY" | "WAITING_BUSINESS_RESPONSE" | "BUSINESS_RESPONSE_RECEIVED" | "LEGAL_ACTION_RECORDED";
+        };
+        InvitationAcceptRequest: {
+            newPassword: string;
+            token: string;
+        };
+        InvitationValidationResponse: {
+            email?: string;
+            /** Format: date */
+            responseDeadline?: string;
+            status?: string;
+            valid?: boolean;
         };
         LegalDashboardSummaryResponse: {
             /** Format: int32 */
@@ -2654,6 +2766,26 @@ export interface operations {
             };
         };
     };
+    getInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListBusinessInvitationStatusResponse"];
+                };
+            };
+        };
+    };
     disconnect: {
         parameters: {
             query?: never;
@@ -2828,6 +2960,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    resendInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBusinessInvitationStatusResponse"];
                 };
             };
         };
@@ -3290,6 +3444,52 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListDepartmentResponse"];
+                };
+            };
+        };
+    };
+    accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvitationAcceptRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    validate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseInvitationValidationResponse"];
                 };
             };
         };

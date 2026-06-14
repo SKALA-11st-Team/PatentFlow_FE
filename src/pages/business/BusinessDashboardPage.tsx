@@ -17,6 +17,7 @@ import { usePatentList } from "../../hooks/usePatentList";
 import type { PatentListItem } from "../../types/patent";
 import {
   RECOMMENDATION_FILTER_OPTIONS,
+  accessWindowStateLabels,
   businessOpinionLabels,
   getBusinessOpinionTone,
   getRecommendationsByFilter,
@@ -24,6 +25,7 @@ import {
   recommendationLabels,
   type RecommendationFilter,
 } from "../../constants/status";
+import type { AccessWindowState } from "../../types/invitation";
 
 type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
 type DashboardListMode = "REVIEW_REQUESTS" | "ASSIGNED_PATENTS";
@@ -122,6 +124,9 @@ export function BusinessDashboardPage() {
     setOpinionFilter("ALL");
   };
 
+  // 회신 기한 기반 접근 윈도우 — 열린 검토(활성 분기)가 없으면 NONE, 회신 기한 경과면 CLOSED, 아니면 OPEN.
+  const accessWindow = getAccessWindow(activeQuarter ? submissionDeadline : null);
+
   const tableTitle = listMode === "ASSIGNED_PATENTS" ? "담당 특허" : "의견 요청 특허";
   const tableDescription =
     listMode === "ASSIGNED_PATENTS"
@@ -172,6 +177,12 @@ export function BusinessDashboardPage() {
           />
         </div>
       </section>
+      <p className={`notice ${accessWindow.state === "CLOSED" ? "notice-warning" : ""}`}>
+        <Badge tone={accessWindow.state === "OPEN" ? "success" : accessWindow.state === "CLOSED" ? "warning" : "neutral"}>
+          {accessWindowStateLabels[accessWindow.state]}
+        </Badge>{" "}
+        {accessWindow.message}
+      </p>
       <div className="dashboard-error-stack">
         <ErrorNotice message={dashboardErrorMessage} />
         <ErrorNotice message={deadlineErrorMessage} />
@@ -356,4 +367,34 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
  */
 function formatOptionalTableText(value: string) {
   return value === "N/A" ? "" : value;
+}
+
+/**
+ * @relatedFR FR-LEGAL-23, FR-BUS-01
+ * @relatedUI UI-BUS-01
+ * @description 회신 기한과 오늘을 비교해 접근 윈도우 상태(열림/마감/없음)와 안내 문구를 계산한다.
+ *              열린 검토(활성 분기)가 없으면 NONE, 회신 기한 경과면 CLOSED, 그 외 OPEN.
+ */
+function getAccessWindow(submissionDeadline: string | null): { state: AccessWindowState; message: string } {
+  if (!submissionDeadline) {
+    return { state: "NONE", message: "현재 진행 중인 검토 요청이 없습니다." };
+  }
+
+  // 회신 기한은 날짜 단위 비교 — 자정 기준으로 잘라 남은 일수를 계산한다.
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const deadline = new Date(`${submissionDeadline}T00:00:00`);
+  const remainingDays = Math.ceil((deadline.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (remainingDays < 0) {
+    return {
+      state: "CLOSED",
+      message: `회신 기한 ${submissionDeadline} 경과 — 제출 기간이 종료되어 조회만 가능합니다.`,
+    };
+  }
+
+  return {
+    state: "OPEN",
+    message: `회신 기한 ${submissionDeadline} · 남은 ${remainingDays}일 — 지금 의견을 제출할 수 있습니다.`,
+  };
 }

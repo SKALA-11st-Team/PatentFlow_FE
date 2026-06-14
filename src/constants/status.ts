@@ -309,3 +309,56 @@ export const reviewWorkflowTone: Record<ReviewWorkflowStatus, StatusTone> = {
 export function getReviewWorkflowTone(status: ReviewWorkflowStatus) {
   return reviewWorkflowTone[status];
 }
+
+// ── 사업부 초대 토큰 / 계정 / 접근 윈도우 상태 (UI-LEGAL-08) ─────────────
+import type { AccountStatus, InvitationStatus, AccessWindowState } from "../types/invitation";
+
+export const accountStatusLabels: Record<AccountStatus, string> = {
+  PENDING: "초대됨",
+  ACTIVE: "활성",
+  INACTIVE: "비활성",
+};
+
+export const invitationStatusLabels: Record<InvitationStatus, string> = {
+  PENDING: "대기",
+  ACCEPTED: "수락",
+  EXPIRED: "만료",
+  REVOKED: "회수",
+};
+
+export const accessWindowStateLabels: Record<AccessWindowState, string> = {
+  OPEN: "열림",
+  CLOSED: "마감",
+  NONE: "없음",
+};
+
+const invitationStatusTone: Record<InvitationStatus, StatusTone> = {
+  PENDING: "warning",
+  ACCEPTED: "success",
+  EXPIRED: "danger",
+  REVOKED: "neutral",
+};
+
+const accountStatusTone: Record<AccountStatus, StatusTone> = {
+  ACTIVE: "success",
+  PENDING: "warning",
+  INACTIVE: "neutral",
+};
+
+/**
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-23
+ * @relatedUI UI-LEGAL-08
+ * @description 초대 상태를 법무 계정 관리 화면의 일관된 배지 tone으로 변환한다.
+ */
+export function getInvitationStatusTone(status: InvitationStatus) {
+  return invitationStatusTone[status];
+}
+
+/**
+ * @relatedFR FR-LEGAL-12, FR-LEGAL-23
+ * @relatedUI UI-LEGAL-08
+ * @description 계정 상태를 법무 계정 관리 화면의 일관된 배지 tone으로 변환한다.
+ */
+export function getAccountStatusTone(status: AccountStatus) {
+  return accountStatusTone[status];
+}

@@ -1,4 +1,11 @@
-import { requestJson, type ApiEnvelope } from "./client";
+import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
+import {
+  createMockUser,
+  deleteMockUser,
+  getMockUsers,
+  resetMockUserPassword,
+  updateMockUser,
+} from "../mocks/users.mock";
 
 export interface UserItem {
   id: string;
@@ -27,11 +34,13 @@ export interface ResetPasswordResult {
 }
 
 export async function getUsers(): Promise<UserItem[]> {
+  if (!isBackendApiEnabled()) return getMockUsers();
   const res = await requestJson<ApiEnvelope<UserItem[]>>("/admin/users");
   return res.data ?? [];
 }
 
 export async function createUser(request: CreateUserRequest): Promise<UserItem> {
+  if (!isBackendApiEnabled()) return createMockUser(request);
   const res = await requestJson<ApiEnvelope<UserItem>>("/admin/users", {
     method: "POST",
     body: JSON.stringify(request),
@@ -41,6 +50,7 @@ export async function createUser(request: CreateUserRequest): Promise<UserItem> 
 }
 
 export async function deleteUser(userId: string): Promise<void> {
+  if (!isBackendApiEnabled()) return deleteMockUser(userId);
   await requestJson<ApiEnvelope<null>>(`/admin/users/${userId}`, { method: "DELETE" });
 }
 
@@ -50,6 +60,7 @@ export async function deleteUser(userId: string): Promise<void> {
  * @description 관리자 설정 화면에서 사용자 계정 정보를 수정한다.
  */
 export async function updateUser(userId: string, request: UpdateUserRequest): Promise<UserItem> {
+  if (!isBackendApiEnabled()) return updateMockUser(userId, request);
   const res = await requestJson<ApiEnvelope<UserItem>>(`/admin/users/${userId}`, {
     method: "PUT",
     body: JSON.stringify(request),
@@ -59,6 +70,7 @@ export async function updateUser(userId: string, request: UpdateUserRequest): Pr
 }
 
 export async function resetUserPassword(userId: string): Promise<ResetPasswordResult> {
+  if (!isBackendApiEnabled()) return resetMockUserPassword(userId);
   const res = await requestJson<ApiEnvelope<ResetPasswordResult>>(
     `/admin/users/${userId}/reset-password`,
     { method: "POST" },

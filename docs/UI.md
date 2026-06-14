@@ -9,6 +9,7 @@
 | `UI-COM-01` | 로그인 | 공통 | 관리자/사업부 사용자가 로그인하고 역할에 따라 화면 진입 | `/login`, `src/pages/LoginPage.tsx` |
 | `UI-COM-02` | 상태별 특허 리스트 | 공통 | 동일한 workflow 상태의 특허들을 표로 리스트업하고 검색과 정렬 제공 | 대시보드/검토 목록/사업부 목록의 공통 리스트 패턴 |
 | `UI-COM-03` | 알림 패널 | 공통 | 읽지 않은 알림 배지, 오늘/지난주/그 이전 그룹, 읽음 토글 액션 | `src/components/notification/NotificationPanel.tsx` |
+| `UI-COM-04` | 초대 수락 | 공통 | 사업부 사용자가 법무팀 초대 링크로 진입해 최초 비밀번호를 설정하고 계정을 활성화 | `/invite/accept`, `src/pages/InvitationAcceptPage.tsx` |
 | `UI-LEGAL-01` | 관리자 대시보드 | 관리자 | 해당 분기에 연차료를 내야 하는 특허들의 상태와 상세를 KPI 카드와 특허 리스트로 표시 | `/admin/dashboard` |
 | `UI-LEGAL-02` | 특허 관리 | 관리자 | 특허를 새로 등록하거나 수정 대상으로 조회하는 페이지 | `/admin/patents` |
 | `UI-LEGAL-03` | 특허 수정 | 관리자 | 선택한 특허를 수정 | `/admin/patents/:patentId/edit` |

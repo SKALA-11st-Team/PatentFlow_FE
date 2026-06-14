@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes } from "react";
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   // 항목14: 아이콘만 보이므로 접근성 라벨을 강제한다(툴팁으로도 노출).
   label: string;
-  icon: "edit" | "delete" | "key";
+  icon: "edit" | "delete" | "key" | "mail";
   tone?: "default" | "danger";
 }
 
@@ -22,7 +22,7 @@ export function IconButton({ label, icon, tone = "default", className = "", ...p
       type="button"
       {...props}
     >
-      {icon === "edit" ? <PencilIcon /> : icon === "key" ? <KeyIcon /> : <TrashIcon />}
+      {icon === "edit" ? <PencilIcon /> : icon === "key" ? <KeyIcon /> : icon === "mail" ? <MailIcon /> : <TrashIcon />}
     </button>
   );
 }
@@ -40,6 +40,15 @@ function KeyIcon() {
     <svg aria-hidden="true" fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="14">
       <circle cx="7.5" cy="15.5" r="5.5" />
       <path d="M21 2l-9.6 9.6M15.5 7.5l2 2M18 5l2 2" />
+    </svg>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="14">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
     </svg>
   );
 }

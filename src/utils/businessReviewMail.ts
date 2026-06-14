@@ -34,6 +34,8 @@ export function createBusinessReviewMailDraftFromPatents(
   patents: PatentListItem[],
   recipientMappings: DepartmentRecipientMapping[] = [],
   pdfLinks: PatentPdfLink[] = [],
+  // FR-LEGAL-23: 활성 분기 회신 기한(있을 때만 본문에 명시). 값이 없으면 해당 라인을 생략한다.
+  submissionDeadline: string | null = null,
 ): BusinessReviewMailDraft {
   const [firstPatent] = patents;
 
@@ -84,8 +86,10 @@ export function createBusinessReviewMailDraftFromPatents(
       "",
       ...patentLines,
       "",
+      ...(submissionDeadline ? [`회신 기한: ${submissionDeadline}`] : []),
       "회신 기한까지 사업부 의견을 제출해 주세요.",
       "각 특허의 AI 특허 평가 레포트와 평가 근거를 확인한 뒤 유지 또는 포기 의견을 제출해 주세요.",
+      "PatentFlow에 로그인해 유지/포기 의견을 제출해 주세요.",
       ...(accessUrl ? [`접속 URL: ${accessUrl}`] : []),
     ].join("\n"),
     ccEmails: recipient.ccEmails,
@@ -109,6 +113,7 @@ export function createGroupedBusinessReviewMailDrafts(
   patents: PatentListItem[],
   recipientMappings: DepartmentRecipientMapping[] = [],
   pdfLinks: PatentPdfLink[] = [],
+  submissionDeadline: string | null = null,
 ) {
   const groupedPatents = new Map<string, PatentListItem[]>();
 
@@ -120,7 +125,7 @@ export function createGroupedBusinessReviewMailDrafts(
   });
 
   return Array.from(groupedPatents.values()).map((groupedPatentList) =>
-    createBusinessReviewMailDraftFromPatents(groupedPatentList, recipientMappings, pdfLinks),
+    createBusinessReviewMailDraftFromPatents(groupedPatentList, recipientMappings, pdfLinks, submissionDeadline),
   );
 }
 

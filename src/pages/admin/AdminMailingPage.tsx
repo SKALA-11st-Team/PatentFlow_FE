@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getDepartmentRecipientMappings, getMailingHistory, getPatentPdfLinks } from "../../api/mailing";
 import { getPatents, sendBusinessReviewMails } from "../../api/patents";
+import { getActiveQuarter } from "../../api/settings";
 import { getApiErrorMessage } from "../../api/client";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
@@ -32,26 +33,30 @@ export function AdminMailingPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState("메일링 설정을 불러오는 중입니다.");
+  // FR-LEGAL-23: 활성 분기 회신 기한 — 메일 본문에 "회신 기한: …" 라인으로 명시한다.
+  const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
 
   const readyPatents = useMemo(
     () => patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY"),
     [patents],
   );
-  const groupedPreview = createGroupedBusinessReviewMailDrafts(readyPatents, recipientMappings);
+  const groupedPreview = createGroupedBusinessReviewMailDrafts(readyPatents, recipientMappings, [], submissionDeadline);
 
   useEffect(() => {
     let isMounted = true;
     async function loadMailingData() {
       try {
-        const [nextMappings, nextPatents, nextHistoryItems] = await Promise.all([
+        const [nextMappings, nextPatents, nextHistoryItems, activeQuarter] = await Promise.all([
           getDepartmentRecipientMappings(),
           getPatents(),
           getMailingHistory(),
+          getActiveQuarter(),
         ]);
         if (!isMounted) return;
         setRecipientMappings(nextMappings);
         setPatents(nextPatents);
         setMailingHistoryItems(nextHistoryItems);
+        setSubmissionDeadline(activeQuarter?.submissionDeadline ?? null);
         setMessage("");
       } catch (error) {
         if (isMounted) {
@@ -74,7 +79,7 @@ export function AdminMailingPage() {
     }
     // MAIL-12: 미리보기 열 때 PDF 다운로드 링크를 해석해 본문에 포함한다(실패 시 원문 URL만).
     const pdfLinks = await getPatentPdfLinks(readyPatents.map((patent) => patent.patentId));
-    const drafts = createGroupedBusinessReviewMailDrafts(readyPatents, recipientMappings, pdfLinks);
+    const drafts = createGroupedBusinessReviewMailDrafts(readyPatents, recipientMappings, pdfLinks, submissionDeadline);
     setMailDrafts(drafts);
     setActiveMailIndex(0);
     setIsSendConfirmOpen(false);

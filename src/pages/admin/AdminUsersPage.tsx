@@ -3,7 +3,6 @@ import {
   createUser,
   deleteUser,
   getUsers,
-  resetUserPassword,
   updateUser,
   type CreateUserRequest,
   type UserItem,
@@ -12,21 +11,32 @@ import { changePassword, logout } from "../../api/auth";
 import { getStoredAuthUser } from "../../api/authStorage";
 import { createDepartment, deleteDepartment, getDepartments, updateDepartment, type Department } from "../../api/departments";
 import { getApiErrorMessage } from "../../api/client";
+import { getBusinessInvitations, resendInvitation } from "../../api/invitations";
+import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { IconButton } from "../../components/common/IconButton";
 import { Modal } from "../../components/common/Modal";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { AppLayout } from "../../components/layout/AppLayout";
+import {
+  accountStatusLabels,
+  getAccountStatusTone,
+  getInvitationStatusTone,
+  invitationStatusLabels,
+} from "../../constants/status";
 import { useClientPagination } from "../../hooks/useClientPagination";
+import type { BusinessInvitationStatus } from "../../types/invitation";
 
 /**
- * @relatedFR FR-COM-01, FR-LEGAL-12, FR-LEGAL-16
+ * @relatedFR FR-COM-01, FR-LEGAL-12, FR-LEGAL-16, FR-LEGAL-23
  * @relatedUI UI-LEGAL-08
- * @description 사업부와 사용자 계정을 모달 기반으로 추가/수정/삭제하는 관리자 설정 화면
+ * @description 사업부와 사용자 계정을 모달 기반으로 추가/수정/삭제하고, 사업부 계정의 초대 토큰
+ *              상태와 회신 기한 기반 접근 윈도우를 관리하는 관리자 설정 화면
  */
 export function AdminUsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [invitations, setInvitations] = useState<BusinessInvitationStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [accountTab, setAccountTab] = useState<"admin" | "business">("business");
   const businessUsers = users.filter(u => u.role === "BUSINESS");
@@ -55,14 +65,39 @@ export function AdminUsersPage() {
   const [isSavingDepartment, setIsSavingDepartment] = useState(false);
 
   useEffect(() => {
-    Promise.all([getUsers(), getDepartments()])
-      .then(([nextUsers, nextDepts]) => {
+    Promise.all([getUsers(), getDepartments(), getBusinessInvitations()])
+      .then(([nextUsers, nextDepts, nextInvitations]) => {
         setUsers(nextUsers);
         setDepartments(nextDepts);
+        setInvitations(nextInvitations);
       })
       .catch((error) => showMessage(getApiErrorMessage(error, "데이터를 불러오지 못했습니다."), true))
       .finally(() => setIsLoading(false));
   }, []);
+
+  // 사업부 계정 행을 userId로 초대 상태에 매칭한다(없으면 undefined → "-" 표시).
+  const invitationByUserId = new Map(invitations.map((invitation) => [invitation.userId, invitation]));
+  const pendingInvitationCount = invitations.filter(
+    (invitation) => invitation.invitationStatus === "PENDING",
+  ).length;
+  const expiredInvitationCount = invitations.filter(
+    (invitation) => invitation.invitationStatus === "EXPIRED",
+  ).length;
+
+  async function handleResendInvitation(user: UserItem) {
+    if (!confirm(`${user.username} (${user.email})에게 초대를 재발송하시겠습니까?`)) return;
+    try {
+      const updated = await resendInvitation(user.id);
+      setInvitations((current) =>
+        current.some((invitation) => invitation.userId === updated.userId)
+          ? current.map((invitation) => (invitation.userId === updated.userId ? updated : invitation))
+          : [...current, updated],
+      );
+      showMessage(`초대를 재발송했습니다. ${updated.email}로 초대 메일이 발송됩니다.`);
+    } catch (error) {
+      showMessage(getApiErrorMessage(error, "초대 재발송에 실패했습니다."), true);
+    }
+  }
 
   function showMessage(msg: string, error = false) {
     setMessage(msg);
@@ -188,7 +223,7 @@ export function AdminUsersPage() {
         showMessage(
           editingUserId
             ? `${nextUser.username} (${nextUser.email}) 계정이 수정되었습니다.`
-            : `${nextUser.username} (${nextUser.email}) 계정이 생성되었습니다. 임시 비밀번호가 이메일로 발송됩니다.`,
+            : `${nextUser.username} (${nextUser.email}) 계정이 생성되었습니다. 초대 메일이 발송되며, 사용자가 링크에서 비밀번호를 설정합니다.`,
         );
       }
     } catch (error) {
@@ -243,16 +278,6 @@ export function AdminUsersPage() {
       showMessage(`${user.username} 계정이 삭제되었습니다.`);
     } catch (error) {
       showMessage(getApiErrorMessage(error, "계정 삭제에 실패했습니다."), true);
-    }
-  }
-
-  async function handleResetPassword(user: UserItem) {
-    if (!confirm(`${user.username} (${user.email})의 임시 비밀번호를 새로 발급해 이메일로 보내시겠습니까?`)) return;
-    try {
-      const result = await resetUserPassword(user.id);
-      showMessage(`임시 비밀번호를 발급했습니다. ${result.email}로 이메일이 발송되었습니다.`);
-    } catch (error) {
-      showMessage(getApiErrorMessage(error, "임시 비밀번호 발급에 실패했습니다."), true);
     }
   }
 
@@ -381,6 +406,12 @@ export function AdminUsersPage() {
         {/* 사업부 계정 탭 */}
         {accountTab === "business" && (
           <div style={{ minHeight: "420px" }}>
+            {/* 초대 미수락·만료 경고 — 회신 기한 전 접근 윈도우를 열려면 재발송이 필요하다. */}
+            {pendingInvitationCount + expiredInvitationCount > 0 ? (
+              <p className="notice notice-warning" style={{ marginBottom: "1rem" }}>
+                초대 미수락 {pendingInvitationCount}건 · 만료 {expiredInvitationCount}건 — 재발송이 필요합니다.
+              </p>
+            ) : null}
             <div className="table-wrap">
               <table>
                 <thead>
@@ -388,26 +419,54 @@ export function AdminUsersPage() {
                     <th>이름</th>
                     <th>이메일 (ID)</th>
                     <th>사업부명</th>
+                    <th>접근 상태</th>
+                    <th>회신 기한</th>
+                    <th>마지막 접속</th>
                     <th>생성일</th>
                     <th>작업</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {pagedBusinessUsers.map((user) => (
+                  {pagedBusinessUsers.map((user) => {
+                    const invitation = invitationByUserId.get(user.id);
+                    return (
                     <tr key={user.id}>
                       <td>{user.username}</td>
                       <td>{user.email}</td>
                       <td>{user.departmentName ?? "-"}</td>
+                      <td>
+                        {invitation ? (
+                          <div className="table-cell-actions">
+                            <Badge tone={getAccountStatusTone(invitation.accountStatus)}>
+                              {accountStatusLabels[invitation.accountStatus]}
+                            </Badge>
+                            {invitation.invitationStatus ? (
+                              <Badge tone={getInvitationStatusTone(invitation.invitationStatus)}>
+                                {invitationStatusLabels[invitation.invitationStatus]}
+                              </Badge>
+                            ) : null}
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                      <td>{invitation?.responseDeadline ?? "-"}</td>
+                      <td>
+                        {invitation?.lastAccessAt
+                          ? new Date(invitation.lastAccessAt).toLocaleDateString("ko-KR")
+                          : "-"}
+                      </td>
                       <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString("ko-KR") : "-"}</td>
                       <td className="table-cell-actions">
                         <IconButton icon="edit" label={`${user.username} 수정`} onClick={() => openEditUserModal(user)} />
-                        <IconButton icon="key" label={`${user.username} 임시 비밀번호 발급`} onClick={() => handleResetPassword(user)} />
+                        <IconButton icon="mail" label={`${user.username} 초대 재발송`} onClick={() => handleResendInvitation(user)} />
                         <IconButton icon="delete" label={`${user.username} 삭제`} onClick={() => handleDeleteUser(user)} tone="danger" />
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   {!isLoading && businessUsers.length === 0 ? (
-                    <tr><td className="empty-table-cell" colSpan={5}>사업부 계정이 없습니다.</td></tr>
+                    <tr><td className="empty-table-cell" colSpan={8}>사업부 계정이 없습니다.</td></tr>
                   ) : null}
                 </tbody>
               </table>
