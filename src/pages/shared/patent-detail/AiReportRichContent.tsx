@@ -236,6 +236,9 @@ export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport }) 
   const avgScore =
     report.averageScore ??
     (scored.length ? Math.round((scored.reduce((sum, s) => sum + (s.score ?? 0), 0) / scored.length) * 10) / 10 : null);
+  // 종합 점수 /300은 핵심 3축(권리성·기술성·시장성) 합으로 계산해 평균과 항상 일관되게 한다.
+  const coreScores = scored.filter((s) => s.category === "RIGHTS" || s.category === "TECHNOLOGY" || s.category === "MARKET");
+  const coreTotal = coreScores.length ? coreScores.reduce((sum, s) => sum + (s.score ?? 0), 0) : null;
   const oneLiner = report.summaryBrief?.one_line_summary ?? report.keyEvidence;
   const action = report.businessCheckRequests?.find((item) => item.trim());
   return (
@@ -256,7 +259,7 @@ export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport }) 
             {avgScore != null ? <CountUp value={Math.round(avgScore)} /> : "–"}
             <small> / 100</small>
           </strong>
-          {report.totalScore != null ? <small className="judgment-sub">{report.totalScore} / 300</small> : null}
+          {coreTotal != null ? <small className="judgment-sub">{coreTotal} / 300</small> : null}
         </motion.div>
         {strongest ? <AxisStat label="가장 강한 평가축" score={strongest} /> : null}
         {weakest && weakest !== strongest ? <AxisStat label="가장 약한 평가축" score={weakest} /> : null}
