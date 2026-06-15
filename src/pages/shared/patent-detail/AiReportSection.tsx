@@ -122,6 +122,35 @@ interface AiReportRegenerateControls {
   onRegenerate: () => void;
 }
 
+const REGEN_STAGES: string[] = ["특허 이해", "근거 수집", "근거 압축", "4축 평가", "레포트 작성", "검증"];
+
+function extractCurrentStage(message: string): string | null {
+  const parts = message.split(" · ");
+  return parts.length > 1 ? parts[parts.length - 1].trim() : null;
+}
+
+function RegenProgressSteps({ message }: { message: string }) {
+  const currentStage = extractCurrentStage(message);
+  const currentIdx = currentStage ? REGEN_STAGES.indexOf(currentStage) : -1;
+  return (
+    <div className="regen-progress">
+      {REGEN_STAGES.map((stage, idx) => {
+        const isDone = idx < currentIdx;
+        const isActive = idx === currentIdx;
+        return (
+          <div
+            key={stage}
+            className={`regen-stage${isDone ? " regen-stage--done" : ""}${isActive ? " regen-stage--active" : ""}`}
+          >
+            <div className="regen-stage-dot" />
+            <span className="regen-stage-label">{stage}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * @relatedFR FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-LEGAL-09, FR-LEGAL-18
  * @relatedUI UI-LEGAL-04, UI-BUS-03
@@ -158,9 +187,13 @@ export function AiReportSection({
       description="특허 유지 검토에 참고할 수 있는 AI 생성 평가 레포트입니다."
     >
       {editControls || regenerateControls ? (
+        <>
+        {regenerateControls?.isRegenerating ? (
+          <RegenProgressSteps message={regenerateControls.regenerateMessage} />
+        ) : null}
         <div className="ai-report-edit-toolbar">
           {editControls?.editMessage ? <span className="ai-report-edit-message">{editControls.editMessage}</span> : null}
-          {regenerateControls?.regenerateMessage ? (
+          {regenerateControls?.regenerateMessage && !regenerateControls.isRegenerating ? (
             <span className="ai-report-edit-message">{regenerateControls.regenerateMessage}</span>
           ) : null}
           {editControls && (report.edited || editControls.isShowingOriginal) ? (
@@ -190,7 +223,9 @@ export function AiReportSection({
               type="button"
               variant="secondary"
             >
-              {regenerateControls.isRegenerating ? "재생성 중..." : "AI 레포트 재생성"}
+              {regenerateControls.isRegenerating ? (
+                <><span className="btn-spinner" />재생성 중...</>
+              ) : "AI 레포트 재생성"}
             </Button>
           ) : null}
           {pendingRegenConfirm ? (
@@ -201,6 +236,7 @@ export function AiReportSection({
             </span>
           ) : null}
         </div>
+        </>
       ) : null}
       {editControls?.isShowingOriginal ? (
         <p className="notice">AI가 생성한 원본 레포트를 보고 있습니다. 수정 내용은 반영되어 있지 않습니다.</p>
