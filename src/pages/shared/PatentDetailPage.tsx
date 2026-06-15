@@ -102,6 +102,12 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     }
   }, [aiReportScrollTrigger]);
 
+  // 다른 특허 상세로 진입/이동하면 이전 스크롤 위치가 남지 않도록 항상 최상단에서 시작한다.
+  // (.main-content는 자체 overflow가 없어 윈도가 스크롤되므로 window를 직접 올린다.)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [patentId]);
+
   const [aiReportRegenBusinessAllowed, setAiReportRegenBusinessAllowed] = useState(false);
   useEffect(() => {
     getAiReportRegenSetting().then((s) => setAiReportRegenBusinessAllowed(s.businessAllowed)).catch(() => {});
