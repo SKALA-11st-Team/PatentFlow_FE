@@ -50,16 +50,24 @@ export function LoginPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage("");
+
+    // 빈값/공백만 입력 시 빈 자격증명을 BE로 보내지 않고 즉시 안내한다.
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      setErrorMessage("아이디와 비밀번호를 입력해 주세요.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const loginResult = await login({ email, password });
+      const loginResult = await login({ email: trimmedEmail, password });
       // 서버가 반환한 실제 역할을 우선 사용 — 탭 선택과 실제 역할이 다를 경우를 방어
       const nextRole = loginResult.user.role ?? role;
 
       // AUTH-07: 아이디 기억은 탭 선택값(role)이 아니라 서버 확정 역할(nextRole) 키에 저장/삭제한다.
       if (rememberMe) {
-        storeRememberedEmail(nextRole, email);
+        storeRememberedEmail(nextRole, trimmedEmail);
       } else {
         clearRememberedEmail(nextRole);
       }
@@ -105,6 +113,7 @@ export function LoginPage() {
             <input
               autoComplete="username"
               onChange={(event) => setEmail(event.target.value)}
+              required
               type="email"
               value={email}
             />
@@ -114,6 +123,7 @@ export function LoginPage() {
             <input
               autoComplete="current-password"
               onChange={(event) => setPassword(event.target.value)}
+              required
               type="password"
               value={password}
             />
@@ -136,19 +146,28 @@ export function LoginPage() {
   );
 }
 
+// 관리자 탭이 복원할 때 조회할 역할 키 목록. LEGAL은 별도 탭이 없고 관리자
+// 워크스페이스로 진입하므로(I3), ADMIN 탭에서 LEGAL로 저장된 아이디도 복원한다.
+function rememberLookupRoles(role: UserRole): UserRole[] {
+  return role === "ADMIN" ? ["ADMIN", "LEGAL"] : [role];
+}
+
 function getRememberedEmail(role: UserRole) {
-  const saved = localStorage.getItem(REMEMBER_KEY[role]);
-  if (saved) {
-    return saved;
+  for (const lookupRole of rememberLookupRoles(role)) {
+    const saved = localStorage.getItem(REMEMBER_KEY[lookupRole]);
+    if (saved) {
+      return saved;
+    }
+
+    const legacySaved = localStorage.getItem(LEGACY_REMEMBER_KEY[lookupRole]);
+    if (legacySaved) {
+      storeRememberedEmail(lookupRole, legacySaved);
+      localStorage.removeItem(LEGACY_REMEMBER_KEY[lookupRole]);
+      return legacySaved;
+    }
   }
 
-  const legacySaved = localStorage.getItem(LEGACY_REMEMBER_KEY[role]);
-  if (legacySaved) {
-    storeRememberedEmail(role, legacySaved);
-    localStorage.removeItem(LEGACY_REMEMBER_KEY[role]);
-  }
-
-  return legacySaved;
+  return null;
 }
 
 function storeRememberedEmail(role: UserRole, email: string) {

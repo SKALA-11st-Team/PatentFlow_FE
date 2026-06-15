@@ -5,16 +5,21 @@ import type { PatentListItem, PatentUpsertPayload } from "../types/patent";
  * @description F5: 특허 목록 CSV 내보내기/가져오기 — 외부 라이브러리 없이 따옴표 포함 셀을 처리하는
  * 최소 파서를 제공한다. 내보내기는 Excel 한글 호환을 위해 BOM을 붙인다.
  */
+// round-trip 보존: parsePatentCsv가 읽는 컬럼 집합과 동일하게 맞춘다. import이 무시하는
+// feeDueDate·departmentName은 내보내면 재가져오기 시 손실되므로 제외한다.
 const EXPORT_HEADERS = [
   "managementNumber",
   "title",
   "country",
+  "applicationDate",
+  "registrationDate",
   "applicationNumber",
   "registrationNumber",
-  "feeDueDate",
-  "departmentName",
+  "coApplicants",
+  "expectedExpirationDate",
   "businessArea",
   "technologyArea",
+  "productName",
 ] as const;
 
 export function patentsToCsv(patents: PatentListItem[]): string {
@@ -78,11 +83,14 @@ export function parsePatentCsv(text: string): CsvImportResult {
         registrationNumber: record.registrationNumber || null,
         coApplicants: record.coApplicants || "없음",
         expectedExpirationDate: record.expectedExpirationDate || "",
-        source: "CSV_IMPORT",
+        // PatentBibliographicInfo.source 유니온에 "CSV_IMPORT"가 없어 이 필드만 좁게 단언한다.
+        // 객체 전체를 캐스팅하지 않으므로 나머지 필드는 PatentUpsertPayload로 정상 타입 체크된다.
+        // (BE PatentUpsertRequest.source는 plain String이라 런타임 통과.)
+        source: "CSV_IMPORT" as PatentUpsertPayload["source"],
         businessArea: record.businessArea || "미분류",
         technologyArea: record.technologyArea || "미분류",
         productName: record.productName || "",
-      } as unknown as PatentUpsertPayload,
+      },
     });
   }
   return { rows, errors };

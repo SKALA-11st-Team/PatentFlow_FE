@@ -241,13 +241,16 @@ function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recom
         evidenceSummary: "AI 평가 생성 후 상세 근거 확인이 필요한 항목입니다.",
         score: null,
       }));
-  // CONTRACT-02: totalScore=0~400 원문 합, averageScore=0~100 평균으로 라이브 응답과 동일한 척도를 유지한다.
-  const scoredValues = scores.flatMap((score) => (score.score == null ? [] : [score.score]));
+  // CONTRACT-02: Agent 권위에 맞춰 종합 점수는 핵심 3축(권리성·기술성·시장성) 합(0~300),
+  // 평균은 그 3축 평균(0~100)이다. 사업 연계성(BUSINESS_ALIGNMENT)은 축 점수로 표시하되 합산에서 제외한다.
+  const scoredValues = scores.flatMap((score) =>
+    score.category === "BUSINESS_ALIGNMENT" || score.score == null ? [] : [score.score],
+  );
   const scoreSum = scoredValues.reduce((sum, score) => sum + score, 0);
   const averageScore = scoredValues.length
     ? Number((scoreSum / scoredValues.length).toFixed(1))
     : patent.aiEvaluationReport.averageScore;
-  const maxScore = scores.length * 100;
+  const maxScore = scoredValues.length * 100;
 
   return {
     ...patent.aiEvaluationReport,
@@ -461,7 +464,9 @@ export function createFallbackFinalDecisionResult(patentId: string, payload: Fin
     },
     legalActionResult: payload.legalActionResult,
     patentId,
-    reviewWorkflowStatus: "NOT_IN_REVIEW",
+    // 법무 최종판단 기록 후 워크플로우 종착 상태는 LEGAL_ACTION_RECORDED('처리 완료')다.
+    // BE PatentWorkflowService(withFinalDecision/withPatchedFinalDecision)와 정합시킨다.
+    reviewWorkflowStatus: "LEGAL_ACTION_RECORDED",
   };
 }
 

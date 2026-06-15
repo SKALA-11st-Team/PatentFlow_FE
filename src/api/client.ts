@@ -209,8 +209,12 @@ function primeCsrfTokenOnce(): Promise<void> {
 }
 
 function redirectToLogin() {
+  // API-04: 세션 만료 시 로그인으로 보내되, window.location.assign 같은 강제 풀 리로드는 SPA 라우팅을
+  // 깨고 ProtectedRoute의 <Navigate>와 경쟁한다. history.pushState + popstate로 React Router에 위임해
+  // 인메모리 상태를 유지한 채 SPA 내비게이션으로 처리한다.
   if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-    window.location.assign("/login");
+    window.history.pushState({}, "", "/login");
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
 }
 
@@ -225,6 +229,15 @@ function getCookie(name: string): string | undefined {
 
 export function getApiErrorMessage(error: unknown, fallbackMessage: string) {
   if (error instanceof ApiRequestError) {
+    // BE GlobalExceptionHandler는 @Valid 위반 시 message에 고정 문구('요청 값을 확인해주세요.')만 담고
+    // 실제 필드별 사유는 details 맵에 넣는다. INVALID_REQUEST면 details를 풀어 사용자에게 노출한다.
+    if (error.code === "INVALID_REQUEST" && error.details) {
+      const fieldMessages = Object.values(error.details)
+        .filter((value): value is string => typeof value === "string" && value.length > 0);
+      if (fieldMessages.length > 0) {
+        return fieldMessages.join("\n");
+      }
+    }
     return error.message || fallbackMessage;
   }
 

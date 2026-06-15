@@ -173,9 +173,9 @@ export const RECOMMENDATION_FILTER_OPTIONS = [
     value: "MAINTAIN",
   },
   {
-    label: recommendationLabels.REVIEW_AGAIN,
+    label: `${recommendationLabels.REVIEW_AGAIN} · ${recommendationLabels.CONDITIONAL_MAINTAIN}`,
     recommendations: ["REVIEW_AGAIN", "CONDITIONAL_MAINTAIN"],
-    value: "REVIEW_AGAIN_OR_HOLD",
+    value: "REVIEW_AGAIN_OR_CONDITIONAL",
   },
   {
     label: recommendationLabels.ABANDON,
@@ -193,7 +193,7 @@ export type RecommendationFilter = (typeof RECOMMENDATION_FILTER_OPTIONS)[number
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-06, FR-BUS-01
  * @relatedUI UI-BUS-01, UI-BUS-02
- * @description 같은 표시 라벨을 공유하는 AI 권고값을 화면 필터용 그룹으로 변환한다.
+ * @description 화면 필터 옵션값을 해당 그룹의 AI 권고값 목록으로 변환한다.
  */
 export function getRecommendationsByFilter(recommendationFilter: RecommendationFilter): readonly Recommendation[] {
   const matchedOption = RECOMMENDATION_FILTER_OPTIONS.find((option) => option.value === recommendationFilter);

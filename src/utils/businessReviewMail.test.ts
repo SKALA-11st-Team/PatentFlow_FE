@@ -85,3 +85,22 @@ describe("businessReviewMail — 특허 PDF 다운로드 링크(MAIL-12)", () =>
     expect(sendDraft.patents[1].pdfDownloadUrl).toBeNull();
   });
 });
+
+// FR-LEGAL-23: 회신 기한 안내 문구가 dangling 참조가 되지 않도록 한다.
+describe("businessReviewMail — 회신 기한 안내(FR-LEGAL-23)", () => {
+  it("회신 기한이 설정되면 기한 라인과 함께 '회신 기한까지' 문구를 명시한다", () => {
+    const draft = createBusinessReviewMailDraftFromPatents([patent("PAT-1")], [], [], "2026-07-31");
+
+    expect(draft.body).toContain("회신 기한: 2026-07-31");
+    expect(draft.body).toContain("회신 기한까지 사업부 의견을 제출해 주세요.");
+  });
+
+  it("회신 기한이 없으면 기한 라인을 생략하고 미명시 기한을 참조하지 않는다", () => {
+    const draft = createBusinessReviewMailDraftFromPatents([patent("PAT-1")]);
+
+    expect(draft.body).not.toContain("회신 기한:");
+    // 미명시 기한을 가리키는 "회신 기한까지 …" 단독 라인이 남지 않아야 한다.
+    expect(draft.body.split("\n")).not.toContain("회신 기한까지 사업부 의견을 제출해 주세요.");
+    expect(draft.body).toContain("관리자가 안내한 회신 기한까지 사업부 의견을 제출해 주세요.");
+  });
+});

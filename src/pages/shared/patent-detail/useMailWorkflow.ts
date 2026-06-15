@@ -136,8 +136,14 @@ export function useMailWorkflow({ patent, setPatent, refreshPatentHistory, setAc
       setMailDrafts([]);
       setActiveMailIndex(0);
       setIsSendConfirmOpen(false);
+      const failedNote = result.failedCount ? ` ${result.failedCount}건은 발송에 실패했습니다(발송 이력 확인).` : "";
+      const recordedNote = result.recordedCount
+        ? ` ${result.recordedCount}건은 Google 계정 연동 미설정으로 발송 없이 기록되었습니다.`
+        : "";
       const resultMessage =
-        result.updatedCount > 0 ? "사업부 검토 요청 메일을 발송했습니다." : "메일 발송 처리할 선택 건이 없습니다.";
+        result.updatedCount > 0
+          ? `사업부 검토 요청 메일을 발송했습니다.${failedNote}${recordedNote}`
+          : "메일 발송 처리할 선택 건이 없습니다.";
       setActionMessage(resultMessage);
       showToast(resultMessage, result.updatedCount > 0 ? "success" : "info");
     } catch (error) {

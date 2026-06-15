@@ -116,9 +116,16 @@ export function BusinessSubmissionHistoryDetail({ patent }: { patent: PatentDeta
                     </article>
                   </div>
                   <div className="submission-report-preview">
-                    {patent.aiEvaluationReport.scores.map((score) => (
+                    <span className="submission-report-preview-label">
+                      {submission.snapshotScores?.length ? "제출 당시 AI 레포트 축별 점수" : "현재 AI 레포트 축별 점수"}
+                    </span>
+                    {(submission.snapshotScores?.length
+                      ? submission.snapshotScores
+                      : patent.aiEvaluationReport.scores
+                    ).map((score) => (
                         <span key={score.category}>
-                          {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
+                          {evaluationCategoryLabels[score.category as keyof typeof evaluationCategoryLabels]}{" "}
+                          <b>{score.score ?? "N/A"}</b>
                         </span>
                       ))}
                   </div>
@@ -224,17 +231,31 @@ function AiReportModal({
           {recommendationLabels[submission.aiRecommendation]}
         </Badge>
       </div>
+      <p className="eyebrow">
+        {submission.snapshotScores?.length
+          ? "제출 당시 AI 레포트 축별 점수"
+          : "현재 AI 레포트 축별 점수 (제출 당시 스냅샷 미보존)"}
+      </p>
       <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
       <div className="score-list">
-        {patent.aiEvaluationReport.scores.map((score) => (
-            <div className="score-row" key={score.category}>
-              <div>
-                <strong>{evaluationCategoryLabels[score.category]}</strong>
-                <span>{score.evidenceSummary}</span>
+        {submission.snapshotScores?.length
+          ? submission.snapshotScores.map((score) => (
+              <div className="score-row" key={score.category}>
+                <div>
+                  <strong>{evaluationCategoryLabels[score.category as keyof typeof evaluationCategoryLabels]}</strong>
+                </div>
+                <b>{score.score ?? "N/A"}</b>
               </div>
-              <b>{score.score ?? "N/A"}</b>
-            </div>
-          ))}
+            ))
+          : patent.aiEvaluationReport.scores.map((score) => (
+              <div className="score-row" key={score.category}>
+                <div>
+                  <strong>{evaluationCategoryLabels[score.category]}</strong>
+                  <span>{score.evidenceSummary}</span>
+                </div>
+                <b>{score.score ?? "N/A"}</b>
+              </div>
+            ))}
       </div>
     </Modal>
   );
@@ -268,6 +289,25 @@ function EvaluationHistoryModal({
         <strong>{submission.checklistTotal}점</strong>
         <small>정성 평가 {submission.qualitativeScore}점을 포함한 사업부 제출 기준 점수입니다.</small>
       </div>
+      {submission.evaluatedAt || submission.qualitativeMemo || submission.additionalNeeds ? (
+        <div className="submission-memo-block">
+          {submission.evaluatedAt ? (
+            <p>
+              <strong>평가일</strong> {submission.evaluatedAt}
+            </p>
+          ) : null}
+          {submission.qualitativeMemo ? (
+            <p>
+              <strong>정성 평가 메모</strong> {submission.qualitativeMemo}
+            </p>
+          ) : null}
+          {submission.additionalNeeds ? (
+            <p>
+              <strong>추가 확인 필요</strong> {submission.additionalNeeds}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="evaluation-history-list">
         {submission.checklistScores.map((score) => {
           const checklistItem = businessChecklistItems.find((item) => item.id === score.itemId);

@@ -118,10 +118,15 @@ function QuarterHistoryRow({
 }) {
   const [isActivating, setIsActivating] = useState(false);
 
+  // date-only 'YYYY-MM-DD'는 UTC 자정으로 해석되어 음수 오프셋 타임존에서 하루 밀린다.
+  // 로컬 자정(`...T00:00:00`)으로 파싱해 타임존 무관하게 같은 날짜를 표시한다.
+  // activatedAt/endedAt 등 오프셋 포함 datetime은 그대로 둔다.
+  const toLocalDate = (d: string) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(d) ? new Date(`${d}T00:00:00`) : new Date(d);
   const fmt = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" }) : "-";
+    d ? toLocalDate(d).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" }) : "-";
   const fmtFull = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("ko-KR") : "-";
+    d ? toLocalDate(d).toLocaleDateString("ko-KR") : "-";
 
   const isUpcoming = !quarter.activated && !quarter.ended;
   const isActive = quarter.activated && !quarter.ended;

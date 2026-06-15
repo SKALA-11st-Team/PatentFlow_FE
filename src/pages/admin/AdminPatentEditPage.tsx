@@ -108,6 +108,8 @@ export function AdminPatentEditPage() {
     try {
       await updatePatent(currentPatentId, form);
       setSaveMessage("특허 정보가 수정되었습니다.");
+    } catch (error) {
+      setSaveMessage(getApiErrorMessage(error, "특허 정보 수정에 실패했습니다. 입력값과 BE 상태를 확인해 주세요."));
     } finally {
       setIsSaving(false);
     }

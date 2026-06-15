@@ -1,6 +1,7 @@
 import { getAverageScore } from "../api/patents";
 import { businessChecklistItems } from "../mocks/businessChecklist.mock";
 import type {
+  BusinessChecklistItem,
   BusinessChecklistResponse,
   BusinessChecklistSubmission,
 } from "../types/businessChecklist";
@@ -10,14 +11,22 @@ import type { PatentDetail } from "../types/patent";
  * @relatedFR FR-BUS-01, FR-BUS-04
  * @relatedUI UI-LEGAL-04, UI-BUS-02, UI-BUS-03
  * @description AI 평가 레포트를 참고해 사업부 체크리스트의 초기 제안 점수를 만든다.
+ *   draft.responses는 모달이 렌더하는 항목과 동일한 출처여야 한다(BE DB 항목을 legal팀이
+ *   추가/수정/삭제 가능하므로 정적 mock과 드리프트 가능). checklistItems가 전달되면 그 동적
+ *   항목으로 시드하고, 없으면 정적 mock으로 폴백한다.
  */
-export function createBusinessChecklistDraft(patent: PatentDetail): BusinessChecklistSubmission {
+export function createBusinessChecklistDraft(
+  patent: PatentDetail,
+  checklistItems: BusinessChecklistItem[] = businessChecklistItems,
+): BusinessChecklistSubmission {
+  const seedItems = checklistItems.length > 0 ? checklistItems : businessChecklistItems;
+
   return {
     patentId: patent.patentId,
     evaluatorName: patent.departmentName,
     // BIZ-09: 하드코딩 날짜 대신 오늘 날짜. 실제 제출 시각은 서버(submittedAt)가 정본이며 evaluatedAt은 표시용.
     evaluatedAt: new Date().toISOString().slice(0, 10),
-    responses: businessChecklistItems.map((item) => {
+    responses: seedItems.map((item) => {
       const aiSuggestedScore = getAiSuggestedScore(patent, item.id);
 
       return {

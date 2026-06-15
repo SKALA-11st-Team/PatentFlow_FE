@@ -86,8 +86,9 @@ export function createBusinessReviewMailDraftFromPatents(
       "",
       ...patentLines,
       "",
-      ...(submissionDeadline ? [`회신 기한: ${submissionDeadline}`] : []),
-      "회신 기한까지 사업부 의견을 제출해 주세요.",
+      ...(submissionDeadline
+        ? [`회신 기한: ${submissionDeadline}`, "회신 기한까지 사업부 의견을 제출해 주세요."]
+        : ["관리자가 안내한 회신 기한까지 사업부 의견을 제출해 주세요."]),
       "각 특허의 AI 특허 평가 레포트와 평가 근거를 확인한 뒤 유지 또는 포기 의견을 제출해 주세요.",
       "PatentFlow에 로그인해 유지/포기 의견을 제출해 주세요.",
       ...(accessUrl ? [`접속 URL: ${accessUrl}`] : []),

@@ -2,6 +2,15 @@ import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { Button } from "../../../components/common/Button";
 import type { MailOAuth2Status, ResponseDeadline } from "../../../api/settings";
 
+// type=number 입력은 '1e'·'-' 같은 중간 입력에서 빈 문자열(→ Number는 NaN)을 만들 수 있다.
+// NaN은 저장 비활성 비교(=== 현재값)를 통과해 버튼을 활성화하고, JSON.stringify에서 null로
+// 직렬화되어 BE의 원시 int 바인딩에서 400을 유발한다. 항상 [min, max] 범위의 정수로 정규화한다.
+export function normalizeNumberInput(rawValue: string, min: number, max: number): number {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed)) return min;
+  return Math.min(Math.max(Math.trunc(parsed), min), max);
+}
+
 interface MailSettingsSectionProps {
   oauth2Status: MailOAuth2Status;
   isDisconnecting: boolean;
@@ -99,7 +108,7 @@ export function MailSettingsSection({
                 aria-label="발송 기준 (개월)"
                 max={24}
                 min={0}
-                onChange={(e) => setMailLeadMonthsInput(Number(e.target.value))}
+                onChange={(e) => setMailLeadMonthsInput(normalizeNumberInput(e.target.value, 0, 24))}
                 type="number"
                 value={mailLeadMonthsInput}
               />
@@ -123,7 +132,9 @@ export function MailSettingsSection({
                 aria-label="회신 기한 개월"
                 max={12}
                 min={0}
-                onChange={(e) => setResponseDeadlineInput((prev) => ({ ...prev, months: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setResponseDeadlineInput((prev) => ({ ...prev, months: normalizeNumberInput(e.target.value, 0, 12) }))
+                }
                 type="number"
                 value={responseDeadlineInput.months}
               />
@@ -134,7 +145,9 @@ export function MailSettingsSection({
                 aria-label="회신 기한 일"
                 max={30}
                 min={0}
-                onChange={(e) => setResponseDeadlineInput((prev) => ({ ...prev, days: Number(e.target.value) }))}
+                onChange={(e) =>
+                  setResponseDeadlineInput((prev) => ({ ...prev, days: normalizeNumberInput(e.target.value, 0, 30) }))
+                }
                 type="number"
                 value={responseDeadlineInput.days}
               />

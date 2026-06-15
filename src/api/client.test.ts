@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiRequestError, requestJson } from "./client";
+import { ApiRequestError, getApiErrorMessage, requestJson } from "./client";
 
 function jsonResponse(status: number, body: unknown): Response {
   const response = {
@@ -77,5 +77,42 @@ describe("requestJson CSRF 재시도", () => {
 
     await expect(requestJson("/departments")).rejects.toBeInstanceOf(ApiRequestError);
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+// BE @Valid 위반은 message에 고정 문구만, 실제 필드별 사유는 details에 담긴다 — FE가 details를 노출하는지 검증.
+describe("getApiErrorMessage details 노출", () => {
+  it("INVALID_REQUEST면 details의 필드 사유들을 합쳐 보여준다", () => {
+    const error = new ApiRequestError(400, "Bad Request", {
+      code: "INVALID_REQUEST",
+      message: "요청 값을 확인해주세요.",
+      details: { password: "비밀번호는 8자 이상이어야 합니다.", email: "올바른 이메일 형식이 아닙니다." },
+    });
+
+    const message = getApiErrorMessage(error, "초대 수락에 실패했습니다.");
+
+    expect(message).toContain("비밀번호는 8자 이상이어야 합니다.");
+    expect(message).toContain("올바른 이메일 형식이 아닙니다.");
+    expect(message).not.toBe("요청 값을 확인해주세요.");
+  });
+
+  it("INVALID_REQUEST라도 사용할 수 있는 필드 사유가 없으면 message로 폴백한다", () => {
+    const error = new ApiRequestError(400, "Bad Request", {
+      code: "INVALID_REQUEST",
+      message: "요청 값을 확인해주세요.",
+      details: {},
+    });
+
+    expect(getApiErrorMessage(error, "fallback")).toBe("요청 값을 확인해주세요.");
+  });
+
+  it("다른 코드면 details를 풀지 않고 기존 message를 그대로 쓴다", () => {
+    const error = new ApiRequestError(403, "Forbidden", {
+      code: "ACCESS_DENIED",
+      message: "접근 권한이 없습니다.",
+      details: { field: "무시되어야 함" },
+    });
+
+    expect(getApiErrorMessage(error, "fallback")).toBe("접근 권한이 없습니다.");
   });
 });

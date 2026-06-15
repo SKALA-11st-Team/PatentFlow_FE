@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  adjustAnnualFeeSchedule,
+  getAnnualFeeSchedule,
   getCountryExtensions,
   getFeeRules,
   updateCountryExtension,
   updateFeeRule,
+  type AnnualFeeScheduleItem,
   type CountryExtension,
   type FeeRule,
 } from "../../../api/settings";
@@ -31,10 +34,27 @@ export function AnnualFeeSettingsSection() {
   const [isSavingFeeRules, setIsSavingFeeRules] = useState(false);
   const [feeRuleMessage, setFeeRuleMessage] = useState("");
 
+  // FR-LEGAL-24: 국가별 보유 특허의 다음 연차료 납부 예정일 조회 + 행별 조정.
+  const [scheduleItems, setScheduleItems] = useState<AnnualFeeScheduleItem[]>([]);
+  const [scheduleCountry, setScheduleCountry] = useState("ALL");
+  const [scheduleMessage, setScheduleMessage] = useState("");
+  const [adjustingItem, setAdjustingItem] = useState<AnnualFeeScheduleItem | null>(null);
+
   useEffect(() => {
     getCountryExtensions().then(setExtensions).catch(() => setExtensions([]));
     getFeeRules().then(setFeeRules).catch(() => setFeeRules([]));
   }, []);
+
+  useEffect(() => {
+    getAnnualFeeSchedule(scheduleCountry)
+      .then(setScheduleItems)
+      .catch(() => setScheduleItems([]));
+  }, [scheduleCountry]);
+
+  const scheduleCountryOptions = useMemo(
+    () => [{ value: "ALL", label: "전체" }, ...feeRules.map((rule) => ({ value: rule.country, label: rule.countryLabel }))],
+    [feeRules],
+  );
 
 
   const dirtyExtensionCountries = useMemo(
@@ -227,6 +247,11 @@ export function AnnualFeeSettingsSection() {
                 {feeRules.map((rule) => {
                   const draft = feeRuleDrafts[rule.country] ?? toFeeRuleDraft(rule);
                   const isDirty = dirtyFeeRuleCountries.includes(rule.country);
+                  // BE AnnualFeeScheduleService.ruleFor가 고정 유지료 일정(maintenanceMonths)을
+                  // 내장한 국가는 기산일·일괄 연차 오버라이드를 무시한다. 편집을 허용하면 저장은
+                  // 되지만 응답에서 원복되는 silent no-op이 되므로 입력을 잠근다.
+                  // BE가 내려주는 fixedSchedule 플래그를 우선 사용하고, 미지원 응답엔 국가 하드코딩으로 폴백.
+                  const isFixedRule = rule.fixedSchedule ?? hasFixedSchedule(rule.country);
                   const updateDraft = (patch: Partial<FeeRuleDraft>) =>
                     setFeeRuleDrafts((prev) => ({ ...prev, [rule.country]: { ...draft, ...patch } }));
                   return (
@@ -239,6 +264,7 @@ export function AnnualFeeSettingsSection() {
                       <td>
                         <select
                           aria-label={`${rule.country} 기산일`}
+                          disabled={isFixedRule}
                           onChange={(event) => updateDraft({ basis: event.target.value as FeeRule["basis"] })}
                           value={draft.basis}
                         >
@@ -249,6 +275,7 @@ export function AnnualFeeSettingsSection() {
                       <td>
                         <input
                           aria-label={`${rule.country} 일괄 납부 연차`}
+                          disabled={isFixedRule}
                           max={10}
                           min={0}
                           onChange={(event) => updateDraft({ initialLumpYears: Number(event.target.value) })}
@@ -256,7 +283,12 @@ export function AnnualFeeSettingsSection() {
                           value={draft.initialLumpYears}
                         />
                       </td>
-                      <td className="rule-label-cell">{rule.ruleLabel}</td>
+                      <td className="rule-label-cell">
+                        {rule.ruleLabel}
+                        {isFixedRule ? (
+                          <span className="table-subtext">고정 유지료 일정 — 기산일·일괄 연차 변경 불가</span>
+                        ) : null}
+                      </td>
                     </tr>
                   );
                 })}
@@ -267,7 +299,83 @@ export function AnnualFeeSettingsSection() {
             </table>
           </div>
         </div>
+        {/* 서브섹션 3: 연차료 납부 예정 및 조정 (FR-LEGAL-24) */}
+        <div className="fee-rules-subsection">
+          <div className="section-header section-header-compact">
+            <div>
+              <h3>연차료 납부 예정 및 조정</h3>
+              <p>국가별 보유 특허의 다음 연차료 납부 예정일을 확인하고, 필요 시 납부일을 조정합니다.</p>
+            </div>
+            <select aria-label="국가 필터" onChange={(event) => setScheduleCountry(event.target.value)} value={scheduleCountry}>
+              {scheduleCountryOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {scheduleMessage ? (
+            <p className="notice notice-compact" style={{ marginBottom: "0.75rem" }}>{scheduleMessage}</p>
+          ) : null}
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>관리번호</th>
+                  <th>발명의 명칭</th>
+                  <th>국가</th>
+                  <th>기준 납부일</th>
+                  <th>실효 납부일</th>
+                  <th>조정 납부일 / 사유</th>
+                  <th style={{ width: 48 }} />
+                </tr>
+              </thead>
+              <tbody>
+                {scheduleItems.map((item) => (
+                  <tr key={item.patentId}>
+                    <td><strong className="nowrap-cell">{item.managementNumber}</strong></td>
+                    <td>{item.title}</td>
+                    <td>{item.country}{item.domesticPatent ? " (국내)" : " (해외)"}</td>
+                    <td>{item.calculatedAnnualFeeDueDate ?? item.annualFeeBaseDate ?? "-"}</td>
+                    <td>{item.effectiveAnnualFeeDueDate ?? item.nextAnnualFeeDueDate ?? "-"}</td>
+                    <td>
+                      {item.adjustedAnnualFeeDueDate
+                        ? `${item.adjustedAnnualFeeDueDate}${item.latestAdjustmentReason ? ` (${item.latestAdjustmentReason})` : ""}`
+                        : "-"}
+                    </td>
+                    <td>
+                      <IconButton
+                        icon="edit"
+                        label={`${item.managementNumber} 납부일 조정`}
+                        onClick={() => setAdjustingItem(item)}
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {scheduleItems.length === 0 ? (
+                  <tr>
+                    <td className="empty-table-cell" colSpan={7}>
+                      표시할 연차료 일정이 없습니다. (mock 모드에서는 백엔드 연결이 필요합니다.)
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
+
+      {adjustingItem ? (
+        <AdjustAnnualFeeModal
+          item={adjustingItem}
+          onApplied={(updated) => {
+            setScheduleItems((prev) => prev.map((it) => (it.patentId === updated.patentId ? updated : it)));
+            setAdjustingItem(null);
+            setScheduleMessage(`${updated.managementNumber} 납부일을 조정했습니다.`);
+          }}
+          onClose={() => setAdjustingItem(null)}
+        />
+      ) : null}
 
       {editingExtension ? (
         <ExtensionRoundsModal
@@ -293,6 +401,15 @@ interface FeeRuleDraft {
 
 function toFeeRuleDraft(rule: FeeRule): FeeRuleDraft {
   return { basis: rule.basis, initialLumpYears: rule.initialLumpYears, cycleMonths: rule.cycleMonths };
+}
+
+// BE AnnualFeeScheduleService.ruleFor가 고정 유지료 일정을 내장해 기산일·일괄 연차
+// 오버라이드를 적용하지 않는 국가. US는 등록일 기준 3.5/7.5/11.5년 유지료 일정으로 고정.
+// (BE가 별도 플래그를 노출하지 않아 국가 코드로 식별한다.)
+const FIXED_SCHEDULE_COUNTRIES = new Set(["US"]);
+
+function hasFixedSchedule(country: string): boolean {
+  return FIXED_SCHEDULE_COUNTRIES.has(country.trim().toUpperCase());
 }
 
 function normalizeRounds(extension: CountryExtension): number[] {
@@ -428,6 +545,77 @@ function ExtensionRoundsModal({
         </Button>
         <Button disabled={!isValid} onClick={() => onApply(rounds)} type="button">
           적용
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-07
+ * @description 행별 연차료 납부일 조정 모달 — 조정 납부일과 사유를 입력해 BE에 PATCH한다.
+ */
+function AdjustAnnualFeeModal({
+  item,
+  onApplied,
+  onClose,
+}: {
+  item: AnnualFeeScheduleItem;
+  onApplied: (updated: AnnualFeeScheduleItem) => void;
+  onClose: () => void;
+}) {
+  const [dueDate, setDueDate] = useState(item.adjustedAnnualFeeDueDate ?? item.effectiveAnnualFeeDueDate ?? "");
+  const [reason, setReason] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleApply() {
+    if (!dueDate) {
+      setError("조정할 납부일을 입력하세요.");
+      return;
+    }
+    setIsSaving(true);
+    setError("");
+    try {
+      const updated = await adjustAnnualFeeSchedule(item.patentId, dueDate, reason.trim());
+      onApplied(updated);
+    } catch (caught) {
+      setError(getApiErrorMessage(caught, "납부일 조정에 실패했습니다."));
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <Modal ariaLabel={`${item.managementNumber} 연차료 납부일 조정`} className="settings-modal" onClose={onClose}>
+      <div className="modal-header">
+        <div>
+          <h2>연차료 납부일 조정</h2>
+          <p>{item.managementNumber} · {item.title}</p>
+        </div>
+        <button aria-label="납부일 조정 닫기" className="modal-close-button" onClick={onClose} type="button">
+          ×
+        </button>
+      </div>
+      <label className="form-field">
+        <span className="form-label-text">조정 납부일</span>
+        <input onChange={(event) => setDueDate(event.target.value)} type="date" value={dueDate ?? ""} />
+      </label>
+      <label className="form-field">
+        <span className="form-label-text">조정 사유</span>
+        <textarea
+          onChange={(event) => setReason(event.target.value)}
+          placeholder="납부일 조정 사유를 입력하세요."
+          value={reason}
+        />
+      </label>
+      {error ? <p className="notice notice-error notice-compact">{error}</p> : null}
+      <div className="modal-actions">
+        <Button onClick={onClose} type="button" variant="secondary">
+          취소
+        </Button>
+        <Button disabled={isSaving} onClick={handleApply} type="button">
+          {isSaving ? "저장 중…" : "조정 저장"}
         </Button>
       </div>
     </Modal>

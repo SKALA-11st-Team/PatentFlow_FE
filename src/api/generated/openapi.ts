@@ -1116,24 +1116,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
-        post: operations["addClassification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/settings/classifications/{type}/{value}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
         put: operations["renameClassification"];
-        post?: never;
+        post: operations["addClassification"];
         delete: operations["deleteClassification"];
         options?: never;
         head?: never;
@@ -1417,6 +1401,7 @@ export interface components {
             /** Format: date-time */
             editedAt?: string;
             editedBy?: string;
+            evidenceConfidence?: string;
             externalSources?: components["schemas"]["SourceResponse"][];
             failureReason?: string;
             finalGrade?: string;
@@ -1432,6 +1417,7 @@ export interface components {
             scores?: components["schemas"]["EvaluationScoreResponse"][];
             /** Format: int32 */
             totalScore?: number;
+            warnings?: string[];
         };
         AiReportEditRequest: {
             baseReportId: string;
@@ -2026,6 +2012,7 @@ export interface components {
             score?: number;
         };
         BusinessSubmissionVersionResponse: {
+            additionalNeeds?: string;
             /** @enum {string} */
             aiRecommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "CONDITIONAL_MAINTAIN";
             /** Format: date-time */
@@ -2037,12 +2024,15 @@ export interface components {
             checklistTotal?: number;
             /** @enum {string} */
             decision?: "MAINTAIN" | "ABANDON";
+            evaluatedAt?: string;
             /** @enum {string} */
             finalOpinion?: "MAINTAIN" | "ABANDON";
+            qualitativeMemo?: string;
             /** Format: int32 */
             qualitativeScore?: number;
             reason?: string;
             responses?: components["schemas"]["BusinessSubmissionChecklistScoreResponse"][];
+            snapshotScores?: components["schemas"]["EvaluationScoreResponse"][];
             submissionId?: string;
             /** Format: date-time */
             submittedAt?: string;
@@ -2131,6 +2121,7 @@ export interface components {
             countryLabel?: string;
             /** Format: int32 */
             cycleMonths?: number;
+            fixedSchedule?: boolean;
             /** Format: int32 */
             initialLumpYears?: number;
             ruleLabel?: string;
@@ -2642,6 +2633,8 @@ export interface components {
             axisWeights: {
                 [key: string]: number;
             };
+            /** Format: double */
+            businessFitOverrideThreshold?: number;
             gradeCutoffs: {
                 [key: string]: number;
             };
@@ -4611,6 +4604,34 @@ export interface operations {
             };
         };
     };
+    renameClassification: {
+        parameters: {
+            query: {
+                value: string;
+            };
+            header?: never;
+            path: {
+                type: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassificationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseClassificationResponse"];
+                };
+            };
+        };
+    };
     addClassification: {
         parameters: {
             query?: never;
@@ -4637,40 +4658,14 @@ export interface operations {
             };
         };
     };
-    renameClassification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                type: string;
-                value: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ClassificationRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseClassificationResponse"];
-                };
-            };
-        };
-    };
     deleteClassification: {
         parameters: {
-            query?: never;
+            query: {
+                value: string;
+            };
             header?: never;
             path: {
                 type: string;
-                value: string;
             };
             cookie?: never;
         };

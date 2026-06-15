@@ -62,12 +62,12 @@ export function QuarterCompletionDonut({
  * @relatedUI UI-LEGAL-01, UI-BUS-01
  * @description 완료 건수와 전체 건수로 대시보드 원형 그래프 비율을 계산한다.
  */
-function getCompletionPercent(completed: number, total: number) {
+export function getCompletionPercent(completed: number, total: number) {
   if (total <= 0) {
     return 0;
   }
 
-  return Math.round((completed / total) * 100);
+  return Math.min(100, Math.max(0, Math.round((completed / total) * 100)));
 }
 
 /**

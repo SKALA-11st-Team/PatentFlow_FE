@@ -234,6 +234,19 @@ export function AiReportSection({
         </p>
       ) : null}
       {report.degraded && report.failureReason ? <p className="notice notice-warning">{report.failureReason}</p> : null}
+      {report.warnings?.length ? (
+        <div className="report-block">
+          <h3>생성 경고</h3>
+          <ul className="clean-list">
+            {report.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {report.evidenceConfidence ? (
+        <p className="notice">근거 신뢰도: {report.evidenceConfidence}</p>
+      ) : null}
       <p className="notice">{report.recommendationText}</p>
       {report.keyEvidence ? (
         <div className="report-callout">
@@ -259,6 +272,39 @@ export function AiReportSection({
             {report.businessCheckRequests.map((item) => (
               <li key={item}>{item}</li>
             ))}
+          </ul>
+        </div>
+      ) : null}
+      {report.missingInformation?.length ? (
+        <div className="report-block">
+          <h3>정보 부족 · 추가 확인 필요</h3>
+          <ul className="clean-list">
+            {report.missingInformation.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {report.externalSources?.length ? (
+        <div className="report-block">
+          <h3>외부 근거</h3>
+          <ul className="clean-list">
+            {report.externalSources.map((source) =>
+              safeExternalUrl(source.url) ? (
+                <li key={`${source.title}-${source.url ?? ""}`}>
+                  <a
+                    className="inline-source-link"
+                    href={safeExternalUrl(source.url) ?? undefined}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    {source.title}
+                  </a>
+                </li>
+              ) : (
+                <li key={`${source.title}-${source.url ?? ""}`}>{source.title}</li>
+              ),
+            )}
           </ul>
         </div>
       ) : null}

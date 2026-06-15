@@ -33,23 +33,32 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(() => ({ showToast }), [showToast]);
 
+  // error 톤이 하나라도 있으면 즉시 알림(assertive/alert)으로 승격해 실패 통지를 지연 없이 읽게 한다.
+  const hasError = toasts.some((toast) => toast.tone === "error");
+
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {toasts.length ? (
-        <div aria-live="polite" className="toast-stack" role="status">
-          {toasts.map((toast) => (
-            <button
-              className={`toast toast-${toast.tone}`}
-              key={toast.id}
-              onClick={() => dismissToast(toast.id)}
-              type="button"
-            >
-              {toast.message}
-            </button>
-          ))}
-        </div>
-      ) : null}
+      {/*
+        live region 컨테이너는 항상 DOM에 두고 내부 항목만 토글한다.
+        조건부로 region 자체를 마운트하면 스크린리더가 첫 토스트 변경을 감지하지 못할 수 있다.
+      */}
+      <div
+        aria-live={hasError ? "assertive" : "polite"}
+        className="toast-stack"
+        role={hasError ? "alert" : "status"}
+      >
+        {toasts.map((toast) => (
+          <button
+            className={`toast toast-${toast.tone}`}
+            key={toast.id}
+            onClick={() => dismissToast(toast.id)}
+            type="button"
+          >
+            {toast.message}
+          </button>
+        ))}
+      </div>
     </ToastContext.Provider>
   );
 }

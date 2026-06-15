@@ -38,8 +38,9 @@ export function AdminUsersPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [invitations, setInvitations] = useState<BusinessInvitationStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [accountTab, setAccountTab] = useState<"admin" | "business">("business");
+  const [accountTab, setAccountTab] = useState<"admin" | "legal" | "business">("business");
   const businessUsers = users.filter(u => u.role === "BUSINESS");
+  const legalUsers = users.filter((u) => u.role === "LEGAL");
   const { currentPage, pageSize, pagedItems: pagedBusinessUsers, setCurrentPage, totalItems: businessTotalItems, totalPages: businessTotalPages } = useClientPagination(businessUsers, [accountTab], 10);
   // 사업부 섹션과 계정 섹션의 메시지를 분리해 서로 다른 위치에 표시한다.
   const [deptMessage, setDeptMessage] = useState("");
@@ -109,14 +110,14 @@ export function AdminUsersPage() {
     setIsDeptError(error);
   }
 
-  function openCreateUserModal() {
+  function openCreateUserModal(role: "BUSINESS" | "LEGAL" = "BUSINESS") {
     const firstDepartment = departments[0];
     setEditingUserId(null);
     setUserForm({
       email: "",
-      role: "BUSINESS",
-      departmentId: firstDepartment?.departmentId ?? null,
-      departmentName: firstDepartment?.departmentName ?? null,
+      role,
+      departmentId: role === "BUSINESS" ? (firstDepartment?.departmentId ?? null) : null,
+      departmentName: role === "BUSINESS" ? (firstDepartment?.departmentName ?? null) : null,
       username: "",
     });
     setIsUserModalOpen(true);
@@ -166,8 +167,9 @@ export function AdminUsersPage() {
     setDepartmentForm({ departmentId: "", departmentName: "" });
   }
 
-  function handleUserRoleChange(role: "ADMIN" | "BUSINESS") {
-    if (role === "ADMIN") {
+  function handleUserRoleChange(role: "ADMIN" | "LEGAL" | "BUSINESS") {
+    if (role === "ADMIN" || role === "LEGAL") {
+      // 관리자·법무는 부서에 속하지 않는 운영자 측 역할이다.
       setUserForm((current) => ({ ...current, role, departmentId: null, departmentName: null }));
       return;
     }
@@ -250,6 +252,12 @@ export function AdminUsersPage() {
 
   async function handleChangePassword(event: FormEvent) {
     event.preventDefault();
+    if (passwordForm.newPassword.length < 10) {
+      // BE ChangePasswordRequest의 @Size(min=10)와 일치시켜 모호한 서버 400 대신 명확히 안내한다.
+      setPwModalMessage("새 비밀번호는 10자 이상이어야 합니다.");
+      setIsPwModalError(true);
+      return;
+    }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setPwModalMessage("새 비밀번호가 일치하지 않습니다.");
       setIsPwModalError(true);
@@ -373,8 +381,13 @@ export function AdminUsersPage() {
             <h2>계정 관리</h2>
           </div>
           {accountTab === "business" && (
-            <Button onClick={openCreateUserModal} type="button">
+            <Button onClick={() => openCreateUserModal("BUSINESS")} type="button">
               새 계정 추가
+            </Button>
+          )}
+          {accountTab === "legal" && (
+            <Button onClick={() => openCreateUserModal("LEGAL")} type="button">
+              새 법무 계정 추가
             </Button>
           )}
         </div>
@@ -387,6 +400,13 @@ export function AdminUsersPage() {
             onClick={() => setAccountTab("business")}
           >
             사업부 계정
+          </button>
+          <button
+            type="button"
+            className={accountTab === "legal" ? "selected" : ""}
+            onClick={() => setAccountTab("legal")}
+          >
+            법무 계정
           </button>
           <button
             type="button"
@@ -478,6 +498,40 @@ export function AdminUsersPage() {
               totalItems={businessTotalItems}
               totalPages={businessTotalPages}
             />
+          </div>
+        )}
+
+        {/* 법무 계정 탭 — LEGAL은 부서 없는 운영자 측 역할(검토 업무 1급) */}
+        {accountTab === "legal" && (
+          <div style={{ minHeight: "420px" }}>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>이름</th>
+                    <th>이메일 (ID)</th>
+                    <th>생성일</th>
+                    <th>작업</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {legalUsers.map((user) => (
+                    <tr key={user.id}>
+                      <td>{user.username}</td>
+                      <td>{user.email}</td>
+                      <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString("ko-KR") : "-"}</td>
+                      <td className="table-cell-actions">
+                        <IconButton icon="edit" label={`${user.username} 수정`} onClick={() => openEditUserModal(user)} />
+                        <IconButton icon="delete" label={`${user.username} 삭제`} onClick={() => handleDeleteUser(user)} tone="danger" />
+                      </td>
+                    </tr>
+                  ))}
+                  {!isLoading && legalUsers.length === 0 ? (
+                    <tr><td className="empty-table-cell" colSpan={4}>법무 계정이 없습니다. ‘새 법무 계정 추가’로 등록하세요.</td></tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -614,22 +668,25 @@ export function AdminUsersPage() {
                   <label className="form-field">
                     <span className="form-label-text">역할</span>
                     <select
-                      onChange={(event) => handleUserRoleChange(event.target.value as "ADMIN" | "BUSINESS")}
+                      onChange={(event) => handleUserRoleChange(event.target.value as "ADMIN" | "LEGAL" | "BUSINESS")}
                       value={userForm.role}
                     >
                       <option value="BUSINESS">사업부</option>
+                      <option value="LEGAL">법무</option>
                     </select>
                   </label>
-                  <label className="form-field">
-                    <span className="form-label-text">사업부명</span>
-                    <select onChange={(event) => handleUserDepartmentChange(event.target.value)} value={userForm.departmentId ?? ""}>
-                      {departments.map((department) => (
-                        <option key={department.departmentId} value={department.departmentId}>
-                          {department.departmentName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  {userForm.role === "BUSINESS" && (
+                    <label className="form-field">
+                      <span className="form-label-text">사업부명</span>
+                      <select onChange={(event) => handleUserDepartmentChange(event.target.value)} value={userForm.departmentId ?? ""}>
+                        {departments.map((department) => (
+                          <option key={department.departmentId} value={department.departmentId}>
+                            {department.departmentName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                 </>
               )}
             </div>

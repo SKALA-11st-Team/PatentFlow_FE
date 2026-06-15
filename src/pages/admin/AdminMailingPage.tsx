@@ -109,11 +109,18 @@ export function AdminMailingPage() {
       setMailDrafts([]);
       setActiveMailIndex(0);
       setIsSendConfirmOpen(false);
-      setMessage(
-        result.updatedCount > 0
-          ? `${mailDrafts.length}통의 메일을 발송하고 ${result.updatedCount}건의 특허를 사업부 검토 요청 처리했습니다.`
-          : "메일 발송 처리할 선택 건이 없습니다.",
-      );
+      // 부분 발송 실패(failedCount)·연동 미설정 기록(recordedCount)을 사용자에게 노출한다.
+      const summaryParts: string[] = [];
+      if (result.updatedCount > 0) {
+        summaryParts.push(`${mailDrafts.length}통의 메일을 발송하고 ${result.updatedCount}건의 특허를 사업부 검토 요청 처리했습니다.`);
+      }
+      if (result.failedCount) {
+        summaryParts.push(`${result.failedCount}건은 발송에 실패했습니다(발송 이력에서 확인).`);
+      }
+      if (result.recordedCount) {
+        summaryParts.push(`${result.recordedCount}건은 Google 계정 연동 미설정으로 발송 없이 기록되었습니다.`);
+      }
+      setMessage(summaryParts.length > 0 ? summaryParts.join(" ") : "메일 발송 처리할 선택 건이 없습니다.");
     } catch (error) {
       setMessage(getApiErrorMessage(error, "메일 발송 처리에 실패했습니다."));
     } finally {

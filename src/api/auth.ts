@@ -37,6 +37,9 @@ export async function login(request: LoginRequest): Promise<LoginResult> {
 }
 
 export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("백엔드 API가 비활성화되어 있어 비밀번호를 변경할 수 없습니다.");
+  }
   await requestJson<ApiEnvelope<unknown>>("/auth/password", {
     method: "PATCH",
     body: JSON.stringify({ currentPassword, newPassword }),

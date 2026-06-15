@@ -13,7 +13,12 @@ export function estimateAnnualFeeKrw(
   applicationDate: string | null,
 ): number {
   const cc = (country ?? "").toUpperCase();
-  const baseText = registrationDate ?? applicationDate;
+  // FEE-04: 국가별 기산일을 BE annualFeeBaseDate와 정합 — KR/US는 등록일 우선(등록일 기준),
+  // 그 외(JP/CN/EP/기타)는 출원일 우선(출원일 기준).
+  const registrationBased = cc === "KR" || cc === "US";
+  const baseText = registrationBased
+    ? registrationDate ?? applicationDate
+    : applicationDate ?? registrationDate;
   const baseMs = baseText ? new Date(baseText).getTime() : null;
   const ageYears = baseMs ? (Date.now() - baseMs) / (365.25 * 24 * 3_600_000) : 5;
 
@@ -65,7 +70,9 @@ export function getNextAnnualFeeDueDate(
   baseDate = new Date(),
   registrationDateText?: string | null,
 ) {
-  // FEE-04: BE와 동일 기준 — 출원일 우선, 없으면 등록일로 폴백한다(FE가 출원일만 보던 불일치 해소).
+  // FEE-04: 국가 무관 출원일 우선, 없으면 등록일로 폴백한다(FE가 출원일만 보던 불일치 해소).
+  // KR/US는 BE annualFeeBaseDate가 등록일을 우선하므로 등록일·출원일 월일이 다르면 BE와 어긋날 수 있다 —
+  // BE feeDueDate가 정본이고 이 값은 BE feeDueDate가 비어 있을 때의 폴백/등록 폼 프리뷰로만 쓴다.
   // 둘 다 유효하지 않으면 빈 문자열 유지(당해 12/31 폴백은 BE effective 필드를 정본으로 사용).
   const baseDateValue = parseDate(applicationDateText) ?? parseDate(registrationDateText);
 
@@ -87,13 +94,14 @@ export function getNextAnnualFeeDueDate(
  * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-BUS-01, UI-BUS-02
  * @description 현재 날짜 기준 납부 기한까지 남은 일수를 계산한다.
+ * 파싱 실패 시 null을 반환한다(유효 입력 '오늘 마감'=0과 구분해야 호출처가 D-day 오표시를 막을 수 있다).
  */
-export function getRemainingDaysUntilDate(dueDateText: string, baseDate = new Date()) {
+export function getRemainingDaysUntilDate(dueDateText: string, baseDate = new Date()): number | null {
   const todayStart = getDateStart(baseDate);
   const dueDate = parseDate(dueDateText);
 
   if (!dueDate) {
-    return 0;
+    return null;
   }
 
   return Math.ceil((dueDate.getTime() - todayStart.getTime()) / 86_400_000);

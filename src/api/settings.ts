@@ -62,6 +62,9 @@ export async function getMailLeadMonths(): Promise<number> {
 }
 
 export async function updateMailLeadMonths(months: number): Promise<number> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("데모(mock) 모드에서는 이 작업을 지원하지 않습니다.");
+  }
   const response = await requestJson<ApiEnvelope<{ mailLeadMonths: number }>>(
     "/settings/mail-lead-months",
     { method: "PATCH", body: JSON.stringify({ mailLeadMonths: months }) },
@@ -83,6 +86,9 @@ export async function getResponseDeadline(): Promise<ResponseDeadline> {
 }
 
 export async function updateResponseDeadline(months: number, days: number): Promise<ResponseDeadline> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("데모(mock) 모드에서는 이 작업을 지원하지 않습니다.");
+  }
   const response = await requestJson<ApiEnvelope<ResponseDeadline>>(
     "/settings/response-deadline",
     { method: "PATCH", body: JSON.stringify({ months, days }) },
@@ -97,6 +103,8 @@ export interface ValuationCriteriaConfig {
   axisWeights: Record<string, number>;
   gradeCutoffs: Record<string, number>;
   maintainThreshold: number;
+  // agent-valuation-4: 사업 연계성 점수가 이 값 이상이면 AI 권고를 '유지 권고'로 끌어올리는 오버라이드 기준점.
+  businessFitOverrideThreshold: number;
   subscoreWeights: Record<string, Record<string, number>>;
 }
 
@@ -123,6 +131,7 @@ export const DEFAULT_VALUATION_CRITERIA: ValuationCriteria = {
     axisWeights: { legal: 25, technology: 25, market: 25, business_fit: 25 },
     gradeCutoffs: { A: 80, B: 60, C: 40 },
     maintainThreshold: 60,
+    businessFitOverrideThreshold: 60,
     subscoreWeights: {
       legal: { right_stability: 35, claim_protection: 40, portfolio_defensive_value: 25 },
       business_fit: { official_business_evidence: 30, product_function_direct_match: 45, business_context_fit: 25 },
@@ -376,6 +385,9 @@ export async function getMailOAuth2Status(): Promise<MailOAuth2Status> {
 }
 
 export async function disconnectMailOAuth2(): Promise<void> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("데모(mock) 모드에서는 이 작업을 지원하지 않습니다.");
+  }
   await requestJson<ApiEnvelope<MailOAuth2Status>>(
     "/admin/settings/mail/oauth2/google",
     { method: "DELETE" },
@@ -383,6 +395,9 @@ export async function disconnectMailOAuth2(): Promise<void> {
 }
 
 export async function redirectToGoogleOAuth2(): Promise<void> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("데모(mock) 모드에서는 이 작업을 지원하지 않습니다.");
+  }
   const response = await requestJson<ApiEnvelope<string>>("/admin/settings/mail/oauth2/google/authorize-url");
   const url = response.data;
   if (url) window.location.href = url;
@@ -417,6 +432,9 @@ export async function getActiveQuarter(): Promise<QuarterSetting | null> {
 }
 
 export async function activateReviewQuarter(quarterKey: string): Promise<QuarterActivateResult> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("데모(mock) 모드에서는 이 작업을 지원하지 않습니다.");
+  }
   const response = await requestJson<ApiEnvelope<QuarterActivateResult>>(
     `/settings/review-quarters/${quarterKey}/activate`,
     { method: "POST" },
@@ -442,6 +460,9 @@ export async function updateCountryExtension(
   country: string,
   extensionMonthsByRound: number[],
 ): Promise<CountryExtension> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("데모(mock) 모드에서는 이 작업을 지원하지 않습니다.");
+  }
   const response = await requestJson<ApiEnvelope<CountryExtension>>(
     `/settings/country-extensions/${country}`,
     {
@@ -480,6 +501,9 @@ export interface AnnualFeeScheduleItem {
   adjustedAnnualFeeDueDate: string | null;
   latestAdjustmentReason: string | null;
   countryExtensionMonths: number;
+  // FEE: 초기 일괄 연차(국가 규칙) / 다음 도래 연차수 — BE AnnualFeeScheduleItemResponse와 1:1.
+  initialLumpYears: number;
+  nextDueYearNumber: number;
   annualFeeBasis: "APPLICATION_DATE" | "REGISTRATION_DATE" | string;
   paymentRuleLabel: string | null;
   adjustmentHistory: AnnualFeeAdjustmentHistory[];
@@ -497,6 +521,9 @@ export async function adjustAnnualFeeSchedule(
   adjustedDueDate: string,
   reason: string,
 ): Promise<AnnualFeeScheduleItem> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("데모(mock) 모드에서는 이 작업을 지원하지 않습니다.");
+  }
   const response = await requestJson<ApiEnvelope<AnnualFeeScheduleItem>>(
     `/annual-fees/schedule/${encodeURIComponent(patentId)}`,
     {
@@ -547,7 +574,9 @@ export async function renameClassification(
 ): Promise<ClassificationGroup> {
   if (!isBackendApiEnabled()) return updateFallbackClassification(type, nextValue, currentValue);
   const response = await requestJson<ApiEnvelope<ClassificationGroup>>(
-    `/settings/classifications/${type}/${encodeURIComponent(currentValue)}`,
+    // 대상 분류값은 쿼리 파라미터(value)로 보낸다. '금융/전략'처럼 '/'가 포함된 값은
+    // path segment로 보내면 %2F를 StrictHttpFirewall이 차단(400)하므로 BE 계약과 맞춘다. (FR-LEGAL-25)
+    `/settings/classifications/${type}?value=${encodeURIComponent(currentValue)}`,
     {
       method: "PUT",
       body: JSON.stringify({ value: nextValue }),
@@ -562,7 +591,7 @@ export async function deleteClassification(type: ClassificationType, value: stri
     return { ...group, values: group.values.filter((item) => item !== value) };
   }
   const response = await requestJson<ApiEnvelope<ClassificationGroup>>(
-    `/settings/classifications/${type}/${encodeURIComponent(value)}`,
+    `/settings/classifications/${type}?value=${encodeURIComponent(value)}`,
     { method: "DELETE" },
   );
   return response.data!;
@@ -587,6 +616,8 @@ export interface FeeRule {
   initialLumpYears: number;
   cycleMonths: number;
   ruleLabel: string;
+  // fe-admin-settings-3: 고정 유지료 일정(US 등) — 기산일·일괄 연차 편집이 BE에서 무시되는 규칙.
+  fixedSchedule?: boolean;
 }
 
 export async function getFeeRules(): Promise<FeeRule[]> {
@@ -601,6 +632,9 @@ export async function updateFeeRule(
   country: string,
   payload: { basis?: FeeRule["basis"]; initialLumpYears?: number; cycleMonths?: number },
 ): Promise<FeeRule | undefined> {
+  if (!isBackendApiEnabled()) {
+    throw new Error("데모(mock) 모드에서는 이 작업을 지원하지 않습니다.");
+  }
   const response = await requestJson<ApiEnvelope<FeeRule>>(`/settings/fee-rules/${country}`, {
     method: "PUT",
     body: JSON.stringify(payload),

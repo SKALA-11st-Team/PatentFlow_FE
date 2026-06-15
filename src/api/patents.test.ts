@@ -119,7 +119,7 @@ describe("patents API Utils", () => {
         { category: "BUSINESS_ALIGNMENT", score: 0, evidenceSummary: "" },
       ] satisfies EvaluationScore[];
 
-      expect(getTotalScoreText(scores, 0, 0)).toBe("0/400점, 평균 0점");
+      expect(getTotalScoreText(scores, 0, 0)).toBe("0/300점, 평균 0점");
     });
   });
 
@@ -177,6 +177,23 @@ describe("patents API Utils", () => {
       expect(report.editVersion).toBe(3);
       expect(report.editStale).toBe(true);
       expect(report.appliedCriteria).toEqual({ version: 2 });
+    });
+
+    it("averageScore와 축별 점수가 모두 없으면 totalScore를 핵심 3축으로 나눠 평균을 환산한다(BE /3 정합)", () => {
+      const report = mapBackendAiEvaluationReport({
+        reportId: "R-3",
+        createdAt: "2026-06-08T00:00:00Z",
+        recommendation: "REVIEW_AGAIN",
+        recommendationReason: "근거 제한",
+        // 3축 합(권리성·기술성·시장성), business_fit은 합산 제외.
+        totalScore: 210,
+        // degraded 폴백: averageScore 미제공 + 숫자 점수 없는 축만 존재.
+        scores: [{ category: "RIGHTS", score: null, grade: null, evidence: "근거 부족" }],
+        missingInformation: [],
+      });
+
+      // 210 / 3 = 70 (이전 /4였다면 52.5로 약 25% 과소 산정됨).
+      expect(report.averageScore).toBe(70);
     });
   });
 });

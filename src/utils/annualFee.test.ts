@@ -66,5 +66,13 @@ describe("annualFee Utils", () => {
       const baseDate = new Date("2024-05-19");
       expect(getRemainingDaysUntilDate("2024-05-19", baseDate)).toBe(0);
     });
+
+    // 파싱 실패는 null로 반환해 '오늘 마감'(유효 0)과 구분한다(D-day 오표시 방지).
+    it("형식이 잘못된 날짜는 0이 아닌 null을 반환한다", () => {
+      const baseDate = new Date("2024-05-19");
+      expect(getRemainingDaysUntilDate("invalid", baseDate)).toBeNull();
+      expect(getRemainingDaysUntilDate("2024-13-99", baseDate)).toBeNull();
+      expect(getRemainingDaysUntilDate("", baseDate)).toBeNull();
+    });
   });
 });

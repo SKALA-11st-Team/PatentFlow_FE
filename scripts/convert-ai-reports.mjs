@@ -92,9 +92,14 @@ function parseAiReport(entry) {
       score: score.value,
     };
   });
-  const scoreValues = scores.map((score) => score.score).filter((score) => typeof score === "number");
-  const categoryTotal = scoreValues.reduce((sum, score) => sum + score, 0);
-  const averageScore = scoreValues.length ? roundToOneDecimal(categoryTotal / scoreValues.length) : undefined;
+  // Agent 권위: 종합 점수는 핵심 3축(권리성·기술성·시장성) 합(max 300), 평균은 그 3축 평균이다.
+  // 사업 연계성(BUSINESS_ALIGNMENT)은 축 점수로 표시하되 종합 합산에서 제외한다.
+  const coreScoreValues = scores
+    .filter((score) => score.category !== "BUSINESS_ALIGNMENT")
+    .map((score) => score.score)
+    .filter((score) => typeof score === "number");
+  const categoryTotal = coreScoreValues.reduce((sum, score) => sum + score, 0);
+  const averageScore = coreScoreValues.length ? roundToOneDecimal(categoryTotal / coreScoreValues.length) : undefined;
   const externalSources = collectExternalSources(scores.flatMap((score) => score.evidenceDetails));
 
   return {
@@ -109,8 +114,8 @@ function parseAiReport(entry) {
     recommendation: getRecommendation(recommendationText),
     recommendationText,
     scores,
-    totalScore: averageScore ?? categoryTotal,
-    totalScoreText: `${categoryTotal}/${scores.length * 100}점, 평균 ${averageScore}점`,
+    totalScore: categoryTotal,
+    totalScoreText: `${categoryTotal}/${coreScoreValues.length * 100}점, 평균 ${averageScore}점`,
   };
 }
 

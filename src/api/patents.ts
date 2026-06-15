@@ -85,6 +85,12 @@ export interface BulkMailingResult {
   skippedPatentIds?: string[];
   updatedCount: number;
   updatedPatentIds: string[];
+  // BE MailingSendResponse 정합화: 부분 발송 실패/연동 미설정 기록을 발송 화면에서 노출하기 위한 신호.
+  // sentCount=실발송, failedCount=SMTP 실패(FAILED 이력), recordedCount=Google 계정 미연동으로 발송 없이 기록만.
+  mailingBatchId?: string;
+  sentCount?: number;
+  failedCount?: number;
+  recordedCount?: number;
 }
 
 export interface FinalDecisionPayload {
@@ -162,6 +168,8 @@ interface BackendPatentDetail extends BackendPatentListItem {
     finalGrade?: string | null;
     degraded?: boolean | null;
     failureReason?: string | null;
+    warnings?: string[] | null;
+    evidenceConfidence?: string | null;
     scores: Array<{
       category: string;
       score: number | null;
@@ -893,7 +901,9 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
   const rawTotalScore = typeof report.totalScore === "number" ? report.totalScore : getScoreTotal(scores) ?? 0;
   const averageScore = typeof report.averageScore === "number"
     ? report.averageScore
-    : scoreAverage ?? (rawTotalScore > 0 ? Math.round((rawTotalScore / 4) * 10) / 10 : undefined);
+    // BE PatentWorkflowService.averageScore 폴백과 정합: totalScore는 핵심 평가축(권리성·기술성·시장성) 3축 합이므로
+    // 평균 환산도 3으로 나눈다(이전 /4는 BE /3과 어긋나 동일 입력에서 평균을 약 25% 과소 산정했다).
+    : scoreAverage ?? (rawTotalScore > 0 ? Math.round((rawTotalScore / 3) * 10) / 10 : undefined);
 
   return {
     evaluationId: report.reportId,
@@ -906,6 +916,8 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
     finalGrade: report.finalGrade ?? null,
     degraded: Boolean(report.degraded),
     failureReason: report.failureReason ?? null,
+    warnings: report.warnings ?? undefined,
+    evidenceConfidence: report.evidenceConfidence ?? null,
     // ORCH-06/AIREPORT-02: 리포트 레벨 리치 근거를 화면 모델로 풀스루한다(그동안 항상 빈 값이던 필드).
     keyEvidence: report.keyEvidence ?? undefined,
     judgementGrounds: report.judgementGrounds ?? undefined,
@@ -1003,13 +1015,15 @@ export function formatReportDisplayScore(report: AiEvaluationReport) {
 }
 
 export function getTotalScoreText(scores: EvaluationScore[], averageScore: number | undefined, rawTotalScore?: number) {
-  const scoreTotal = rawTotalScore ?? getScoreTotal(scores);
+  // Agent 권위: 종합 점수는 핵심 3축(권리성·기술성·시장성) 합(max 300)이며 사업 연계성은 합산에서 제외한다.
+  const coreScores = scores.filter((score) => score.category !== "BUSINESS_ALIGNMENT");
+  const scoreTotal = rawTotalScore ?? getScoreTotal(coreScores);
 
   if (averageScore === undefined || scoreTotal === undefined) {
     return undefined;
   }
 
-  const maxScore = scores.length > 0 ? scores.length * 100 : 400;
+  const maxScore = coreScores.length > 0 ? coreScores.length * 100 : 300;
   return `${scoreTotal}/${maxScore}점, 평균 ${averageScore}점`;
 }
 

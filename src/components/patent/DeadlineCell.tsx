@@ -22,6 +22,7 @@ export function DeadlineCell({ dueDate }: DeadlineCellProps) {
 /** D3: 임박도 컬러 스케일 — D-7 이하 위험, D-30 이하 주의. */
 function ddayToneClass(dueDateText: string) {
   const remainingDays = getRemainingDaysUntilDate(dueDateText);
+  if (remainingDays === null) return "";
   if (remainingDays < 0) return "deadline-overdue";
   if (remainingDays <= 7) return "deadline-urgent";
   if (remainingDays <= 30) return "deadline-soon";
@@ -34,6 +35,10 @@ function formatShortDate(dateText: string) {
 
 function formatRemainingDays(dueDateText: string) {
   const remainingDays = getRemainingDaysUntilDate(dueDateText);
+
+  if (remainingDays === null) {
+    return "-";
+  }
 
   if (remainingDays === 0) {
     return "D-day";

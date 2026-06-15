@@ -99,6 +99,9 @@ export interface AiEvaluationReport {
   finalGrade?: string | null;
   degraded?: boolean;
   failureReason?: string | null;
+  // xcomp-be-agent-2: Agent 계약 신호(품질 경고·근거 신뢰도).
+  warnings?: string[];
+  evidenceConfidence?: string | null;
   keyEvidence?: string;
   judgementGrounds?: string[];
   scores: EvaluationScore[];
@@ -212,7 +215,7 @@ export interface PatentBibliographicInfo {
   applicationNumber: string;
   registrationNumber: string | null;
   expectedExpirationDate: string;
-  source: "KIPRIS" | "GOOGLE_PATENTS";
+  source: "KIPRIS" | "GOOGLE_PATENTS" | "CSV_IMPORT";
 }
 
 export interface PatentUpsertPayload extends PatentBibliographicInfo {

@@ -6,7 +6,7 @@ import { submitBusinessChecklist } from "../../api/businessChecklist";
 import { getBusinessSubmissionVersions } from "../../api/businessSubmissions";
 // CONTRACT-02: 대표 점수 산식은 api/patents의 단일 정본을 공유해 척도 드리프트를 막는다.
 import { formatReportDisplayScore, getBusinessPatentDetail } from "../../api/patents";
-import { getActiveQuarter } from "../../api/settings";
+import { getActiveQuarter, type QuarterSetting } from "../../api/settings";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
 import { Modal } from "../../components/common/Modal";
@@ -24,6 +24,7 @@ import { useClientPagination } from "../../hooks/useClientPagination";
 import { usePatentList } from "../../hooks/usePatentList";
 import {
   RECOMMENDATION_FILTER_OPTIONS,
+  accessWindowStateLabels,
   businessOpinionLabels,
   evaluationCategoryLabels,
   getBusinessOpinionTone,
@@ -34,6 +35,7 @@ import {
 } from "../../constants/status";
 import type { BusinessChecklistSubmission } from "../../types/businessChecklist";
 import type { BusinessSubmissionVersion } from "../../types/businessSubmission";
+import type { AccessWindowState } from "../../types/invitation";
 import type { PatentDetail, PatentListItem } from "../../types/patent";
 
 type OpinionFilter = "ALL" | "PENDING" | "SUBMITTED";
@@ -60,13 +62,21 @@ export function BusinessReviewRequestPage() {
   const [detailMessage, setDetailMessage] = useState("");
   const [submittedOpinions, setSubmittedOpinions] = useState<Record<string, BusinessChecklistSubmission>>({});
   const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
+  const [activeQuarter, setActiveQuarter] = useState<QuarterSetting | null>(null);
+  const { items: businessChecklistItems } = useBusinessChecklistItems();
   const user = getStoredAuthUser();
 
   useEffect(() => {
     getActiveQuarter()
-      .then((q) => setSubmissionDeadline(q?.submissionDeadline ?? null))
+      .then((q) => {
+        setActiveQuarter(q);
+        setSubmissionDeadline(q?.submissionDeadline ?? null);
+      })
       .catch((error) => setDetailMessage(getApiErrorMessage(error, "활성 분기 정보를 불러오지 못했습니다.")));
   }, []);
+  // 회신 기한 기반 접근 윈도우 — 열린 검토(활성 분기)가 없으면 NONE, 회신 기한 경과면 CLOSED, 아니면 OPEN.
+  const accessWindow = getAccessWindow(activeQuarter ? submissionDeadline : null);
+  const isClosed = accessWindow.state === "CLOSED";
   const { errorMessage, isLoading, patents } = usePatentList({ departmentId: user?.departmentId ?? undefined });
   const assigned = useMemo(
     () => patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE"),
@@ -106,6 +116,12 @@ export function BusinessReviewRequestPage() {
             <p>{detailMessage || errorMessage || (isLoading ? "특허 목록을 불러오는 중입니다." : `${filteredPatents.length}건의 특허가 조회되었습니다. 행을 선택하면 의견 등록 모달이 열립니다.`)}</p>
           </div>
         </div>
+        <p className={`notice ${isClosed ? "notice-warning" : ""}`}>
+          <Badge tone={accessWindow.state === "OPEN" ? "success" : isClosed ? "warning" : "neutral"}>
+            {accessWindowStateLabels[accessWindow.state]}
+          </Badge>{" "}
+          {accessWindow.message}
+        </p>
         <div className="filter-bar business-filter-bar">
           <label>
             <span>검색</span>
@@ -166,21 +182,29 @@ export function BusinessReviewRequestPage() {
                 const submittedOpinion = submittedOpinions[patent.patentId]?.finalOpinion;
                 const displayedOpinion = submittedOpinion ?? patent.businessOpinionDecision;
                 const alreadySubmitted = Boolean(displayedOpinion);
+                // 회신 기한 마감(CLOSED) 후에는 미제출 행도 클릭/등록 차단 — BE 차단 전에 사전 안내.
+                const rowDisabled = alreadySubmitted || isClosed;
 
                 return (
                   <tr
-                    className={alreadySubmitted ? undefined : "clickable-row"}
+                    className={rowDisabled ? undefined : "clickable-row"}
                     key={patent.patentId}
-                    onClick={alreadySubmitted ? undefined : () => handleSelectPatent(patent.patentId)}
-                    onKeyDown={alreadySubmitted ? undefined : (event) => {
+                    onClick={rowDisabled ? undefined : () => handleSelectPatent(patent.patentId)}
+                    onKeyDown={rowDisabled ? undefined : (event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
                         handleSelectPatent(patent.patentId);
                       }
                     }}
-                    role={alreadySubmitted ? undefined : "button"}
-                    tabIndex={alreadySubmitted ? undefined : 0}
-                    title={alreadySubmitted ? "이미 제출한 의견은 변경할 수 없습니다." : undefined}
+                    role={rowDisabled ? undefined : "button"}
+                    tabIndex={rowDisabled ? undefined : 0}
+                    title={
+                      alreadySubmitted
+                        ? "이미 제출한 의견은 변경할 수 없습니다."
+                        : isClosed
+                          ? "회신 기한이 종료되어 의견을 등록할 수 없습니다."
+                          : undefined
+                    }
                   >
                     <td>
                       <strong title={patent.title}>{patent.title}</strong>
@@ -228,7 +252,8 @@ export function BusinessReviewRequestPage() {
 
       {selectedPatent ? (
         <BusinessOpinionModal
-          initialSubmission={submittedOpinions[selectedPatent.patentId] ?? createBusinessChecklistDraft(selectedPatent)}
+          initialSubmission={submittedOpinions[selectedPatent.patentId] ?? createBusinessChecklistDraft(selectedPatent, businessChecklistItems)}
+          isClosed={isClosed}
           onClose={() => setSelectedPatent(null)}
           onSubmit={async (submission) => {
             const savedSubmission = await submitBusinessChecklist(selectedPatent.patentId, submission);
@@ -341,11 +366,13 @@ function comparePatents(firstPatent: PatentListItem, secondPatent: PatentListIte
  */
 function BusinessOpinionModal({
   initialSubmission,
+  isClosed,
   onClose,
   onSubmit,
   patent,
 }: {
   initialSubmission: BusinessChecklistSubmission;
+  isClosed: boolean;
   onClose: () => void;
   onSubmit: (submission: BusinessChecklistSubmission) => void | Promise<void>;
   patent: PatentDetail;
@@ -387,8 +414,19 @@ function BusinessOpinionModal({
   }, [patent]);
 
   async function handleSubmit() {
+    if (isClosed) {
+      setSubmitMessage("회신 기한이 종료되어 의견을 제출할 수 없습니다.");
+      return;
+    }
+
     if (!hasCompleteBusinessChecklistSubmission(draft)) {
       setSubmitMessage("모든 체크리스트 점수와 사업부 의견을 입력해 주세요.");
+      return;
+    }
+
+    // BIZ: 정성 점수는 BE @Min(-5)@Max(5) 계약과 동일하게 사전 검증해 모호한 일반 400을 막는다.
+    if (!isWithinQualitativeScoreRange(draft.qualitativeScore)) {
+      setSubmitMessage("정성적 요소 점수는 -5에서 5 사이로 입력해 주세요.");
       return;
     }
 
@@ -491,6 +529,11 @@ function BusinessOpinionModal({
         </div>
 
         <div className="business-opinion-form-panel">
+          {isClosed ? (
+            <p className="notice notice-warning">
+              회신 기한이 종료되어 의견을 제출할 수 없습니다. 조회만 가능합니다.
+            </p>
+          ) : null}
           <div className="checklist-total-row">
             <span>총점</span>
             <strong>{total}점</strong>
@@ -587,7 +630,7 @@ function BusinessOpinionModal({
         <Button onClick={onClose} type="button" variant="secondary">
           취소
         </Button>
-        <Button disabled={isSubmitting} onClick={handleSubmit} type="button">
+        <Button disabled={isSubmitting || isClosed} onClick={handleSubmit} type="button">
           {isSubmitting ? "전달 중" : "관리자에게 전달"}
         </Button>
       </div>
@@ -602,6 +645,45 @@ function hasCompleteBusinessChecklistSubmission(submission: BusinessChecklistSub
       Number.isFinite(submission.qualitativeScore) &&
       submission.finalOpinion,
   );
+}
+
+/**
+ * @relatedFR FR-BUS-01
+ * @relatedUI UI-BUS-02
+ * @description 정성 점수가 BE @Min(-5)@Max(5) 계약 범위(-5~5) 안에 있는지 검증한다.
+ */
+function isWithinQualitativeScoreRange(qualitativeScore: number) {
+  return Number.isFinite(qualitativeScore) && qualitativeScore >= -5 && qualitativeScore <= 5;
+}
+
+/**
+ * @relatedFR FR-LEGAL-23, FR-BUS-01
+ * @relatedUI UI-BUS-02
+ * @description 회신 기한과 오늘을 비교해 접근 윈도우 상태(열림/마감/없음)와 안내 문구를 계산한다.
+ *              열린 검토(활성 분기)가 없으면 NONE, 회신 기한 경과면 CLOSED, 그 외 OPEN.
+ */
+function getAccessWindow(submissionDeadline: string | null): { state: AccessWindowState; message: string } {
+  if (!submissionDeadline) {
+    return { state: "NONE", message: "현재 진행 중인 검토 요청이 없습니다." };
+  }
+
+  // 회신 기한은 날짜 단위 비교 — 자정 기준으로 잘라 남은 일수를 계산한다.
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const deadline = new Date(`${submissionDeadline}T00:00:00`);
+  const remainingDays = Math.ceil((deadline.getTime() - startOfToday.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (remainingDays < 0) {
+    return {
+      state: "CLOSED",
+      message: `회신 기한 ${submissionDeadline} 경과 — 제출 기간이 종료되어 조회만 가능합니다.`,
+    };
+  }
+
+  return {
+    state: "OPEN",
+    message: `회신 기한 ${submissionDeadline} · 남은 ${remainingDays}일 — 지금 의견을 제출할 수 있습니다.`,
+  };
 }
 
 /**

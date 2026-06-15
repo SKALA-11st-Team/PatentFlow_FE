@@ -24,4 +24,10 @@ export interface BusinessSubmissionVersion {
   checklistTotal: number;
   checklistScores: BusinessSubmissionChecklistScore[];
   qualitativeScore: number;
+  // 사업부 자유 입력 — 제출 당시 값으로 영속화된다(과거/시드 제출에는 없을 수 있어 선택적).
+  qualitativeMemo?: string | null;
+  additionalNeeds?: string | null;
+  evaluatedAt?: string | null;
+  // fe-components-2: 제출 당시 AI 레포트 축별 점수 스냅샷(현재 레포트가 아니라 '당시' 값).
+  snapshotScores?: { category: string; score: number | null; grade?: string | null }[];
 }
