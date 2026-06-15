@@ -4519,6 +4519,37 @@ tbody tr:hover {
   justify-content: space-between;
 }
 
+/* 카드 제목 + 산정 기준 도움말('?') 아이콘 묶음 */
+.visual-card-title-group {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.fee-help-icon {
+  align-items: center;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  cursor: help;
+  display: inline-flex;
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 700;
+  height: 1.05rem;
+  justify-content: center;
+  line-height: 1;
+  width: 1.05rem;
+}
+
+.fee-help-icon:hover,
+.fee-help-icon:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  outline: none;
+}
+
 .timeline-unit-toggle {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);

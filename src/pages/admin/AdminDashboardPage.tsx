@@ -613,7 +613,25 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
   return (
     <div className="dashboard-visual-card">
       <div className="dashboard-visual-card-head">
-        <h3>분기별 예상 연차료</h3>
+        <div className="visual-card-title-group">
+          <h3>분기별 예상 연차료</h3>
+          <span
+            aria-label="예상 연차료 산정 기준"
+            className="fee-help-icon"
+            role="img"
+            tabIndex={0}
+            title={[
+              "국가별 기산일·연차 경과 구간 기준 추정치입니다.",
+              "· 기산일: KR·US는 등록일 기준, 그 외(JP·CN·EP 등)는 출원일 기준",
+              "· 단가: 경과 연차 구간별 누진 추정 (KR 15만→18만→24만→30만원 등)",
+              "· 해외는 환율 환산값 (JPY 9 / CNY 190 / EUR 1,500원)",
+              "· 납부 예정 시점은 BE 연차료 일정(feeDueDate)을 우선 사용",
+              "실제 납부액은 특허청 고시·청구항 수·환율에 따라 달라질 수 있는 참고용 값입니다.",
+            ].join("\n")}
+          >
+            ?
+          </span>
+        </div>
         <span className="table-subtext">추정치 (참고용)</span>
       </div>
       <svg
