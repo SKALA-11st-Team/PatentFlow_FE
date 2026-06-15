@@ -3234,6 +3234,7 @@ tbody tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   margin: 0;
+  min-width: 0; /* fieldset 기본값 min-width:min-content 제거 — grid에서 shrink 허용 */
   padding: var(--spacing-lg);
 }
 
@@ -3576,6 +3577,7 @@ tbody tr:hover {
 }
 
 .notice-warning {
+  border-left-color: var(--color-warning) !important;
   color: var(--color-warning, #b45309) !important;
 }
 
@@ -3955,6 +3957,26 @@ tbody tr:hover {
   padding-left: var(--spacing-md);
 }
 
+/* ── 공동출원인 합의 패널 ────────────────────────────────────── */
+
+.co-applicant-consent-panel {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+}
+
+/* ── AI 재생성 인라인 확인 ───────────────────────────────────── */
+
+.regen-confirm-inline {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
 /* ── FR-LEGAL-09: AI 레포트 법무 편집 ──────────────────────── */
 
 .ai-report-edit-toolbar {
@@ -4031,7 +4053,7 @@ tbody tr:hover {
 }
 
 .ai-report-edit-score-input input {
-  width: 5rem;
+  width: 5rem !important; /* 전역 input:not() 특이성 우선 */
 }
 
 .ai-report-edit-score-input span {
@@ -4121,9 +4143,10 @@ tbody tr:hover {
   border-radius: var(--radius-sm);
   flex: none;
   font: inherit;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  /* 전역 input:not() 규칙(특이성 0,3,1)이 width·padding을 덮으므로 !important로 재지정 */
+  padding: var(--spacing-xs) var(--spacing-sm) !important;
   text-align: right;
-  width: 7rem;
+  width: 7rem !important;
 }
 
 .valuation-criteria-field input:focus {
@@ -4658,7 +4681,7 @@ tbody tr:hover {
 .deadline-overdue strong { color: var(--color-text-light); text-decoration: line-through; }
 
 /* ── F5/I5: CSV·저장 필터 액션 ─────────────────────────────────────── */
-.csv-action-row { margin-bottom: 0.75rem; flex-wrap: wrap; }
+.csv-action-row { display: flex; margin-bottom: 0.75rem; flex-wrap: wrap; gap: var(--spacing-sm); }
 
 /* 항목3: 등록 폼에서 선택해 둔 PDF 파일 표시 칩 */
 .pdf-file-chip {
@@ -4853,7 +4876,7 @@ tbody tr:hover {
   display: flex;
   gap: 1.5rem;
   justify-content: space-between;
-  padding: 0.85rem 0.25rem;
+  padding: 0.85rem 0.5rem;
 }
 
 .settings-row:first-child { border-top: none; }
@@ -4894,9 +4917,9 @@ tbody tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font: inherit;
-  padding: 0.35rem 0.5rem;
+  padding: 0.35rem 0.5rem !important; /* 전역 input:not() 특이성 우선 */
   text-align: right;
-  width: 4.5rem;
+  width: 4.5rem !important;
 }
 
 .settings-inline-input span {
@@ -4971,9 +4994,9 @@ tbody tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font: inherit;
-  padding: 0.35rem 0.5rem;
+  padding: 0.35rem 0.5rem !important; /* 전역 input:not() 특이성 우선 */
   text-align: right;
-  width: 4.5rem;
+  width: 4.5rem !important;
 }
 
 .extension-round-row label span {
