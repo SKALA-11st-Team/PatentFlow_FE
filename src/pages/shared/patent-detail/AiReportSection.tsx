@@ -12,6 +12,7 @@ import {
 } from "../../../constants/status";
 import type { PatentDetail } from "../../../types/patent";
 import { AxisRadarChart, AxisRadialGrid, ReportSectionPanels } from "./AiReportRichContent";
+import { AxisDetailModal } from "./AxisDetailModal";
 import { formatDate, formatReportDisplayScore } from "./PatentDetailHooks";
 
 // 외부 근거 URL은 http(s)만 링크로 허용한다(javascript:/data: 등 위험 프로토콜 차단).
@@ -175,6 +176,7 @@ export function AiReportSection({
 }) {
   const [pendingRegenConfirm, setPendingRegenConfirm] = useState(false);
   const confidence = getEvidenceConfidenceMeta(report.evidenceConfidence);
+  const [isAxisModalOpen, setIsAxisModalOpen] = useState(false);
 
   function handleRegenerateClick() {
     if (report.edited) {
@@ -315,8 +317,12 @@ export function AiReportSection({
             <AxisRadialGrid scores={report.scores} />
             <AxisRadarChart scores={report.scores} />
           </div>
+          <Button onClick={() => setIsAxisModalOpen(true)} type="button" variant="secondary">
+            평가축별 상세 근거 보기
+          </Button>
         </div>
       ) : null}
+      {isAxisModalOpen ? <AxisDetailModal onClose={() => setIsAxisModalOpen(false)} report={report} /> : null}
       {report.judgementGrounds?.length ? (
         <div className="report-block">
           <h3>판단 근거</h3>

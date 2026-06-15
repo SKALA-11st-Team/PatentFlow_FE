@@ -77,6 +77,10 @@ export interface EvaluationScore {
   grade?: string | null;
   evidenceSummary: string;
   evidenceDetails?: EvaluationEvidenceDetail[];
+  // AIREPORT-AXIS: 축별 상세 모달용 — 위험 요인·부족 정보·신뢰도(0~1).
+  riskFactors?: string[];
+  missingInformation?: string[];
+  confidence?: number | null;
 }
 
 export interface EvaluationEvidenceDetail {

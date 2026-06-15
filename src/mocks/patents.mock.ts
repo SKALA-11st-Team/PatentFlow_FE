@@ -480,7 +480,13 @@ function demoGradeFromScore(score: number | null): string | undefined {
 function withDemoRichFields(report: AiEvaluationReport, row: SkaxPatentRow): AiEvaluationReport {
   return {
     ...report,
-    scores: report.scores.map((score) => ({ ...score, grade: score.grade ?? demoGradeFromScore(score.score) })),
+    scores: report.scores.map((score) => ({
+      ...score,
+      grade: score.grade ?? demoGradeFromScore(score.score),
+      riskFactors: score.riskFactors ?? ["심사 이력·보정 내역 미확인", "구현 파라미터(임계값 등) 구체성 부족"],
+      missingInformation: score.missingInformation ?? ["청구항 전문·실시예 대응표", "실증/PoC 데이터"],
+      confidence: score.confidence ?? 0.72,
+    })),
     evidenceConfidence: report.evidenceConfidence ?? "MEDIUM",
     summaryBrief: report.summaryBrief ?? {
       one_line_summary: `${row.title}에 관한 기술로, 핵심 동작을 자동화·구조화하여 효율을 높이는 발명입니다.`,

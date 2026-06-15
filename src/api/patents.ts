@@ -183,6 +183,10 @@ interface BackendPatentDetail extends BackendPatentListItem {
         text: string;
         source?: { title?: string | null; url?: string | null } | null;
       }> | null;
+      // AIREPORT-AXIS: 축별 상세 모달용.
+      riskFactors?: string[] | null;
+      missingInformation?: string[] | null;
+      confidence?: number | null;
     }>;
     missingInformation: string[];
     // ORCH-06/AIREPORT-02: 리포트 레벨 리치 근거.
@@ -961,6 +965,10 @@ export function mapBackendEvaluationScores(scores: BackendPatentDetail["aiEvalua
       evidenceSummary: score.evidence,
       // ORCH-06/AIREPORT-02: 축별 세부 근거(클릭형 출처)를 풀스루한다.
       evidenceDetails: mapBackendEvidenceDetails(score.evidenceDetails),
+      // AIREPORT-AXIS: 축별 상세 모달용 — 위험 요인·부족 정보·신뢰도.
+      riskFactors: score.riskFactors ?? undefined,
+      missingInformation: score.missingInformation ?? undefined,
+      confidence: score.confidence ?? null,
     }];
   });
 }
