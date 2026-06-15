@@ -25,6 +25,11 @@ function safeExternalUrl(url: string | null | undefined): string | null {
   }
 }
 
+// 근거 요약 앞에 박힌 "NN / X:" 점수·등급 프리픽스 제거 — 점수·등급은 별도 표시되므로 중복을 없앤다.
+function stripScorePrefix(text: string): string {
+  return text.replace(/^\s*\d{1,3}\s*\/\s*[A-Da-d]\s*[:·-]?\s*/, "").trim();
+}
+
 export function AiReportStructuredContent({ report }: { report: PatentDetail["aiEvaluationReport"] }) {
   return (
     <div className="score-list">
@@ -32,7 +37,7 @@ export function AiReportStructuredContent({ report }: { report: PatentDetail["ai
         <div className="score-row" key={score.category}>
           <div>
             <strong>{evaluationCategoryLabels[score.category]}</strong>
-            <span>{score.evidenceSummary}</span>
+            <span>{stripScorePrefix(score.evidenceSummary)}</span>
             {score.evidenceDetails?.length ? (
               <ul className="score-detail-list">
                 {score.evidenceDetails.map((detail) => (

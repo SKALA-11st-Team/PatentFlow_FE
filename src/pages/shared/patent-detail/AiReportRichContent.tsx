@@ -199,6 +199,22 @@ export function ReportSectionPanels({ sections }: { sections: Partial<Record<Rep
   );
 }
 
+// 판단(recommendation) → 강조 텍스트 색. 배지 톤과 동일 의미.
+function recommendationColor(recommendation: AiEvaluationReport["recommendation"]): string {
+  switch (getRecommendationTone(recommendation)) {
+    case "success":
+      return "var(--color-success)";
+    case "warning":
+      return "var(--color-accent)";
+    case "danger":
+      return "var(--color-error)";
+    case "primary":
+      return "var(--color-primary)";
+    default:
+      return "var(--color-text-dark)";
+  }
+}
+
 // ① 한눈에 보는 판단 요약 — 판단·종합점수·강/약 평가축·핵심 확인·한 줄 요약을 상단에 압축.
 function AxisStat({ label, score }: { label: string; score: EvaluationScore }) {
   return (
@@ -227,10 +243,12 @@ export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport }) 
       <motion.div className="judgment-grid" initial="hidden" variants={containerVariants} viewport={VIEWPORT} whileInView="show">
         <motion.div className="judgment-verdict" variants={itemVariants}>
           <span className="judgment-label">
-            <Sparkles aria-hidden size={15} />
+            <Sparkles aria-hidden size={16} />
             AI 제안 판단
           </span>
-          <Badge tone={getRecommendationTone(report.recommendation)}>{recommendationLabels[report.recommendation]}</Badge>
+          <strong className="judgment-verdict-value" style={{ color: recommendationColor(report.recommendation) }}>
+            {recommendationLabels[report.recommendation]}
+          </strong>
         </motion.div>
         <motion.div className="judgment-stat" variants={itemVariants}>
           <span>AI 종합 점수</span>

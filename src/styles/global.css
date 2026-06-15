@@ -5597,6 +5597,13 @@ tbody tr:hover {
   color: var(--color-accent);
 }
 
+.judgment-verdict-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
 .judgment-stat > span {
   color: var(--color-text-muted);
   font-size: 13px;
