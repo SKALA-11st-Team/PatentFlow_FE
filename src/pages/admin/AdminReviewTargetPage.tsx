@@ -293,9 +293,13 @@ export function AdminReviewTargetPage() {
       setMailDrafts([]);
       setActiveMailIndex(0);
       setIsSendConfirmOpen(false);
+      const failedNote = result.failedCount ? ` ${result.failedCount}건은 발송에 실패했습니다(발송 이력 확인).` : "";
+      const recordedNote = result.recordedCount
+        ? ` ${result.recordedCount}건은 Google 계정 연동 미설정으로 발송 없이 기록되었습니다.`
+        : "";
       setActionMessage(
         result.updatedCount > 0
-          ? `${result.updatedCount}건의 사업부 검토 요청 메일을 발송했습니다.${skippedCount > 0 ? ` ${skippedCount}건은 현재 단계가 맞지 않아 건너뛰었습니다.` : ""}`
+          ? `${result.updatedCount}건의 사업부 검토 요청 메일을 발송했습니다.${skippedCount > 0 ? ` ${skippedCount}건은 현재 단계가 맞지 않아 건너뛰었습니다.` : ""}${failedNote}${recordedNote}`
           : "메일 발송 처리할 선택 건이 없습니다.",
       );
     } catch (error) {
