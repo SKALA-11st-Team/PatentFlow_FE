@@ -116,10 +116,16 @@ export function BusinessSubmissionHistoryDetail({ patent }: { patent: PatentDeta
                     </article>
                   </div>
                   <div className="submission-report-preview">
-                    <span className="submission-report-preview-label">현재 AI 레포트 축별 점수</span>
-                    {patent.aiEvaluationReport.scores.map((score) => (
+                    <span className="submission-report-preview-label">
+                      {submission.snapshotScores?.length ? "제출 당시 AI 레포트 축별 점수" : "현재 AI 레포트 축별 점수"}
+                    </span>
+                    {(submission.snapshotScores?.length
+                      ? submission.snapshotScores
+                      : patent.aiEvaluationReport.scores
+                    ).map((score) => (
                         <span key={score.category}>
-                          {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
+                          {evaluationCategoryLabels[score.category as keyof typeof evaluationCategoryLabels]}{" "}
+                          <b>{score.score ?? "N/A"}</b>
                         </span>
                       ))}
                   </div>
@@ -225,18 +231,31 @@ function AiReportModal({
           {recommendationLabels[submission.aiRecommendation]}
         </Badge>
       </div>
-      <p className="eyebrow">현재 AI 레포트 축별 점수 (제출 당시 스냅샷 미보존)</p>
+      <p className="eyebrow">
+        {submission.snapshotScores?.length
+          ? "제출 당시 AI 레포트 축별 점수"
+          : "현재 AI 레포트 축별 점수 (제출 당시 스냅샷 미보존)"}
+      </p>
       <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
       <div className="score-list">
-        {patent.aiEvaluationReport.scores.map((score) => (
-            <div className="score-row" key={score.category}>
-              <div>
-                <strong>{evaluationCategoryLabels[score.category]}</strong>
-                <span>{score.evidenceSummary}</span>
+        {submission.snapshotScores?.length
+          ? submission.snapshotScores.map((score) => (
+              <div className="score-row" key={score.category}>
+                <div>
+                  <strong>{evaluationCategoryLabels[score.category as keyof typeof evaluationCategoryLabels]}</strong>
+                </div>
+                <b>{score.score ?? "N/A"}</b>
               </div>
-              <b>{score.score ?? "N/A"}</b>
-            </div>
-          ))}
+            ))
+          : patent.aiEvaluationReport.scores.map((score) => (
+              <div className="score-row" key={score.category}>
+                <div>
+                  <strong>{evaluationCategoryLabels[score.category]}</strong>
+                  <span>{score.evidenceSummary}</span>
+                </div>
+                <b>{score.score ?? "N/A"}</b>
+              </div>
+            ))}
       </div>
     </Modal>
   );

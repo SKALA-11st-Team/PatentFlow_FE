@@ -2032,6 +2032,7 @@ export interface components {
             qualitativeScore?: number;
             reason?: string;
             responses?: components["schemas"]["BusinessSubmissionChecklistScoreResponse"][];
+            snapshotScores?: components["schemas"]["EvaluationScoreResponse"][];
             submissionId?: string;
             /** Format: date-time */
             submittedAt?: string;
@@ -2120,6 +2121,7 @@ export interface components {
             countryLabel?: string;
             /** Format: int32 */
             cycleMonths?: number;
+            fixedSchedule?: boolean;
             /** Format: int32 */
             initialLumpYears?: number;
             ruleLabel?: string;

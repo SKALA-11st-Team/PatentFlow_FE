@@ -250,7 +250,8 @@ export function AnnualFeeSettingsSection() {
                   // BE AnnualFeeScheduleService.ruleFor가 고정 유지료 일정(maintenanceMonths)을
                   // 내장한 국가는 기산일·일괄 연차 오버라이드를 무시한다. 편집을 허용하면 저장은
                   // 되지만 응답에서 원복되는 silent no-op이 되므로 입력을 잠근다.
-                  const isFixedRule = hasFixedSchedule(rule.country);
+                  // BE가 내려주는 fixedSchedule 플래그를 우선 사용하고, 미지원 응답엔 국가 하드코딩으로 폴백.
+                  const isFixedRule = rule.fixedSchedule ?? hasFixedSchedule(rule.country);
                   const updateDraft = (patch: Partial<FeeRuleDraft>) =>
                     setFeeRuleDrafts((prev) => ({ ...prev, [rule.country]: { ...draft, ...patch } }));
                   return (

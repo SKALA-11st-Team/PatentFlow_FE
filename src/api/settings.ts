@@ -613,6 +613,8 @@ export interface FeeRule {
   initialLumpYears: number;
   cycleMonths: number;
   ruleLabel: string;
+  // fe-admin-settings-3: 고정 유지료 일정(US 등) — 기산일·일괄 연차 편집이 BE에서 무시되는 규칙.
+  fixedSchedule?: boolean;
 }
 
 export async function getFeeRules(): Promise<FeeRule[]> {
