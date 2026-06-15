@@ -5295,3 +5295,192 @@ tbody tr:hover {
   cursor: not-allowed;
   opacity: 0.4;
 }
+
+/* ===== AIREPORT-RICH: 에이전트 구조화 데이터 렌더링 ===== */
+
+/* 근거 신뢰도 배지 행 */
+.ai-report-signal-row {
+  margin: 0 0 var(--spacing-md);
+}
+
+/* 섹션/카드 헤더: 아이콘 1개 + 제목 (본문 리스트엔 아이콘 금지) */
+.rich-card-header {
+  align-items: center;
+  color: var(--color-text-dark);
+  display: flex;
+  font-size: 14px;
+  font-weight: 600;
+  gap: var(--spacing-sm);
+  margin: 0 0 var(--spacing-xs);
+}
+
+.rich-card-header svg {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+/* ③ 특허 이해 요약 — 6카드 그리드 */
+.summary-brief-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  margin-bottom: var(--spacing-lg);
+}
+
+.summary-brief-card {
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+}
+
+.summary-brief-card p {
+  color: var(--color-text);
+  line-height: 1.66;
+  margin: 0;
+}
+
+.summary-brief-card ul {
+  display: grid;
+  gap: var(--spacing-xs);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.summary-brief-card li {
+  color: var(--color-text);
+  line-height: 1.6;
+  padding-left: 14px;
+  position: relative;
+}
+
+.summary-brief-card li::before {
+  color: var(--color-accent);
+  content: "•";
+  left: 0;
+  position: absolute;
+}
+
+.summary-brief-card--steps {
+  counter-reset: step;
+}
+
+.summary-brief-card--steps li::before {
+  color: var(--color-text-muted);
+  content: counter(step);
+  counter-increment: step;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ④ 평가축 요약 — 원형 progress */
+.axis-radial-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  margin-bottom: var(--spacing-lg);
+}
+
+.axis-radial {
+  align-items: center;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  padding: var(--spacing-md) var(--spacing-sm);
+}
+
+.axis-radial-title {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.axis-radial-figure {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.axis-radial-figure svg {
+  transform: rotate(-90deg);
+}
+
+.axis-radial-track {
+  fill: none;
+  stroke: var(--color-bg-secondary);
+  stroke-width: 8;
+}
+
+.axis-radial-fill {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 8;
+  transition: stroke-dashoffset var(--transition-fast);
+}
+
+.axis-radial-score {
+  font-size: 20px;
+  font-weight: 700;
+  position: absolute;
+}
+
+.axis-radial-meta {
+  align-items: center;
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.axis-radial-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ④/⑤ 보고서 섹션 펼침 패널 */
+.report-section-panels {
+  display: grid;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+}
+
+.report-section-panel {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 0 var(--spacing-md);
+}
+
+.report-section-panel > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-weight: 600;
+  gap: var(--spacing-sm);
+  list-style: none;
+  padding: var(--spacing-md) 0;
+}
+
+.report-section-panel > summary svg {
+  color: var(--color-text-muted);
+}
+
+.report-section-panel > summary .report-section-chevron {
+  margin-left: auto;
+  transition: transform var(--transition-fast);
+}
+
+.report-section-panel[open] > summary .report-section-chevron {
+  transform: rotate(180deg);
+}
+
+.report-section-panel-body {
+  border-top: 1px solid var(--color-border);
+  line-height: 1.72;
+  padding: var(--spacing-md) 0;
+  white-space: pre-wrap;
+}

@@ -123,7 +123,30 @@ export interface AiEvaluationReport {
   editStale?: boolean;
   // 이 레포트 생성에 적용된 가치평가 기준(valuationConfig) 스냅샷.
   appliedCriteria?: Record<string, unknown> | null;
+  // AIREPORT-RICH: 에이전트가 FE 렌더링용으로 구조화한 필드(BE가 풀스루).
+  // 요약 카드(③): 한줄/문제/핵심아이디어/주요기술/작동단계/기대효과.
+  summaryBrief?: AiSummaryBrief | null;
+  // 보고서 섹션별 본문: evaluationScope·judgmentBasis·axisDetails·roleChecklist·finalOpinion.
+  reportSections?: Partial<Record<ReportSectionKey, string>> | null;
 }
+
+// 에이전트 summaryBrief(요약 카드 ③) 구조. 모든 필드 결측 가능.
+export interface AiSummaryBrief {
+  one_line_summary?: string;
+  problem?: string;
+  core_idea?: string;
+  key_components?: string[];
+  operation_steps?: string[];
+  expected_effect?: string;
+}
+
+// 보고서 섹션 키(④ 펼침 패널 / ⑤ 역할별 확인).
+export type ReportSectionKey =
+  | "evaluationScope"
+  | "judgmentBasis"
+  | "axisDetails"
+  | "roleChecklist"
+  | "finalOpinion";
 
 /** 법무 편집 오버라이드 — 수정한 필드만 담는다(없는 필드는 AI 원본 유지). */
 export interface AiReportScoreOverridePayload {

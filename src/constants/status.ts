@@ -249,6 +249,31 @@ export function getGradeTone(grade: string): StatusTone {
   return "danger";
 }
 
+// AIREPORT-RICH: 등급(A/B/C)을 평가축 요약(④)의 정성 라벨로 매핑. 에이전트 grade와 1:1.
+export function getGradeLabel(grade: string | null | undefined): string {
+  if (!grade) return "미산출";
+  if (grade.startsWith("A")) return "매우 우수";
+  if (grade.startsWith("B")) return "양호";
+  if (grade.startsWith("C")) return "보완 필요";
+  return "재검토";
+}
+
+// AIREPORT-RICH: 근거 신뢰도(HIGH/MEDIUM/LOW) → 배지 라벨·톤.
+export function getEvidenceConfidenceMeta(
+  level: string | null | undefined,
+): { label: string; tone: StatusTone } | null {
+  switch ((level ?? "").toUpperCase()) {
+    case "HIGH":
+      return { label: "근거 신뢰도 높음", tone: "success" };
+    case "MEDIUM":
+      return { label: "근거 신뢰도 보통", tone: "primary" };
+    case "LOW":
+      return { label: "근거 신뢰도 낮음", tone: "warning" };
+    default:
+      return null;
+  }
+}
+
 export const evaluationCategoryLabels: Record<EvaluationCategory, string> = {
   RIGHTS: "권리성",
   TECHNOLOGY: "기술성",

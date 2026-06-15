@@ -5,11 +5,13 @@ import { MarkdownView } from "../../../components/common/MarkdownView";
 import { Section } from "../../../components/common/Section";
 import {
   evaluationCategoryLabels,
+  getEvidenceConfidenceMeta,
   getGradeTone,
   getRecommendationTone,
   recommendationLabels,
 } from "../../../constants/status";
 import type { PatentDetail } from "../../../types/patent";
+import { AxisRadialGrid, ReportSectionPanels, SummaryBriefCards } from "./AiReportRichContent";
 import { formatDate, formatReportDisplayScore } from "./PatentDetailHooks";
 
 // 외부 근거 URL은 http(s)만 링크로 허용한다(javascript:/data: 등 위험 프로토콜 차단).
@@ -167,6 +169,7 @@ export function AiReportSection({
   regenerateControls?: AiReportRegenerateControls;
 }) {
   const [pendingRegenConfirm, setPendingRegenConfirm] = useState(false);
+  const confidence = getEvidenceConfidenceMeta(report.evidenceConfidence);
 
   function handleRegenerateClick() {
     if (report.edited) {
@@ -280,7 +283,11 @@ export function AiReportSection({
           </ul>
         </div>
       ) : null}
-      {report.evidenceConfidence ? (
+      {confidence ? (
+        <p className="ai-report-signal-row">
+          <Badge tone={confidence.tone}>{confidence.label}</Badge>
+        </p>
+      ) : report.evidenceConfidence ? (
         <p className="notice">근거 신뢰도: {report.evidenceConfidence}</p>
       ) : null}
       <p className="notice">{report.recommendationText}</p>
@@ -288,6 +295,18 @@ export function AiReportSection({
         <div className="report-callout">
           <strong>핵심 근거</strong>
           <p>{report.keyEvidence}</p>
+        </div>
+      ) : null}
+      {report.summaryBrief ? (
+        <div className="report-block">
+          <h3>특허 이해 요약</h3>
+          <SummaryBriefCards brief={report.summaryBrief} />
+        </div>
+      ) : null}
+      {report.scores.length ? (
+        <div className="report-block">
+          <h3>평가축 요약</h3>
+          <AxisRadialGrid scores={report.scores} />
         </div>
       ) : null}
       {report.judgementGrounds?.length ? (
@@ -301,6 +320,7 @@ export function AiReportSection({
         </div>
       ) : null}
       <AiReportStructuredContent report={report} />
+      {report.reportSections ? <ReportSectionPanels sections={report.reportSections} /> : null}
       {report.businessCheckRequests?.length ? (
         <div className="report-block">
           <h3>사업부 확인 요청 사항</h3>

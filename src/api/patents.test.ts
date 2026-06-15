@@ -195,6 +195,25 @@ describe("patents API Utils", () => {
       // 210 / 3 = 70 (이전 /4였다면 52.5로 약 25% 과소 산정됨).
       expect(report.averageScore).toBe(70);
     });
+
+    it("AIREPORT-RICH: 에이전트 구조화 필드(요약 카드·섹션 본문)를 화면 모델로 풀스루한다", () => {
+      const report = mapBackendAiEvaluationReport({
+        reportId: "R-4",
+        createdAt: "2026-06-08T00:00:00Z",
+        recommendation: "MAINTAIN",
+        recommendationReason: "유지",
+        totalScore: 240,
+        averageScore: 80,
+        scores: [{ category: "RIGHTS", score: 80, grade: "A", evidence: "근거" }],
+        missingInformation: [],
+        summaryBrief: { one_line_summary: "한 줄 요약", key_components: ["구성 A", "구성 B"] },
+        reportSections: { finalOpinion: "최종 검토 의견 본문" },
+      });
+
+      expect(report.summaryBrief?.one_line_summary).toBe("한 줄 요약");
+      expect(report.summaryBrief?.key_components).toEqual(["구성 A", "구성 B"]);
+      expect(report.reportSections?.finalOpinion).toBe("최종 검토 의견 본문");
+    });
   });
 });
 
