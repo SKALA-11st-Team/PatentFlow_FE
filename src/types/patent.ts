@@ -212,7 +212,7 @@ export interface PatentBibliographicInfo {
   applicationNumber: string;
   registrationNumber: string | null;
   expectedExpirationDate: string;
-  source: "KIPRIS" | "GOOGLE_PATENTS";
+  source: "KIPRIS" | "GOOGLE_PATENTS" | "CSV_IMPORT";
 }
 
 export interface PatentUpsertPayload extends PatentBibliographicInfo {
