@@ -3234,6 +3234,7 @@ tbody tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   margin: 0;
+  min-width: 0; /* fieldset 기본값 min-width:min-content 제거 — grid에서 shrink 허용 */
   padding: var(--spacing-lg);
 }
 
@@ -3576,6 +3577,7 @@ tbody tr:hover {
 }
 
 .notice-warning {
+  border-left-color: var(--color-warning) !important;
   color: var(--color-warning, #b45309) !important;
 }
 
@@ -3955,6 +3957,26 @@ tbody tr:hover {
   padding-left: var(--spacing-md);
 }
 
+/* ── 공동출원인 합의 패널 ────────────────────────────────────── */
+
+.co-applicant-consent-panel {
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+}
+
+/* ── AI 재생성 인라인 확인 ───────────────────────────────────── */
+
+.regen-confirm-inline {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
 /* ── FR-LEGAL-09: AI 레포트 법무 편집 ──────────────────────── */
 
 .ai-report-edit-toolbar {
@@ -4031,7 +4053,7 @@ tbody tr:hover {
 }
 
 .ai-report-edit-score-input input {
-  width: 5rem;
+  width: 5rem !important; /* 전역 input:not() 특이성 우선 */
 }
 
 .ai-report-edit-score-input span {
@@ -4081,11 +4103,12 @@ tbody tr:hover {
 }
 
 .valuation-criteria-card {
+  background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   display: grid;
   gap: var(--spacing-sm);
-  max-width: 400px;
   padding: var(--spacing-lg);
 }
 
@@ -4110,7 +4133,9 @@ tbody tr:hover {
   color: var(--color-text-muted);
   flex: 1;
   font-size: 0.9rem;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: keep-all;
 }
 
 .valuation-criteria-field input {
@@ -4118,9 +4143,16 @@ tbody tr:hover {
   border-radius: var(--radius-sm);
   flex: none;
   font: inherit;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  /* 전역 input:not() 규칙(특이성 0,3,1)이 width·padding을 덮으므로 !important로 재지정 */
+  padding: var(--spacing-xs) var(--spacing-sm) !important;
   text-align: right;
-  width: 7rem;
+  width: 7rem !important;
+}
+
+.valuation-criteria-field input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.12);
+  outline: none;
 }
 
 .valuation-criteria-sum {
@@ -4649,7 +4681,7 @@ tbody tr:hover {
 .deadline-overdue strong { color: var(--color-text-light); text-decoration: line-through; }
 
 /* ── F5/I5: CSV·저장 필터 액션 ─────────────────────────────────────── */
-.csv-action-row { margin-bottom: 0.75rem; flex-wrap: wrap; }
+.csv-action-row { display: flex; margin-bottom: 0.75rem; flex-wrap: wrap; gap: var(--spacing-sm); }
 
 /* 항목3: 등록 폼에서 선택해 둔 PDF 파일 표시 칩 */
 .pdf-file-chip {
@@ -4748,6 +4780,90 @@ tbody tr:hover {
 }
 
 
+/* ── 토글 스위치 ────────────────────────────────────────────────────── */
+.toggle-label {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.9rem;
+  gap: var(--spacing-md);
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  appearance: none;
+  background: var(--color-border-strong);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  flex-shrink: 0;
+  height: 22px;
+  position: relative;
+  transition: background 0.15s ease;
+  width: 40px;
+}
+
+.toggle-label input[type="checkbox"]::before {
+  background: var(--color-white);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  content: "";
+  height: 18px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: transform 0.15s ease;
+  width: 18px;
+}
+
+.toggle-label input[type="checkbox"]:checked {
+  background: var(--color-primary);
+}
+
+.toggle-label input[type="checkbox"]:checked::before {
+  transform: translateX(18px);
+}
+
+.toggle-label input[type="checkbox"]:focus-visible {
+  outline: 3px solid rgba(var(--color-primary-rgb), 0.28);
+  outline-offset: 2px;
+}
+
+.toggle-label input[type="checkbox"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ── 설정 행 공유 클래스 (settings-label / settings-control / settings-message) ── */
+.settings-label {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.settings-label strong {
+  font-size: 0.92rem;
+}
+
+.settings-label small {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.settings-control {
+  align-items: center;
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.settings-message {
+  color: var(--color-primary);
+  font-size: 0.8rem;
+}
+
 /* ── 항목8: 설정 행 레이아웃(좌 설명 · 우 입력) ───────────────────── */
 .settings-row-list {
   display: flex;
@@ -4760,7 +4876,7 @@ tbody tr:hover {
   display: flex;
   gap: 1.5rem;
   justify-content: space-between;
-  padding: 0.85rem 0.25rem;
+  padding: 0.85rem 0.5rem;
 }
 
 .settings-row:first-child { border-top: none; }
@@ -4801,9 +4917,9 @@ tbody tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font: inherit;
-  padding: 0.35rem 0.5rem;
+  padding: 0.35rem 0.5rem !important; /* 전역 input:not() 특이성 우선 */
   text-align: right;
-  width: 4.5rem;
+  width: 4.5rem !important;
 }
 
 .settings-inline-input span {
@@ -4878,9 +4994,9 @@ tbody tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font: inherit;
-  padding: 0.35rem 0.5rem;
+  padding: 0.35rem 0.5rem !important; /* 전역 input:not() 특이성 우선 */
   text-align: right;
-  width: 4.5rem;
+  width: 4.5rem !important;
 }
 
 .extension-round-row label span {
