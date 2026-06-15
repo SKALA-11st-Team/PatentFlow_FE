@@ -2633,6 +2633,8 @@ export interface components {
             axisWeights: {
                 [key: string]: number;
             };
+            /** Format: double */
+            businessFitOverrideThreshold?: number;
             gradeCutoffs: {
                 [key: string]: number;
             };

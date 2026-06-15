@@ -54,6 +54,7 @@ export function ValuationCriteriaSection() {
   const [axisDraft, setAxisDraft] = useState<NumberDraft>({});
   const [cutoffDraft, setCutoffDraft] = useState<NumberDraft>({});
   const [thresholdDraft, setThresholdDraft] = useState("60");
+  const [businessFitDraft, setBusinessFitDraft] = useState("60");
   const [prompts, setPrompts] = useState<ValuationPrompt[]>([]);
   const [promptDrafts, setPromptDrafts] = useState<Record<string, string>>({});
   const [promptReasons, setPromptReasons] = useState<Record<string, string>>({});
@@ -72,6 +73,7 @@ export function ValuationCriteriaSection() {
     setAxisDraft(toDraft(next.config.axisWeights));
     setCutoffDraft(toDraft(next.config.gradeCutoffs));
     setThresholdDraft(String(next.config.maintainThreshold));
+    setBusinessFitDraft(String(next.config.businessFitOverrideThreshold ?? 60));
   };
 
   const applyPrompts = (nextPrompts: ValuationPrompt[]) => {
@@ -106,9 +108,12 @@ export function ValuationCriteriaSection() {
     hasInvalidNumber(cutoffDraft) || !(100 >= cutoffA && cutoffA > cutoffB && cutoffB > cutoffC && cutoffC >= 0);
   const threshold = Number(thresholdDraft);
   const thresholdInvalid = thresholdDraft.trim() === "" || Number.isNaN(threshold) || threshold < 0 || threshold > 100;
+  const businessFit = Number(businessFitDraft);
+  const businessFitInvalid =
+    businessFitDraft.trim() === "" || Number.isNaN(businessFit) || businessFit < 0 || businessFit > 100;
   // subscoreWeights는 화면에서 편집하지 않으므로(편집 UI 없음) 검증에서 제외한다. 저장 시 마지막으로
   // 로드한 criteria.config.subscoreWeights를 그대로 패스스루해, 사용자가 손댈 수 없는 영역이 저장을 막지 않게 한다.
-  const canSave = !axisInvalid && !cutoffInvalid && !thresholdInvalid;
+  const canSave = !axisInvalid && !cutoffInvalid && !thresholdInvalid && !businessFitInvalid;
   const activePrompt = prompts.find((item) => item.axis === activeAxis);
   const activePromptDraft = promptDrafts[activeAxis] ?? "";
   const isPromptDirty = Boolean(activePrompt && activePrompt.markdown !== activePromptDraft);
@@ -121,6 +126,7 @@ export function ValuationCriteriaSection() {
       axisWeights: Object.fromEntries(Object.entries(axisDraft).map(([key, value]) => [key, Number(value)])),
       gradeCutoffs: Object.fromEntries(Object.entries(cutoffDraft).map(([key, value]) => [key, Number(value)])),
       maintainThreshold: threshold,
+      businessFitOverrideThreshold: businessFit,
       // 편집 UI가 없는 subscoreWeights는 마지막으로 로드한 값을 그대로 전송한다.
       subscoreWeights: criteria?.config.subscoreWeights ?? DEFAULT_VALUATION_CRITERIA.config.subscoreWeights,
     };
@@ -166,6 +172,7 @@ export function ValuationCriteriaSection() {
     setAxisDraft(toDraft(defaults.axisWeights));
     setCutoffDraft(toDraft(defaults.gradeCutoffs));
     setThresholdDraft(String(defaults.maintainThreshold));
+    setBusinessFitDraft(String(defaults.businessFitOverrideThreshold ?? 60));
     // subscoreWeights는 편집 UI가 없으므로 저장 소스인 criteria.config에 기본값을 반영해 둔다.
     setCriteria((current) =>
       current
@@ -255,6 +262,18 @@ export function ValuationCriteriaSection() {
             />
           </label>
           {thresholdInvalid ? <p className="field-error">0~100 사이 값이어야 합니다.</p> : null}
+          <label className="valuation-criteria-field">
+            <span>사업 연계성 오버라이드 기준 점수</span>
+            <input
+              inputMode="decimal"
+              max={100}
+              min={0}
+              onChange={(event) => setBusinessFitDraft(event.target.value)}
+              type="number"
+              value={businessFitDraft}
+            />
+          </label>
+          {businessFitInvalid ? <p className="field-error">0~100 사이 값이어야 합니다.</p> : null}
         </div>
       </div>
 
