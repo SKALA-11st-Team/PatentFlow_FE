@@ -31,7 +31,7 @@ import {
 import { lifecycleStatusLabels, recommendationLabels, reviewWorkflowStatusLabels } from "../../constants/status";
 import { getOriginalPatentUrl } from "../../utils/businessReviewMail";
 import { downloadAiReportPdf } from "../../utils/reportPrint";
-import { SummaryBriefCards } from "./patent-detail/AiReportRichContent";
+import { JudgmentSummaryBand, SummaryBriefCards } from "./patent-detail/AiReportRichContent";
 import type { MailingDeliveryStatus, MailingHistoryItem } from "../../types/mailing";
 import type { PatentFeeSchedule, PatentHistoryItem, PatentLifecycleStatus, PatentListItem, PatentPdfMeta, UserRole } from "../../types/patent";
 import { formatDate, usePatentDetail } from "./patent-detail/PatentDetailHooks";
@@ -241,6 +241,10 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         </div>
       </section>
 
+      <Section title="한눈에 보는 판단 요약" description="AI 평가 결과를 한 화면에 요약합니다.">
+        <JudgmentSummaryBand report={patent.aiEvaluationReport} />
+      </Section>
+
       <Section
         title="특허 기본 정보"
         description="출원·등록 서지 정보입니다."
@@ -271,7 +275,6 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         </div>
       </Section>
 
-      {feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
       {familyPatents.length > 0 ? <PatentFamilyCard isAdmin={isAdmin} members={familyPatents} /> : null}
 
       <div className="detail-followup-grid">
@@ -405,6 +408,8 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           historyItems={patentHistoryItems}
           message={patentHistoryMessage}
         />
+
+        {feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
 
         <Link className="back-link detail-back-link" to={role === "ADMIN" ? "/admin/dashboard" : "/business/dashboard"}>
           대시보드로 돌아가기

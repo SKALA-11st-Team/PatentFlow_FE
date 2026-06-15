@@ -5555,3 +5555,86 @@ tbody tr:hover {
   padding: var(--spacing-md) 0;
   white-space: pre-wrap;
 }
+
+/* ① 한눈에 보는 판단 요약 밴드 */
+.judgment-band {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.judgment-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.judgment-verdict,
+.judgment-stat {
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-md);
+}
+
+.judgment-verdict {
+  align-content: start;
+  background: rgba(var(--color-accent-rgb), 0.07);
+  border-color: rgba(var(--color-accent-rgb), 0.28);
+}
+
+.judgment-label {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: flex;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 6px;
+}
+
+.judgment-label svg {
+  color: var(--color-accent);
+}
+
+.judgment-stat > span {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+.judgment-stat > strong {
+  color: var(--color-text-dark);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.judgment-stat > strong small {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.judgment-sub {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.judgment-action {
+  font-size: 14px !important;
+  font-weight: 600;
+  line-height: 1.5;
+  /* 2줄까지만 노출 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.judgment-oneliner {
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  line-height: 1.7;
+  margin: 0;
+  padding: var(--spacing-md);
+}

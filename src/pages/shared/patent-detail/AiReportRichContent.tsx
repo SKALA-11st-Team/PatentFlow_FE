@@ -9,12 +9,19 @@ import {
   type LucideIcon,
   MessageSquareText,
   Settings,
+  Sparkles,
   Target,
   TrendingUp,
 } from "lucide-react";
 import { Badge } from "../../../components/common/Badge";
-import { evaluationCategoryLabels, getGradeLabel, getGradeTone } from "../../../constants/status";
-import type { AiSummaryBrief, EvaluationScore, ReportSectionKey } from "../../../types/patent";
+import {
+  evaluationCategoryLabels,
+  getGradeLabel,
+  getGradeTone,
+  getRecommendationTone,
+  recommendationLabels,
+} from "../../../constants/status";
+import type { AiEvaluationReport, AiSummaryBrief, EvaluationScore, ReportSectionKey } from "../../../types/patent";
 
 // ③ 특허 이해 요약 — summaryBrief 6카드. 아이콘은 카드 헤더에만(본문 리스트엔 금지).
 const BRIEF_CARDS: Array<{
@@ -140,6 +147,61 @@ export function ReportSectionPanels({ sections }: { sections: Partial<Record<Rep
           <div className="report-section-panel-body">{sections[key]}</div>
         </details>
       ))}
+    </div>
+  );
+}
+
+// ① 한눈에 보는 판단 요약 — 판단·종합점수·강/약 평가축·핵심 확인·한 줄 요약을 상단에 압축.
+function AxisStat({ label, score }: { label: string; score: EvaluationScore }) {
+  return (
+    <div className="judgment-stat">
+      <span>{label}</span>
+      <strong>
+        {evaluationCategoryLabels[score.category]} {score.score ?? "–"}점
+      </strong>
+      {score.grade ? <Badge tone={getGradeTone(score.grade)}>{`등급 ${score.grade} · ${getGradeLabel(score.grade)}`}</Badge> : null}
+    </div>
+  );
+}
+
+export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport }) {
+  const scored = report.scores.filter((s) => typeof s.score === "number");
+  const strongest = scored.length ? scored.reduce((a, b) => ((b.score ?? 0) > (a.score ?? 0) ? b : a)) : null;
+  const weakest = scored.length ? scored.reduce((a, b) => ((b.score ?? 0) < (a.score ?? 0) ? b : a)) : null;
+  // averageScore 미제공 시 축 점수 평균으로 폴백(소수 1자리).
+  const avgScore =
+    report.averageScore ??
+    (scored.length ? Math.round((scored.reduce((sum, s) => sum + (s.score ?? 0), 0) / scored.length) * 10) / 10 : null);
+  const oneLiner = report.summaryBrief?.one_line_summary ?? report.keyEvidence;
+  const action = report.businessCheckRequests?.find((item) => item.trim());
+  return (
+    <div className="judgment-band">
+      <div className="judgment-grid">
+        <div className="judgment-verdict">
+          <span className="judgment-label">
+            <Sparkles aria-hidden size={15} />
+            AI 제안 판단
+          </span>
+          <Badge tone={getRecommendationTone(report.recommendation)}>{recommendationLabels[report.recommendation]}</Badge>
+        </div>
+        <div className="judgment-stat">
+          <span>AI 종합 점수</span>
+          <strong>
+            {avgScore ?? "–"}
+            <small> / 100</small>
+          </strong>
+          {report.totalScore != null ? <small className="judgment-sub">{report.totalScore} / 300</small> : null}
+        </div>
+        {strongest ? <AxisStat label="가장 강한 평가축" score={strongest} /> : null}
+        {weakest && weakest !== strongest ? <AxisStat label="가장 약한 평가축" score={weakest} /> : null}
+        {action ? (
+          <div className="judgment-stat">
+            <span>핵심 확인 사항</span>
+            <strong className="judgment-action">{action}</strong>
+          </div>
+        ) : null}
+      </div>
+      {oneLiner ? <p className="judgment-oneliner">{oneLiner}</p> : null}
     </div>
   );
 }
