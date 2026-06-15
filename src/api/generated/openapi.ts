@@ -1401,6 +1401,7 @@ export interface components {
             /** Format: date-time */
             editedAt?: string;
             editedBy?: string;
+            evidenceConfidence?: string;
             externalSources?: components["schemas"]["SourceResponse"][];
             failureReason?: string;
             finalGrade?: string;
@@ -1416,6 +1417,7 @@ export interface components {
             scores?: components["schemas"]["EvaluationScoreResponse"][];
             /** Format: int32 */
             totalScore?: number;
+            warnings?: string[];
         };
         AiReportEditRequest: {
             baseReportId: string;

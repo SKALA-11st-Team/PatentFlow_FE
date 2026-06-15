@@ -234,6 +234,19 @@ export function AiReportSection({
         </p>
       ) : null}
       {report.degraded && report.failureReason ? <p className="notice notice-warning">{report.failureReason}</p> : null}
+      {report.warnings?.length ? (
+        <div className="report-block">
+          <h3>생성 경고</h3>
+          <ul className="clean-list">
+            {report.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {report.evidenceConfidence ? (
+        <p className="notice">근거 신뢰도: {report.evidenceConfidence}</p>
+      ) : null}
       <p className="notice">{report.recommendationText}</p>
       {report.keyEvidence ? (
         <div className="report-callout">
