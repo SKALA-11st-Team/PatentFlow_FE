@@ -11,7 +11,7 @@ import {
   recommendationLabels,
 } from "../../../constants/status";
 import type { PatentDetail } from "../../../types/patent";
-import { AxisRadialGrid, ReportSectionPanels } from "./AiReportRichContent";
+import { AxisRadarChart, AxisRadialGrid, ReportSectionPanels } from "./AiReportRichContent";
 import { formatDate, formatReportDisplayScore } from "./PatentDetailHooks";
 
 // 외부 근거 URL은 http(s)만 링크로 허용한다(javascript:/data: 등 위험 프로토콜 차단).
@@ -306,7 +306,10 @@ export function AiReportSection({
       {report.scores.length ? (
         <div className="report-block">
           <h3>평가축 요약</h3>
-          <AxisRadialGrid scores={report.scores} />
+          <div className="axis-summary-layout">
+            <AxisRadialGrid scores={report.scores} />
+            <AxisRadarChart scores={report.scores} />
+          </div>
         </div>
       ) : null}
       {report.judgementGrounds?.length ? (

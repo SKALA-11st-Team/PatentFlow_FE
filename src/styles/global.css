@@ -5638,3 +5638,57 @@ tbody tr:hover {
   margin: 0;
   padding: var(--spacing-md);
 }
+
+/* ④ 평가축 요약 — 원형바 + 레이더 2단 레이아웃 */
+.axis-summary-layout {
+  align-items: center;
+  display: grid;
+  gap: var(--spacing-lg);
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+}
+
+.axis-summary-layout .axis-radial-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0;
+}
+
+.axis-radar {
+  width: 100%;
+}
+
+@media (max-width: 860px) {
+  .axis-summary-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 카드 인터랙션·그림자 정제(#3) — hover 시 미세 리프트 */
+.summary-brief-card,
+.axis-radial,
+.meta-item,
+.judgment-stat,
+.judgment-verdict,
+.report-section-panel {
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.summary-brief-card:hover,
+.axis-radial:hover,
+.meta-item:hover,
+.judgment-stat:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summary-brief-card:hover,
+  .axis-radial:hover,
+  .meta-item:hover,
+  .judgment-stat:hover {
+    transform: none;
+  }
+}

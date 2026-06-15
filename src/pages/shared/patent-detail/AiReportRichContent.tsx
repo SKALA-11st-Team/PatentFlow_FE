@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { animate, motion, useMotionValue, type Variants } from "framer-motion";
+import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from "recharts";
 import {
   BarChart3,
   ChevronDown,
@@ -23,6 +26,25 @@ import {
 } from "../../../constants/status";
 import type { AiEvaluationReport, AiSummaryBrief, EvaluationScore, ReportSectionKey } from "../../../types/patent";
 
+// 스크롤 진입 시 1회 재생되는 스태거 페이드/슬라이드.
+const containerVariants: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+};
+const VIEWPORT = { once: true, amount: 0.2 } as const;
+
+// 0 → value 카운트업(framer-motion).
+function CountUp({ value }: { value: number }) {
+  const mv = useMotionValue(0);
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    const controls = animate(mv, value, { duration: 0.9, ease: "easeOut", onUpdate: (v) => setDisplay(Math.round(v)) });
+    return () => controls.stop();
+  }, [mv, value]);
+  return <>{display}</>;
+}
+
 // ③ 특허 이해 요약 — summaryBrief 6카드. 아이콘은 카드 헤더에만(본문 리스트엔 금지).
 const BRIEF_CARDS: Array<{
   key: keyof AiSummaryBrief;
@@ -46,11 +68,11 @@ export function SummaryBriefCards({ brief }: { brief: AiSummaryBrief }) {
   });
   if (!cards.length) return null;
   return (
-    <div className="summary-brief-grid">
+    <motion.div className="summary-brief-grid" initial="hidden" variants={containerVariants} viewport={VIEWPORT} whileInView="show">
       {cards.map(({ key, label, Icon, list, steps }) => {
         const value = brief[key];
         return (
-          <div className={`summary-brief-card${steps ? " summary-brief-card--steps" : ""}`} key={key}>
+          <motion.div className={`summary-brief-card${steps ? " summary-brief-card--steps" : ""}`} key={key} variants={itemVariants}>
             <h4 className="rich-card-header">
               <Icon aria-hidden size={16} />
               {label}
@@ -64,10 +86,10 @@ export function SummaryBriefCards({ brief }: { brief: AiSummaryBrief }) {
             ) : (
               <p>{String(value)}</p>
             )}
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }
 
@@ -86,29 +108,29 @@ function gradeColor(grade?: string | null): string {
 export function AxisRadialGrid({ scores }: { scores: EvaluationScore[] }) {
   if (!scores.length) return null;
   return (
-    <div className="axis-radial-grid">
+    <motion.div className="axis-radial-grid" initial="hidden" variants={containerVariants} viewport={VIEWPORT} whileInView="show">
       {scores.map((score) => {
         const ratio = Math.max(0, Math.min(100, score.score ?? 0)) / 100;
         const color = gradeColor(score.grade);
         return (
-          <div className="axis-radial" key={score.category}>
+          <motion.div className="axis-radial" key={score.category} variants={itemVariants}>
             <span className="axis-radial-title">{evaluationCategoryLabels[score.category]}</span>
             <div className="axis-radial-figure">
               <svg height={84} viewBox="0 0 84 84" width={84}>
                 <circle className="axis-radial-track" cx={42} cy={42} r={RADIAL_RADIUS} />
-                <circle
+                <motion.circle
                   className="axis-radial-fill"
                   cx={42}
                   cy={42}
+                  initial={{ strokeDashoffset: RADIAL_CIRCUMFERENCE }}
                   r={RADIAL_RADIUS}
-                  style={{
-                    stroke: color,
-                    strokeDasharray: RADIAL_CIRCUMFERENCE,
-                    strokeDashoffset: RADIAL_CIRCUMFERENCE * (1 - ratio),
-                  }}
+                  style={{ stroke: color, strokeDasharray: RADIAL_CIRCUMFERENCE }}
+                  transition={{ duration: 0.9, ease: "easeOut" }}
+                  viewport={VIEWPORT}
+                  whileInView={{ strokeDashoffset: RADIAL_CIRCUMFERENCE * (1 - ratio) }}
                 />
               </svg>
-              <span className="axis-radial-score">{score.score ?? "–"}</span>
+              <span className="axis-radial-score">{score.score != null ? <CountUp value={score.score} /> : "–"}</span>
             </div>
             <div className="axis-radial-meta">
               {score.grade ? <Badge tone={getGradeTone(score.grade)}>{score.grade}</Badge> : null}
@@ -116,9 +138,35 @@ export function AxisRadialGrid({ scores }: { scores: EvaluationScore[] }) {
                 {getGradeLabel(score.grade)}
               </span>
             </div>
-          </div>
+          </motion.div>
         );
       })}
+    </motion.div>
+  );
+}
+
+// ④ 4축 점수 분포 레이더 차트(recharts). 3축 미만이면 생략.
+export function AxisRadarChart({ scores }: { scores: EvaluationScore[] }) {
+  const data = scores
+    .filter((s) => typeof s.score === "number")
+    .map((s) => ({ axis: evaluationCategoryLabels[s.category], score: s.score ?? 0 }));
+  if (data.length < 3) return null;
+  return (
+    <div className="axis-radar">
+      <ResponsiveContainer height={240} width="100%">
+        <RadarChart data={data} outerRadius="68%">
+          <PolarGrid stroke="var(--color-border)" />
+          <PolarAngleAxis dataKey="axis" tick={{ fill: "var(--color-text-muted)", fontSize: 12 }} />
+          <Radar
+            dataKey="score"
+            fill="var(--color-primary)"
+            fillOpacity={0.16}
+            isAnimationActive
+            stroke="var(--color-primary)"
+            strokeWidth={2}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -154,13 +202,13 @@ export function ReportSectionPanels({ sections }: { sections: Partial<Record<Rep
 // ① 한눈에 보는 판단 요약 — 판단·종합점수·강/약 평가축·핵심 확인·한 줄 요약을 상단에 압축.
 function AxisStat({ label, score }: { label: string; score: EvaluationScore }) {
   return (
-    <div className="judgment-stat">
+    <motion.div className="judgment-stat" variants={itemVariants}>
       <span>{label}</span>
       <strong>
         {evaluationCategoryLabels[score.category]} {score.score ?? "–"}점
       </strong>
       {score.grade ? <Badge tone={getGradeTone(score.grade)}>{`등급 ${score.grade} · ${getGradeLabel(score.grade)}`}</Badge> : null}
-    </div>
+    </motion.div>
   );
 }
 
@@ -176,31 +224,31 @@ export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport }) 
   const action = report.businessCheckRequests?.find((item) => item.trim());
   return (
     <div className="judgment-band">
-      <div className="judgment-grid">
-        <div className="judgment-verdict">
+      <motion.div className="judgment-grid" initial="hidden" variants={containerVariants} viewport={VIEWPORT} whileInView="show">
+        <motion.div className="judgment-verdict" variants={itemVariants}>
           <span className="judgment-label">
             <Sparkles aria-hidden size={15} />
             AI 제안 판단
           </span>
           <Badge tone={getRecommendationTone(report.recommendation)}>{recommendationLabels[report.recommendation]}</Badge>
-        </div>
-        <div className="judgment-stat">
+        </motion.div>
+        <motion.div className="judgment-stat" variants={itemVariants}>
           <span>AI 종합 점수</span>
           <strong>
-            {avgScore ?? "–"}
+            {avgScore != null ? <CountUp value={Math.round(avgScore)} /> : "–"}
             <small> / 100</small>
           </strong>
           {report.totalScore != null ? <small className="judgment-sub">{report.totalScore} / 300</small> : null}
-        </div>
+        </motion.div>
         {strongest ? <AxisStat label="가장 강한 평가축" score={strongest} /> : null}
         {weakest && weakest !== strongest ? <AxisStat label="가장 약한 평가축" score={weakest} /> : null}
         {action ? (
-          <div className="judgment-stat">
+          <motion.div className="judgment-stat" variants={itemVariants}>
             <span>핵심 확인 사항</span>
             <strong className="judgment-action">{action}</strong>
-          </div>
+          </motion.div>
         ) : null}
-      </div>
+      </motion.div>
       {oneLiner ? <p className="judgment-oneliner">{oneLiner}</p> : null}
     </div>
   );
