@@ -237,11 +237,11 @@ export function usePatentDetail(role: UserRole) {
                 additionalNeeds: "",
               });
             } else {
-              setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
+              setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent, businessChecklistItems));
             }
           } catch {
             if (isMounted) {
-              setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent));
+              setBusinessChecklistSubmission(createBusinessChecklistDraft(nextPatent, businessChecklistItems));
             }
           }
         } else {

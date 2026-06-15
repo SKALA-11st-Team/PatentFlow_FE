@@ -63,6 +63,7 @@ export function BusinessReviewRequestPage() {
   const [submittedOpinions, setSubmittedOpinions] = useState<Record<string, BusinessChecklistSubmission>>({});
   const [submissionDeadline, setSubmissionDeadline] = useState<string | null>(null);
   const [activeQuarter, setActiveQuarter] = useState<QuarterSetting | null>(null);
+  const { items: businessChecklistItems } = useBusinessChecklistItems();
   const user = getStoredAuthUser();
 
   useEffect(() => {
@@ -251,7 +252,7 @@ export function BusinessReviewRequestPage() {
 
       {selectedPatent ? (
         <BusinessOpinionModal
-          initialSubmission={submittedOpinions[selectedPatent.patentId] ?? createBusinessChecklistDraft(selectedPatent)}
+          initialSubmission={submittedOpinions[selectedPatent.patentId] ?? createBusinessChecklistDraft(selectedPatent, businessChecklistItems)}
           isClosed={isClosed}
           onClose={() => setSelectedPatent(null)}
           onSubmit={async (submission) => {
