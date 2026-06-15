@@ -445,23 +445,56 @@ function getAiEvaluationReport(row: SkaxPatentRow, recommendation: Recommendatio
   const generatedReport = aiReportsByManagementNumber[row.managementNumber];
 
   if (generatedReport) {
-    return generatedReport;
+    return withDemoRichFields(generatedReport, row);
   }
 
   const demoReport = demoAiEvaluationReports[row.managementNumber];
 
   if (demoReport) {
-    return demoReport;
+    return withDemoRichFields(demoReport, row);
   }
 
+  return withDemoRichFields(
+    {
+      evaluationId: `EVAL-${row.managementNumber}`,
+      createdAt: getAiReportCreatedAt(index),
+      recommendation,
+      recommendationText: getRecommendationText(recommendation, row),
+      totalScore: getTotalScore(recommendation, index),
+      scores: getScores(row, recommendation, index),
+      missingInformation: getMissingFields(row),
+    },
+    row,
+  );
+}
+
+// AIREPORT-RICH(목 전용): 목 레포트에 등급·요약 카드·섹션 본문·근거 신뢰도가 없으면 데모용 값을 채운다.
+// 실제 BE 응답은 이미 이 필드를 보내므로, 이는 mock 모드에서 리치 UI를 미리보기 위한 보강일 뿐이다.
+function demoGradeFromScore(score: number | null): string | undefined {
+  if (score == null) return undefined;
+  if (score >= 80) return "A";
+  if (score >= 65) return "B";
+  return "C";
+}
+
+function withDemoRichFields(report: AiEvaluationReport, row: SkaxPatentRow): AiEvaluationReport {
   return {
-    evaluationId: `EVAL-${row.managementNumber}`,
-    createdAt: getAiReportCreatedAt(index),
-    recommendation,
-    recommendationText: getRecommendationText(recommendation, row),
-    totalScore: getTotalScore(recommendation, index),
-    scores: getScores(row, recommendation, index),
-    missingInformation: getMissingFields(row),
+    ...report,
+    scores: report.scores.map((score) => ({ ...score, grade: score.grade ?? demoGradeFromScore(score.score) })),
+    evidenceConfidence: report.evidenceConfidence ?? "MEDIUM",
+    summaryBrief: report.summaryBrief ?? {
+      one_line_summary: `${row.title}에 관한 기술로, 핵심 동작을 자동화·구조화하여 효율을 높이는 발명입니다.`,
+      problem: "기존 방식의 수작업·정확도 한계와 운영 비용 문제를 해결하고자 합니다.",
+      core_idea: "입력 데이터를 단계적으로 분석·정규화해 신뢰도 높은 결과를 산출하는 처리 구조입니다.",
+      key_components: ["입력 수집·전처리 모듈", "단계별 분석·판정 엔진", "결과 정규화·출력 인터페이스"],
+      operation_steps: ["입력 수신", "전처리·특징 추출", "단계별 분석·판정", "결과 정규화", "표준 출력"],
+      expected_effect: "처리 품질과 일관성을 높이고 운영 자동화로 비용·시간을 절감합니다.",
+    },
+    reportSections: report.reportSections ?? {
+      evaluationScope: "본 평가는 대상 특허의 청구항·명세서와 수집된 외부 근거(시장·기술 동향)를 범위로 합니다.",
+      judgmentBasis: "권리성·기술성은 청구항 구체성으로 비교적 견고하나, 시장·사업 적용 근거는 추가 확인이 필요합니다.",
+      finalOpinion: "기술적 차별성은 확인되나 사업 연계성 근거가 제한적이라, 보완 자료 확보 후 유지 여부를 재검토하는 것이 적절합니다.",
+    },
   };
 }
 

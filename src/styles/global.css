@@ -1967,14 +1967,57 @@ tbody tr:hover {
 .meta-grid {
   display: grid;
   gap: var(--spacing-md);
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
 .meta-item {
+  align-items: flex-start;
   background: var(--color-bg-light);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  display: flex;
+  gap: var(--spacing-sm);
   padding: var(--spacing-md);
+}
+
+.meta-item-icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.meta-item-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.meta-item-body strong {
+  color: var(--color-text-dark);
+  font-size: 14px;
+  word-break: break-word;
+}
+
+.title-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: flex-end;
+}
+
+.section-link {
+  align-items: center;
+  color: var(--color-text-muted);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.section-link:hover {
+  color: var(--color-primary);
 }
 
 .detail-grid {
@@ -2142,6 +2185,13 @@ tbody tr:hover {
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-lg);
   padding: var(--spacing-md);
+}
+
+/* 최종 검토 의견 — 상단 강조 콜아웃(좌측 액센트 바). */
+.report-callout--final {
+  background: rgba(var(--color-accent-rgb), 0.06);
+  border-color: rgba(var(--color-accent-rgb), 0.28);
+  border-left: 3px solid var(--color-accent);
 }
 
 .report-callout p,
@@ -5323,8 +5373,20 @@ tbody tr:hover {
 .summary-brief-grid {
   display: grid;
   gap: var(--spacing-md);
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 860px) {
+  .summary-brief-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .summary-brief-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .summary-brief-card {
@@ -5380,8 +5442,14 @@ tbody tr:hover {
 .axis-radial-grid {
   display: grid;
   gap: var(--spacing-md);
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-bottom: var(--spacing-lg);
+}
+
+@media (max-width: 640px) {
+  .axis-radial-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .axis-radial {
@@ -5392,7 +5460,10 @@ tbody tr:hover {
   display: grid;
   gap: 2px;
   justify-items: center;
+  margin-inline: auto;
+  max-width: 180px;
   padding: var(--spacing-md) var(--spacing-sm);
+  width: 100%;
 }
 
 .axis-radial-title {

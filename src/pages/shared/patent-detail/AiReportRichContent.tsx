@@ -9,7 +9,6 @@ import {
   type LucideIcon,
   MessageSquareText,
   Settings,
-  ShieldCheck,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -71,9 +70,9 @@ const RADIAL_CIRCUMFERENCE = 2 * Math.PI * RADIAL_RADIUS;
 
 function gradeColor(grade?: string | null): string {
   if (!grade) return "var(--color-text-light)";
-  if (grade.startsWith("A")) return "var(--color-success)";
-  if (grade.startsWith("B")) return "#3b82f6";
-  if (grade.startsWith("C")) return "var(--color-accent)";
+  if (grade.startsWith("A")) return "var(--color-success)"; // 청록
+  if (grade.startsWith("B")) return "#16a34a"; // 초록(목업 톤)
+  if (grade.startsWith("C")) return "var(--color-accent)"; // 주황
   return "var(--color-error)";
 }
 
@@ -118,12 +117,12 @@ export function AxisRadialGrid({ scores }: { scores: EvaluationScore[] }) {
 }
 
 // ④/⑤ 보고서 섹션별 본문 — reportSections 펼침 패널.
+// finalOpinion(최종 검토 의견)은 AiReportSection 상단 콜아웃으로 승격되므로 패널에서는 제외(중복 방지).
 const SECTION_META: Array<{ key: ReportSectionKey; label: string; Icon: LucideIcon }> = [
   { key: "evaluationScope", label: "평가 대상 및 범위", Icon: Eye },
   { key: "judgmentBasis", label: "판단 근거", Icon: MessageSquareText },
   { key: "axisDetails", label: "평가축별 상세 근거", Icon: BarChart3 },
   { key: "roleChecklist", label: "역할별 확인 사항", Icon: ClipboardCheck },
-  { key: "finalOpinion", label: "최종 검토 의견", Icon: ShieldCheck },
 ];
 
 export function ReportSectionPanels({ sections }: { sections: Partial<Record<ReportSectionKey, string>> }) {

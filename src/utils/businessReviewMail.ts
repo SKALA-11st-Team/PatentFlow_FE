@@ -189,7 +189,9 @@ function getDisplayValue(value: string) {
   return normalizedValue && normalizedValue !== "N/A" ? normalizedValue : "미분류";
 }
 
-function getOriginalPatentUrl(patent: PatentListItem) {
+// 특허 원문(KIPRIS/Google Patents) URL. 등록된 URL 우선, 없으면 번호로 Google Patents 자동 생성.
+// 상세 페이지 "특허 원문 보기"·"원문 링크"에서도 재사용한다. 번호도 없으면 "원문 URL 미등록" 반환.
+export function getOriginalPatentUrl(patent: PatentListItem) {
   if (patent.originalPatentUrl?.trim()) {
     return patent.originalPatentUrl.trim();
   }

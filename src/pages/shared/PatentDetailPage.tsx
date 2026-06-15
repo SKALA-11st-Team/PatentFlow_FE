@@ -10,7 +10,28 @@ import { Modal } from "../../components/common/Modal";
 import { Section } from "../../components/common/Section";
 import { BusinessSubmissionHistoryDetail } from "../../components/business/BusinessSubmissionHistoryDetail";
 import { BusinessReviewMailPreviewModal } from "../../components/mailing/BusinessReviewMailPreviewModal";
-import { recommendationLabels, reviewWorkflowStatusLabels } from "../../constants/status";
+import {
+  Briefcase,
+  Calendar,
+  CalendarCheck,
+  CalendarClock,
+  Coins,
+  Cpu,
+  ExternalLink,
+  FileCheck2,
+  FileClock,
+  FileText,
+  Globe,
+  Hash,
+  type LucideIcon,
+  Package,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
+import { lifecycleStatusLabels, recommendationLabels, reviewWorkflowStatusLabels } from "../../constants/status";
+import { getOriginalPatentUrl } from "../../utils/businessReviewMail";
+import { downloadAiReportPdf } from "../../utils/reportPrint";
+import { SummaryBriefCards } from "./patent-detail/AiReportRichContent";
 import type { MailingDeliveryStatus, MailingHistoryItem } from "../../types/mailing";
 import type { PatentFeeSchedule, PatentHistoryItem, PatentLifecycleStatus, PatentListItem, PatentPdfMeta, UserRole } from "../../types/patent";
 import { formatDate, usePatentDetail } from "./patent-detail/PatentDetailHooks";
@@ -182,9 +203,12 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         }
       />
       <section className={`detail-hero section ${getLifecycleHeroClassName(patent.lifecycleStatus)}`}>
-        <div>
-          <div className="detail-title-row">
+        <div className="detail-title-row">
+          <div>
             <h2>{patent.title}</h2>
+            <p>{patent.reviewReason}</p>
+          </div>
+          <div className="title-actions">
             {isAdmin ? (
               <Badge tone={patent.reviewWorkflowStatus === "MAIL_READY" ? "primary" : "neutral"}>
                 {reviewWorkflowStatusLabels[patent.reviewWorkflowStatus]}
@@ -196,28 +220,59 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                   : "의견 대기"}
               </Badge>
             )}
-          </div>
-          <p>{patent.reviewReason}</p>
-          {pdfMeta?.exists && pdfMeta.storageType === "UPLOADED" ? (
-            <Button onClick={handleDownloadPatentPdf} type="button" variant="secondary">
-              특허 PDF 다운로드{pdfMeta.docName ? ` (${pdfMeta.docName})` : ""}
+            {getOriginalPatentUrl(patent) !== "원문 URL 미등록" ? (
+              <Button onClick={() => window.open(getOriginalPatentUrl(patent), "_blank", "noopener")} type="button">
+                특허 원문 보기
+              </Button>
+            ) : null}
+            <Button
+              onClick={() => downloadAiReportPdf(patent.title, patent.aiEvaluationReport)}
+              type="button"
+              variant="secondary"
+            >
+              보고서 다운로드
             </Button>
-          ) : null}
+            {pdfMeta?.exists && pdfMeta.storageType === "UPLOADED" ? (
+              <Button onClick={handleDownloadPatentPdf} type="button" variant="secondary">
+                특허 PDF 다운로드{pdfMeta.docName ? ` (${pdfMeta.docName})` : ""}
+              </Button>
+            ) : null}
+          </div>
         </div>
-        <div className="meta-grid">
-          <Meta label="관리번호" value={patent.managementNumber} />
-          <Meta label="출원번호" value={patent.applicationNumber} />
-          <Meta label="등록번호" value={patent.registrationNumber ?? "N/A"} />
-          <Meta label="공동출원인" value={patent.coApplicants} />
-          <Meta label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} />
-          <Meta label="관련사업 분야" value={patent.businessArea} />
-          <Meta label="관련기술 분야" value={patent.technologyArea} />
-          <Meta label="관련제품" value={patent.productName} />
-          <Meta label="예상 소멸일" value={patent.expectedExpirationDate} />
-        </div>
-        {feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
-        {familyPatents.length > 0 ? <PatentFamilyCard isAdmin={isAdmin} members={familyPatents} /> : null}
       </section>
+
+      <Section
+        title="특허 기본 정보"
+        description="출원·등록 서지 정보입니다."
+        actions={
+          getOriginalPatentUrl(patent) !== "원문 URL 미등록" ? (
+            <a className="section-link" href={getOriginalPatentUrl(patent)} rel="noopener noreferrer" target="_blank">
+              원문 링크 (KIPRIS / Google Patents)
+              <ExternalLink aria-hidden size={14} />
+            </a>
+          ) : null
+        }
+      >
+        <div className="meta-grid">
+          <Meta icon={Hash} label="관리번호" value={patent.managementNumber} />
+          <Meta icon={FileText} label="출원번호" value={patent.applicationNumber} />
+          <Meta icon={FileCheck2} label="등록번호" value={patent.registrationNumber ?? "N/A"} />
+          <Meta icon={ShieldCheck} label="상태" value={lifecycleStatusLabels[patent.lifecycleStatus]} />
+          <Meta icon={Briefcase} label="사업 분야" value={patent.businessArea} />
+          <Meta icon={Cpu} label="기술 분야" value={patent.technologyArea} />
+          <Meta icon={Package} label="관련 제품" value={patent.productName} />
+          <Meta icon={Globe} label="국가" value={patent.country} />
+          <Meta icon={Users} label="공동출원인" value={patent.coApplicants} />
+          <Meta icon={Calendar} label="출원일" value={formatDate(patent.applicationDate)} />
+          <Meta icon={CalendarCheck} label="등록일" value={formatDate(patent.registrationDate)} />
+          <Meta icon={CalendarClock} label="예상 소멸일" value={formatDate(patent.expectedExpirationDate)} />
+          <Meta icon={Coins} label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} />
+          <Meta icon={FileClock} label="보고서 생성일" value={formatDate(patent.aiEvaluationReport.createdAt)} />
+        </div>
+      </Section>
+
+      {feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
+      {familyPatents.length > 0 ? <PatentFamilyCard isAdmin={isAdmin} members={familyPatents} /> : null}
 
       <div className="detail-followup-grid">
         {isAdmin ? (
@@ -290,6 +345,26 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
       </div>
 
       <div className="detail-main">
+        <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
+          {patent.aiEvaluationReport.summaryBrief ? (
+            <SummaryBriefCards brief={patent.aiEvaluationReport.summaryBrief} />
+          ) : (
+            <div className="summary-stack">
+              <SummaryBlock title="요약" content={patent.summary.summaryText} />
+              <SummaryBlock title="해결 과제" content={patent.summary.problemSolved} />
+              <div>
+                <h3>핵심 기술 포인트</h3>
+                <ul className="clean-list">
+                  {patent.summary.coreTechnicalPoints.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+              </div>
+              <SummaryBlock title="권리범위 요약" content={patent.summary.claimsSummary} />
+            </div>
+          )}
+        </Section>
+
         <div ref={aiReportSectionRef}>
         <AiReportSection
           report={
@@ -323,22 +398,6 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           }
         />
         </div>
-
-        <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
-            <div className="summary-stack">
-              <SummaryBlock title="요약" content={patent.summary.summaryText} />
-              <SummaryBlock title="해결 과제" content={patent.summary.problemSolved} />
-              <div>
-                <h3>핵심 기술 포인트</h3>
-                <ul className="clean-list">
-                  {patent.summary.coreTechnicalPoints.map((point) => (
-                    <li key={point}>{point}</li>
-                  ))}
-                </ul>
-              </div>
-              <SummaryBlock title="권리범위 요약" content={patent.summary.claimsSummary} />
-            </div>
-        </Section>
 
         <BusinessSubmissionHistoryDetail patent={patent} />
 
@@ -587,11 +646,14 @@ function getLifecycleHeroClassName(lifecycleStatus: PatentLifecycleStatus) {
   return lifecycleStatus === "ACTIVE" ? "lifecycle-active" : "lifecycle-inactive";
 }
 
-function Meta({ label, value }: { label: string; value: string }) {
+function Meta({ icon: Icon, label, value }: { icon?: LucideIcon; label: string; value: string }) {
   return (
     <div className="meta-item">
-      <span>{label}</span>
-      <strong>{value}</strong>
+      {Icon ? <Icon aria-hidden className="meta-item-icon" size={18} /> : null}
+      <div className="meta-item-body">
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
     </div>
   );
 }
