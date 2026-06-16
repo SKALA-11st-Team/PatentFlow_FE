@@ -163,7 +163,7 @@ export function BusinessDashboardPage() {
             isSelected={listMode === "REVIEW_REQUESTS" && opinionFilter === "PENDING"}
             label="의견 대기"
             value={pendingCount}
-            helper="연차료 검토 요청"
+            helper="검토 요청 특허"
             tone="warning"
             to="/business/review-requests?opinion=PENDING"
           />

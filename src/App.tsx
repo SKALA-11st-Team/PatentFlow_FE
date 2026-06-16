@@ -15,7 +15,6 @@ import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 import { BusinessDashboardPage } from "./pages/business/BusinessDashboardPage";
 import { BusinessPatentDetailPage } from "./pages/business/BusinessPatentDetailPage";
 import { BusinessReviewRequestPage } from "./pages/business/BusinessReviewRequestPage";
-import { BusinessSettingsPage } from "./pages/business/BusinessSettingsPage";
 import { BusinessSubmissionHistoryPage } from "./pages/business/BusinessSubmissionHistoryPage";
 import { LoginPage } from "./pages/LoginPage";
 import { InvitationAcceptPage } from "./pages/InvitationAcceptPage";
@@ -123,7 +122,6 @@ const router = createBrowserRouter([
   { path: "/business/dashboard", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessDashboardPage /></ProtectedRoute> },
   { path: "/business/review-requests", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessReviewRequestPage /></ProtectedRoute> },
   { path: "/business/submissions", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessSubmissionHistoryPage /></ProtectedRoute> },
-  { path: "/business/settings", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessSettingsPage /></ProtectedRoute> },
   { path: "/business/patents/:patentId", element: <ProtectedRoute allowedRole="BUSINESS"><BusinessPatentDetailPage /></ProtectedRoute> },
   { path: "*", element: <Navigate to="/login" replace /> },
 ]);

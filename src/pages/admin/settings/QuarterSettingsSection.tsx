@@ -148,15 +148,10 @@ function QuarterHistoryRow({
         {fmt(quarter.startDate)} ~ {fmt(quarter.endDate)}
       </td>
       <td>
-        {quarter.activated ? (
-          <>
-            <strong>{fmtFull(quarter.activatedAt)}</strong>
-            <span className="table-subtext">실제 시작</span>
-          </>
-        ) : quarter.scheduledMailSendDate ? (
+        {quarter.scheduledMailSendDate ? (
           <>
             <strong>{fmtFull(quarter.scheduledMailSendDate)}</strong>
-            <span className="table-subtext">예정 ({quarter.mailLeadMonths}개월 전)</span>
+            <span className="table-subtext">{quarter.mailLeadMonths}개월 전</span>
           </>
         ) : "-"}
       </td>
