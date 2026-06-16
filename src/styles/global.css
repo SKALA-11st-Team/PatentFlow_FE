@@ -4725,6 +4725,11 @@ tbody tr:hover {
   outline: none;
 }
 
+.fee-help-wrapper {
+  display: inline-flex;
+  position: relative;
+}
+
 .fee-help-tooltip {
   background: var(--color-bg-elevated, #fff);
   border: 1px solid var(--color-border);

@@ -633,18 +633,22 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
       <div className="dashboard-visual-card-head">
         <div className="visual-card-title-group">
           <h3>분기별 예상 연차료</h3>
-          <span
-            aria-label="예상 연차료 산정 기준"
-            className="fee-help-icon"
-            role="button"
-            tabIndex={0}
-            onBlur={() => setShowHelp(false)}
-            onClick={() => setShowHelp(true)}
-            onFocus={() => setShowHelp(true)}
+          <div
+            className="fee-help-wrapper"
             onMouseEnter={() => setShowHelp(true)}
             onMouseLeave={() => setShowHelp(false)}
           >
-            ?
+            <span
+              aria-label="예상 연차료 산정 기준"
+              className="fee-help-icon"
+              role="button"
+              tabIndex={0}
+              onBlur={() => setShowHelp(false)}
+              onClick={() => setShowHelp((v) => !v)}
+              onFocus={() => setShowHelp(true)}
+            >
+              ?
+            </span>
             {showHelp && (
               <div className="fee-help-tooltip">
                 <table className="fee-help-table">
@@ -666,7 +670,7 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
                 </table>
               </div>
             )}
-          </span>
+          </div>
         </div>
         <span className="table-subtext">추정치 (참고용)</span>
       </div>

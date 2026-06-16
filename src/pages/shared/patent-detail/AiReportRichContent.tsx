@@ -96,11 +96,21 @@ export function SummaryBriefCards({ brief }: { brief: AiSummaryBrief }) {
 const RADIAL_RADIUS = 34;
 const RADIAL_CIRCUMFERENCE = 2 * Math.PI * RADIAL_RADIUS;
 
-function gradeColor(grade?: string | null): string {
-  if (!grade) return "var(--color-text-light)";
-  if (grade.startsWith("A")) return "var(--color-success)"; // 청록
-  if (grade.startsWith("B")) return "#16a34a"; // 초록(목업 톤)
-  if (grade.startsWith("C")) return "var(--color-accent)"; // 주황
+function deriveGrade(grade?: string | null, score?: number | null): string | null {
+  if (grade) return grade;
+  if (score == null) return null;
+  if (score >= 85) return "A";
+  if (score >= 70) return "B";
+  if (score >= 55) return "C";
+  return "D";
+}
+
+function gradeColor(grade?: string | null, score?: number | null): string {
+  const g = deriveGrade(grade, score);
+  if (!g) return "var(--color-text-light)";
+  if (g.startsWith("A")) return "var(--color-success)";
+  if (g.startsWith("B")) return "#16a34a";
+  if (g.startsWith("C")) return "var(--color-accent)";
   return "var(--color-error)";
 }
 
@@ -110,7 +120,7 @@ export function AxisRadialGrid({ scores }: { scores: EvaluationScore[] }) {
     <motion.div className="axis-radial-grid" initial="hidden" variants={containerVariants} viewport={VIEWPORT} whileInView="show">
       {scores.map((score) => {
         const ratio = Math.max(0, Math.min(100, score.score ?? 0)) / 100;
-        const color = gradeColor(score.grade);
+        const color = gradeColor(score.grade, score.score);
         return (
           <motion.div className="axis-radial" key={score.category} variants={itemVariants}>
             <span className="axis-radial-title">{evaluationCategoryLabels[score.category]}</span>
@@ -131,12 +141,17 @@ export function AxisRadialGrid({ scores }: { scores: EvaluationScore[] }) {
               </svg>
               <span className="axis-radial-score">{score.score != null ? <CountUp value={score.score} /> : "–"}</span>
             </div>
-            <div className="axis-radial-meta">
-              {score.grade ? <Badge tone={getGradeTone(score.grade)}>{score.grade}</Badge> : null}
-              <span className="axis-radial-label" style={{ color }}>
-                {getGradeLabel(score.grade)}
-              </span>
-            </div>
+            {(() => {
+              const effectiveGrade = deriveGrade(score.grade, score.score);
+              return (
+                <div className="axis-radial-meta">
+                  {effectiveGrade ? <Badge tone={getGradeTone(effectiveGrade)}>{effectiveGrade}</Badge> : null}
+                  <span className="axis-radial-label" style={{ color }}>
+                    {getGradeLabel(effectiveGrade)}
+                  </span>
+                </div>
+              );
+            })()}
           </motion.div>
         );
       })}
@@ -226,7 +241,14 @@ function AxisStat({ label, score }: { label: string; score: EvaluationScore }) {
   );
 }
 
-export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport }) {
+export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport | null }) {
+  if (!report) {
+    return (
+      <div className="judgment-band">
+        <p className="empty-state">AI 레포트 생성 전입니다.</p>
+      </div>
+    );
+  }
   const hasContent = report.scores.length > 0 || !!report.rawMarkdown;
   const scored = report.scores.filter((s) => typeof s.score === "number");
   const strongest = scored.length ? scored.reduce((a, b) => ((b.score ?? 0) > (a.score ?? 0) ? b : a)) : null;
