@@ -4339,7 +4339,9 @@ tbody tr:hover {
   border-left: 4px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  color: var(--color-white);
+  /* 배경이 테마와 무관하게 항상 어두우므로 글자도 항상 밝게 고정한다.
+     var(--color-white)는 다크모드에서 #1d212c로 뒤집혀 어두운 배경+어두운 글자가 된다. */
+  color: #ffffff;
   cursor: pointer;
   font: inherit;
   font-size: 0.9rem;
@@ -4731,7 +4733,7 @@ tbody tr:hover {
 }
 
 .fee-help-tooltip {
-  background: var(--color-bg-elevated, #fff);
+  background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow: var(--shadow-md);
