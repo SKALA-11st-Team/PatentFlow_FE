@@ -5796,15 +5796,15 @@ tbody tr:hover {
   }
 }
 
-/* 평가축별 상세 근거 모달 */
+/* 평가축별 상세 근거 모달 — 권리성 도면(base64)까지 보이도록 넓게 키운다 */
 .axis-detail-modal {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  max-height: 86vh;
-  max-width: 640px;
+  max-height: 90vh;
+  max-width: 960px;
   overflow-y: auto;
-  width: 92vw;
+  width: 94vw;
 }
 
 .axis-detail-tabs {
@@ -5906,4 +5906,45 @@ tbody tr:hover {
   font-size: 12px;
   font-weight: 700;
   padding: 2px 8px;
+}
+
+.claim-flow-body {
+  display: grid;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+/* 권리성 도면(base64 figure) — 흑백 선화가 많아 테마와 무관하게 흰 캔버스로 렌더링 */
+.axis-figure-list {
+  display: grid;
+  gap: var(--spacing-sm);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: var(--spacing-sm);
+}
+
+.axis-figure {
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin: 0;
+  overflow: hidden;
+  padding: var(--spacing-sm);
+}
+
+.axis-figure img {
+  display: block;
+  height: auto;
+  margin: 0 auto;
+  max-height: 60vh;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.axis-figure figcaption {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-align: center;
 }
