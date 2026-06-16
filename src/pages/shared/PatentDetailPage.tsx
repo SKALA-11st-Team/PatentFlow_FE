@@ -375,7 +375,9 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                   ))}
                 </ul>
               </div>
-              <SummaryBlock title="권리범위 요약" content={patent.summary.claimsSummary} />
+              {isMeaningfulSummaryText(patent.summary.claimsSummary) && (
+                <SummaryBlock title="권리범위 요약" content={patent.summary.claimsSummary} />
+              )}
             </div>
           )}
         </Section>
@@ -672,6 +674,14 @@ function Meta({ icon: Icon, label, value }: { icon?: LucideIcon; label: string; 
       </div>
     </div>
   );
+}
+
+/**
+ * 권리범위 요약은 AI/agent가 산출하지 않는 필드라, BE가 값이 없으면 빈 문자열로 내려준다.
+ * 빈 값이면 블록을 노출하지 않는다.
+ */
+function isMeaningfulSummaryText(content: string | undefined | null): boolean {
+  return Boolean(content?.trim());
 }
 
 function SummaryBlock({ title, content }: { title: string; content: string }) {
