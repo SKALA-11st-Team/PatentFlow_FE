@@ -129,13 +129,14 @@ export function getNextAnnualFeeDueDate(
  * @relatedFR FR-LEGAL-01
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-BUS-01, UI-BUS-02
  * @description 현재 날짜 기준 납부 기한까지 남은 일수를 계산한다.
+ * 파싱 실패 시 null을 반환한다(유효 입력 '오늘 마감'=0과 구분해야 호출처가 D-day 오표시를 막을 수 있다).
  */
-export function getRemainingDaysUntilDate(dueDateText: string, baseDate = new Date()) {
+export function getRemainingDaysUntilDate(dueDateText: string, baseDate = new Date()): number | null {
   const todayStart = getDateStart(baseDate);
   const dueDate = parseDate(dueDateText);
 
   if (!dueDate) {
-    return 0;
+    return null;
   }
 
   return Math.ceil((dueDate.getTime() - todayStart.getTime()) / 86_400_000);

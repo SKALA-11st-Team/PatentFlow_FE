@@ -454,6 +454,17 @@ export function usePatentDetail(role: UserRole) {
     }
   }
 
+  // 진행 중인 재생성(폴링)을 취소한다. abort 신호로 handleRequestAiReport의 await들이
+  // 빠져나오며, 화면 상태는 여기서 직접 정리한다(finally의 aborted 가드로 중복 갱신 방지).
+  function handleCancelAiReport() {
+    if (!regenAbortRef.current) return;
+    regenAbortRef.current.abort();
+    regenAbortRef.current = null;
+    setIsWorkflowActionProcessing(false);
+    setRegenStartedAt(null);
+    setWorkflowActionMessage("AI 레포트 생성을 취소했어요.");
+  }
+
   return {
     patentId,
     isAdmin,
@@ -512,6 +523,7 @@ export function usePatentDetail(role: UserRole) {
     handleConfirmSendMails: mailWorkflow.handleConfirmSendMails,
     handleRecordFinalDecision: finalDecision.handleRecordFinalDecision,
     handleRequestAiReport,
+    handleCancelAiReport,
     aiReportScrollTrigger,
     regenStartedAt,
     openFinalDecisionModal: finalDecision.openFinalDecisionModal,

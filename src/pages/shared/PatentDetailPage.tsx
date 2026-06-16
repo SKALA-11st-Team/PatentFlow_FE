@@ -103,6 +103,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     handleConfirmSendMails,
     handleRecordFinalDecision,
     handleRequestAiReport,
+    handleCancelAiReport,
     aiReportScrollTrigger,
     regenStartedAt,
     openFinalDecisionModal,
@@ -409,6 +410,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                   regenerateMessage: workflowActionMessage,
                   regenStartedAt,
                   onRegenerate: handleRequestAiReport,
+                  onCancel: handleCancelAiReport,
                 }
               : undefined
           }

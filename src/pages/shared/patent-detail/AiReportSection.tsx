@@ -129,6 +129,7 @@ interface AiReportRegenerateControls {
   regenerateMessage: string;
   regenStartedAt: string | null;
   onRegenerate: () => void;
+  onCancel: () => void;
 }
 
 const REGEN_STAGES: string[] = ["특허 이해", "근거 수집", "근거 압축", "4축 평가", "레포트 작성", "검증"];
@@ -281,6 +282,11 @@ export function AiReportSection({
               {isRegenerating ? (
                 <><span className="btn-spinner" />재생성 중...</>
               ) : "AI 레포트 재생성"}
+            </Button>
+          ) : null}
+          {regenerateControls && isRegenerating ? (
+            <Button onClick={regenerateControls.onCancel} type="button" variant="secondary">
+              재생성 취소
             </Button>
           ) : null}
           {pendingRegenConfirm ? (
