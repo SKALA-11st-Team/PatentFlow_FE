@@ -183,6 +183,11 @@ export function usePatentDetail(role: UserRole) {
         return;
       }
 
+      // handleRequestAiReport finally가 signal.aborted 시 reset을 건너뛰어 다음 특허에 "생성 중..." 잔존하는 것을 방지.
+      setIsWorkflowActionProcessing(false);
+      setWorkflowActionMessage("");
+      setRegenStartedAt(null);
+
       setLoadMessage("특허 상세 정보를 불러오는 중입니다.");
 
       try {
