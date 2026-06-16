@@ -54,11 +54,11 @@ export async function getReviewPeriodTemplates(): Promise<ReviewPeriodTemplate[]
   return response.data ?? [];
 }
 
-// 기본값 2 = BE DEFAULT_MAIL_LEAD_MONTHS와 동일 — 백엔드 미연결 시 UI가 같은 기준으로 렌더링
+// 기본값 3 = BE DEFAULT_MAIL_LEAD_MONTHS와 동일 — 백엔드 미연결 시 UI가 같은 기준으로 렌더링
 export async function getMailLeadMonths(): Promise<number> {
-  if (!isBackendApiEnabled()) return 2;
+  if (!isBackendApiEnabled()) return 3;
   const response = await requestJson<ApiEnvelope<{ mailLeadMonths: number }>>("/settings/mail-lead-months");
-  return response.data?.mailLeadMonths ?? 2;
+  return response.data?.mailLeadMonths ?? 3;
 }
 
 export async function updateMailLeadMonths(months: number): Promise<number> {
@@ -417,8 +417,8 @@ const MOCK_ACTIVE_QUARTER: QuarterSetting = {
   targetPatentCount: 12,
   submissionDeadline: "2026-07-31",
   businessResponseDueDate: "2026-07-31",
-  mailLeadMonths: 2,
-  scheduledMailSendDate: "2026-05-01",
+  mailLeadMonths: 3,
+  scheduledMailSendDate: "2026-04-01",
 };
 
 export async function getActiveQuarter(): Promise<QuarterSetting | null> {

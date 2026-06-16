@@ -47,11 +47,11 @@ Use these rules consistently in frontend labels, filters, mock data, mailing pre
 - UI must support both quarter filters (`Q1` through `Q4`) and explicit date-range filters where the screen exposes review-target search.
 - Business-facing copy and mailing copy must use `회신 기한`, not `마감 기한`.
 - `회신 기한` is a business-response due date configured in bulk by administrators. It is separate from the internal/legal `실제 마감 기한` seen by administrators.
-- Review-request mail is sent by default two months before the quarter start date:
-  - Q1 patents: November 1 of the previous year
-  - Q2 patents: February 1
-  - Q3 patents: May 1
-  - Q4 patents: August 1
+- Review-request mail is sent by default three months before the quarter start date:
+  - Q1 patents: October 1 of the previous year
+  - Q2 patents: January 1
+  - Q3 patents: April 1
+  - Q4 patents: July 1
 - The administrator settings UI must allow the lead time in months to be changed, and must show the resulting send date for each quarter after the setting is applied.
 - Review-request mail previews and sent-mail history must include the patent original-document URL.
 - FE 설정/연동 관련 화면과 문구에서는 `OAuth`라는 표현을 쓰지 말고, 반드시 `Google 계정 연동`으로만 표기한다.
