@@ -1414,7 +1414,13 @@ export interface components {
             recommendation?: "MAINTAIN" | "REVIEW_AGAIN" | "ABANDON" | "CONDITIONAL_MAINTAIN";
             recommendationReason?: string;
             reportId?: string;
+            reportSections?: {
+                [key: string]: string;
+            };
             scores?: components["schemas"]["EvaluationScoreResponse"][];
+            summaryBrief?: {
+                [key: string]: unknown;
+            };
             /** Format: int32 */
             totalScore?: number;
             warnings?: string[];
@@ -2105,9 +2111,13 @@ export interface components {
         EvaluationScoreResponse: {
             /** @enum {string} */
             category?: "RIGHTS" | "TECHNOLOGY" | "MARKET" | "BUSINESS_ALIGNMENT";
+            /** Format: double */
+            confidence?: number;
             evidence?: string;
             evidenceDetails?: components["schemas"]["EvidenceDetailResponse"][];
             grade?: string;
+            missingInformation?: string[];
+            riskFactors?: string[];
             /** Format: int32 */
             score?: number;
         };
@@ -2638,8 +2648,6 @@ export interface components {
             gradeCutoffs: {
                 [key: string]: number;
             };
-            /** Format: double */
-            maintainThreshold: number;
             subscoreWeights: {
                 [key: string]: {
                     [key: string]: number;
