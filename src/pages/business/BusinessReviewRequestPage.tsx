@@ -9,6 +9,7 @@ import { formatReportDisplayScore, getBusinessPatentDetail } from "../../api/pat
 import { getActiveQuarter, type QuarterSetting } from "../../api/settings";
 import { Badge } from "../../components/common/Badge";
 import { Button } from "../../components/common/Button";
+import { MarkdownView } from "../../components/common/MarkdownView";
 import { Modal } from "../../components/common/Modal";
 import { PaginationControls } from "../../components/common/PaginationControls";
 import { TableLoadingRows } from "../../components/common/TableLoadingRows";
@@ -479,8 +480,12 @@ function BusinessOpinionModal({
                 {patent.aiEvaluationReport.degraded && patent.aiEvaluationReport.failureReason ? (
                   <p className="notice notice-warning">{patent.aiEvaluationReport.failureReason}</p>
                 ) : null}
-                <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
-                {patent.aiEvaluationReport.keyEvidence ? <p>{patent.aiEvaluationReport.keyEvidence}</p> : null}
+                <div className="notice">
+                  <MarkdownView content={patent.aiEvaluationReport.recommendationText} />
+                </div>
+                {patent.aiEvaluationReport.keyEvidence ? (
+                  <MarkdownView content={patent.aiEvaluationReport.keyEvidence} />
+                ) : null}
                 <div className="modal-score-grid">
                   {patent.aiEvaluationReport.scores.map((score) => (
                     <span key={score.category}>
