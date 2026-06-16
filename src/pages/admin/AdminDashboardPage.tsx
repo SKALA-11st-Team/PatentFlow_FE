@@ -28,7 +28,7 @@ import {
 } from "../../constants/status";
 import type { PatentListItem } from "../../types/patent";
 import { isQuarterlyReviewTarget } from "../../utils/reviewWorkflow";
-import { estimateAnnualFeeKrw, getNextAnnualFeeDueDate } from "../../utils/annualFee";
+import { DEFAULT_FEE_EXCHANGE_RATES, estimateAnnualFeeKrw, type FeeExchangeRates, getNextAnnualFeeDueDate } from "../../utils/annualFee";
 
 type SortKey = "DUE_DATE_ASC" | "DUE_DATE_DESC" | "TITLE_ASC";
 type DashboardScope = "ALL" | "QUARTER" | "NOT_IN_QUARTER";
@@ -577,16 +577,11 @@ function ReviewFunnelCard({ stages }: { stages: Array<{ label: string; count: nu
  * @relatedUI UI-LEGAL-01
  * @description D1-EXT: 다음 4분기 연차료 예상 총액 — 기존 patents 배열 기반 KRW 추정치 바 차트.
  */
-type ExchangeRates = { USD: number; JPY: number; CNY: number; EUR: number };
-
-const FALLBACK_RATES: ExchangeRates = { USD: 1_350, JPY: 9, CNY: 190, EUR: 1_500 };
-
 function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
   const [showHelp, setShowHelp] = useState(false);
-  const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
+  const [exchangeRates, setExchangeRates] = useState<FeeExchangeRates | null>(null);
 
   useEffect(() => {
-    if (!showHelp || exchangeRates !== null) return;
     fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/krw.json")
       .then((r) => r.json())
       .then((data: { krw: Record<string, number> }) => {
@@ -598,8 +593,8 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
           EUR: Math.round(1 / k.eur),
         });
       })
-      .catch(() => setExchangeRates(FALLBACK_RATES));
-  }, [showHelp, exchangeRates]);
+      .catch(() => setExchangeRates(DEFAULT_FEE_EXCHANGE_RATES));
+  }, []);
 
   const now = new Date();
   const quarterStart = Math.floor(now.getMonth() / 3) * 3;
@@ -617,7 +612,7 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
         const dueDate = p.feeDueDate || getNextAnnualFeeDueDate(p.applicationDate, now, p.registrationDate);
         return monthKeys.some((k) => dueDate.startsWith(k));
       })
-      .reduce((sum, p) => sum + estimateAnnualFeeKrw(p.country, p.registrationDate, p.applicationDate), 0);
+      .reduce((sum, p) => sum + estimateAnnualFeeKrw(p.country, p.registrationDate, p.applicationDate, exchangeRates ?? DEFAULT_FEE_EXCHANGE_RATES), 0);
     return { key: `${start.getFullYear()}-Q${q}`, label: `${yy}년 ${q}분기`, totalKrw };
   });
   const max = Math.max(1, ...buckets.map((b) => b.totalKrw));

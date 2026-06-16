@@ -1,3 +1,12 @@
+export interface FeeExchangeRates {
+  USD: number;
+  JPY: number;
+  CNY: number;
+  EUR: number;
+}
+
+export const DEFAULT_FEE_EXCHANGE_RATES: FeeExchangeRates = { USD: 1_350, JPY: 9, CNY: 190, EUR: 1_500 };
+
 /**
  * @relatedFR FR-LEGAL-24
  * @relatedUI UI-LEGAL-01
@@ -5,13 +14,15 @@
  * KR: 등록일 기준 누진 / US: 3.5·7.5·11.5년 3단계 / JP: 출원일 기준 4단계 누진 /
  * CN: 출원일 기준 5단계 누진 / EP: 출원일 기준 4단계 누진 / 기타: 300,000원 플랫.
  *
- * 환율 기준: JPY 9.0, CNY 190, EUR 1,500 (KRW)
+ * rates 미전달 시 DEFAULT_FEE_EXCHANGE_RATES(JPY 9 / CNY 190 / EUR 1,500 / USD 1,350) 사용.
  */
 export function estimateAnnualFeeKrw(
   country: string | null,
   registrationDate: string | null,
   applicationDate: string | null,
+  rates?: FeeExchangeRates,
 ): number {
+  const { USD, JPY, CNY, EUR } = rates ?? DEFAULT_FEE_EXCHANGE_RATES;
   const cc = (country ?? "").toUpperCase();
   // FEE-04: 국가별 기산일을 BE annualFeeBaseDate와 정합 — KR/US는 등록일 우선(등록일 기준),
   // 그 외(JP/CN/EP/기타)는 출원일 우선(출원일 기준).
@@ -23,39 +34,30 @@ export function estimateAnnualFeeKrw(
   const ageYears = baseMs ? (Date.now() - baseMs) / (365.25 * 24 * 3_600_000) : 5;
 
   if (cc === "KR") {
-    // 등록일 기준, 1~3년차 설정등록료 일괄 / 이후 매년 누진
     if (ageYears < 4) return 150_000;
     if (ageYears < 7) return 180_000;
     if (ageYears < 10) return 240_000;
     return 300_000;
   }
   if (cc === "US") {
-    // 등록일 기준 3.5 / 7.5 / 11.5년 유지료 (소규모 법인 기준)
-    if (ageYears < 3.5) return 1_160_000;
-    if (ageYears < 7.5) return 2_600_000;
-    return 5_400_000;
+    // 소규모 법인 기준 USD 유지료
+    const usd = ageYears < 3.5 ? 860 : ageYears < 7.5 ? 1_930 : 4_000;
+    return Math.round(usd * USD);
   }
   if (cc === "JP") {
-    // 출원일 기준 매년, 청구항 10개 기준 특허료 (JPY × 9)
-    if (ageYears < 4) return 300_000;    // 설정등록 시 1~3년차 일괄 구간
-    if (ageYears < 7) return 550_000;    // ~60,000 JPY
-    if (ageYears < 10) return 1_000_000; // ~110,000 JPY
-    return 1_600_000;                    // ~180,000 JPY
+    // 청구항 10개 기준 JPY 특허료
+    const jpy = ageYears < 4 ? 33_000 : ageYears < 7 ? 61_000 : ageYears < 10 ? 111_000 : 178_000;
+    return Math.round(jpy * JPY);
   }
   if (cc === "CN") {
-    // 출원일 기준 매년, 발명특허 年费 (CNY × 190)
-    if (ageYears < 4) return 170_000;    // ~900 CNY
-    if (ageYears < 7) return 230_000;    // ~1,200 CNY
-    if (ageYears < 10) return 380_000;   // ~2,000 CNY
-    if (ageYears < 13) return 760_000;   // ~4,000 CNY
-    return 1_200_000;                    // ~6,000+ CNY
+    // 발명특허 年费 CNY
+    const cny = ageYears < 4 ? 900 : ageYears < 7 ? 1_200 : ageYears < 10 ? 2_000 : ageYears < 13 ? 4_000 : 6_000;
+    return Math.round(cny * CNY);
   }
   if (cc === "EP") {
-    // EPO 출원일 기준 매년 renewal fee (EUR × 1,500)
-    if (ageYears < 4) return 700_000;    // ~470 EUR
-    if (ageYears < 7) return 1_200_000;  // ~800 EUR
-    if (ageYears < 10) return 2_100_000; // ~1,400 EUR
-    return 3_000_000;                    // ~2,000 EUR
+    // EPO renewal fee EUR
+    const eur = ageYears < 4 ? 470 : ageYears < 7 ? 800 : ageYears < 10 ? 1_400 : 2_000;
+    return Math.round(eur * EUR);
   }
   return 300_000;
 }
