@@ -3127,6 +3127,7 @@ tbody tr:hover {
   display: grid;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
+  min-width: 0;
   padding: var(--spacing-lg);
 }
 
@@ -3769,6 +3770,9 @@ tbody tr:hover {
 .history-mini-list {
   display: grid;
   gap: 0.75rem;
+  /* 좌측 참고 패널이 콘텐츠 너비만큼 늘어나 우측 체크리스트를 침범하지 않도록
+     그리드 트랙 안에서 축소 가능하게 둔다. */
+  min-width: 0;
 }
 
 .business-opinion-form-panel,
@@ -3939,7 +3943,28 @@ tbody tr:hover {
   display: grid;
   gap: var(--spacing-md);
   line-height: 1.65;
+  /* 좁은 컬럼(예: 사업부 체크리스트 좌측 패널)에서 긴 토큰/표가 옆 영역으로
+     넘치지 않도록 컨테이너를 축소 가능하게 두고 줄바꿈을 허용한다. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+  /* 테두리 있는 박스 안에서 본문이 경계에 딱 붙지 않도록 자체 패딩을 둔다. */
+  padding: var(--spacing-md);
   word-break: keep-all;
+}
+
+/* 이미 자체 패딩을 가진 컨테이너 안에서는 이중 패딩을 피한다. */
+.report-callout .markdown-body,
+.modal-report-summary .markdown-body,
+.report-section-panel-body .markdown-body,
+.ai-report-edit-markdown-preview .markdown-body {
+  padding: 0;
+}
+
+/* 좁은 컬럼에서 넓은 표는 잘리지 않고 가로 스크롤되도록 한다. */
+.markdown-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .markdown-body h1,
