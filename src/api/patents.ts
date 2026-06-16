@@ -729,15 +729,22 @@ export async function getPatentAiReportStatus(patentId: string): Promise<AiRepor
 /**
  * @relatedFR FR-LEGAL-03
  * @relatedUI UI-LEGAL-04
- * @description 출원번호로 KIPRIS 우선 검색 후 결과가 없으면 Google Patents 검색을 요청한다.
+ * @description 출원번호(우선) 또는 관리번호로 KIPRIS → Google Patents 순으로 서지 정보를 조회한다.
+ *              BE가 applicationNumber → registrationNumber → managementNumber 순으로 폴백하므로
+ *              둘 다 전달하고 BE 판단에 맡긴다.
  */
-export async function lookupPatentBibliographicInfo(applicationNumber: string): Promise<PatentBibliographicInfo | null> {
-  const normalizedApplicationNumber = applicationNumber.trim();
+export async function lookupPatentBibliographicInfo(
+  applicationNumber: string,
+  managementNumber?: string,
+): Promise<PatentBibliographicInfo | null> {
+  const normalizedApp = applicationNumber.trim();
+  const normalizedMgmt = managementNumber?.trim() ?? "";
 
   if (isBackendApiEnabled()) {
     const response = await requestJson<ApiEnvelope<BackendPatentBibliographicInfo | null>>(
       `/patents/external-lookup${toQueryString({
-        applicationNumber: normalizedApplicationNumber,
+        ...(normalizedApp ? { applicationNumber: normalizedApp } : {}),
+        ...(normalizedMgmt ? { managementNumber: normalizedMgmt } : {}),
         sourcePriority: "KIPRIS,GOOGLE_PATENTS",
       })}`,
     );
@@ -745,7 +752,7 @@ export async function lookupPatentBibliographicInfo(applicationNumber: string): 
     return response.data ? normalizeBibliographicInfo(response.data) : null;
   }
 
-  return lookupMockPatentBibliographicInfo(normalizedApplicationNumber);
+  return lookupMockPatentBibliographicInfo(normalizedApp || normalizedMgmt);
 }
 
 /**

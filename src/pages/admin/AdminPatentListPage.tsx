@@ -99,8 +99,8 @@ export function AdminPatentListPage() {
   async function handleLookupPatent() {
     setLookupError("");
 
-    if (!form.applicationNumber.trim()) {
-      setLookupMessage("출원번호를 입력해 주세요.");
+    if (!form.applicationNumber.trim() && !form.managementNumber.trim()) {
+      setLookupMessage("출원번호 또는 관리번호를 입력해 주세요.");
       return;
     }
 
@@ -109,10 +109,10 @@ export function AdminPatentListPage() {
     setSaveMessage("");
 
     try {
-      const result = await lookupPatentBibliographicInfo(form.applicationNumber);
+      const result = await lookupPatentBibliographicInfo(form.applicationNumber, form.managementNumber);
 
       if (!result) {
-        setLookupMessage("조회 결과가 없습니다. 출원번호를 다시 확인해 주세요.");
+        setLookupMessage("조회 결과가 없습니다. 출원번호 또는 관리번호를 다시 확인해 주세요.");
         return;
       }
 
