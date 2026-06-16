@@ -577,8 +577,30 @@ function ReviewFunnelCard({ stages }: { stages: Array<{ label: string; count: nu
  * @relatedUI UI-LEGAL-01
  * @description D1-EXT: 다음 4분기 연차료 예상 총액 — 기존 patents 배열 기반 KRW 추정치 바 차트.
  */
+type ExchangeRates = { USD: number; JPY: number; CNY: number; EUR: number };
+
+const FALLBACK_RATES: ExchangeRates = { USD: 1_350, JPY: 9, CNY: 190, EUR: 1_500 };
+
 function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
   const [showHelp, setShowHelp] = useState(false);
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRates | null>(null);
+
+  useEffect(() => {
+    if (!showHelp || exchangeRates !== null) return;
+    fetch("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/krw.json")
+      .then((r) => r.json())
+      .then((data: { krw: Record<string, number> }) => {
+        const k = data.krw;
+        setExchangeRates({
+          USD: Math.round(1 / k.usd),
+          JPY: Math.round(1 / k.jpy),
+          CNY: Math.round(1 / k.cny),
+          EUR: Math.round(1 / k.eur),
+        });
+      })
+      .catch(() => setExchangeRates(FALLBACK_RATES));
+  }, [showHelp, exchangeRates]);
+
   const now = new Date();
   const quarterStart = Math.floor(now.getMonth() / 3) * 3;
   const buckets = Array.from({ length: 4 }, (_, offset) => {
@@ -632,12 +654,19 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
               <div className="fee-help-tooltip">
                 <table className="fee-help-table">
                   <thead>
-                    <tr><th>통화</th><th>적용 환율</th></tr>
+                    <tr><th>통화</th><th>KRW 환산</th></tr>
                   </thead>
                   <tbody>
-                    <tr><td>JPY</td><td>1 JPY = 9 원</td></tr>
-                    <tr><td>CNY</td><td>1 CNY = 190 원</td></tr>
-                    <tr><td>EUR</td><td>1 EUR = 1,500 원</td></tr>
+                    {exchangeRates ? (
+                      (["USD", "JPY", "CNY", "EUR"] as const).map((cur) => (
+                        <tr key={cur}>
+                          <td>{cur}</td>
+                          <td>1 {cur} = {new Intl.NumberFormat("ko-KR").format(exchangeRates[cur])} 원</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr><td colSpan={2} style={{ color: "var(--color-text-muted)" }}>조회 중…</td></tr>
+                    )}
                   </tbody>
                 </table>
               </div>
