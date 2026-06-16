@@ -214,6 +214,9 @@ export function AiReportSection({
     regenerateControls?.onRegenerate();
   }
 
+  const hasContent = report.scores.length > 0 || !!report.rawMarkdown;
+  const isRegenerating = regenerateControls?.isRegenerating ?? false;
+
   return (
     <Section
       title="AI 특허 평가 레포트"
@@ -221,12 +224,12 @@ export function AiReportSection({
     >
       {editControls || regenerateControls ? (
         <>
-        {regenerateControls?.isRegenerating ? (
-          <RegenProgressSteps message={regenerateControls.regenerateMessage} startedAt={regenerateControls.regenStartedAt} />
+        {isRegenerating ? (
+          <RegenProgressSteps message={regenerateControls!.regenerateMessage} startedAt={regenerateControls!.regenStartedAt} />
         ) : null}
         <div className="ai-report-edit-toolbar">
           {editControls?.editMessage ? <span className="ai-report-edit-message">{editControls.editMessage}</span> : null}
-          {regenerateControls?.regenerateMessage && !regenerateControls.isRegenerating ? (
+          {regenerateControls?.regenerateMessage && !isRegenerating ? (
             <span className="ai-report-edit-message">{regenerateControls.regenerateMessage}</span>
           ) : null}
           {editControls && (report.edited || editControls.isShowingOriginal) ? (
@@ -251,12 +254,12 @@ export function AiReportSection({
           ) : null}
           {regenerateControls && !pendingRegenConfirm ? (
             <Button
-              disabled={regenerateControls.isRegenerating}
+              disabled={isRegenerating}
               onClick={handleRegenerateClick}
               type="button"
               variant="secondary"
             >
-              {regenerateControls.isRegenerating ? (
+              {isRegenerating ? (
                 <><span className="btn-spinner" />재생성 중...</>
               ) : "AI 레포트 재생성"}
             </Button>
@@ -271,6 +274,14 @@ export function AiReportSection({
         </div>
         </>
       ) : null}
+
+      {!hasContent && !isRegenerating ? (
+        <div className="empty-state-card">
+          <strong>아직 AI 레포트가 없어요</strong>
+          <p>AI 레포트 재생성 버튼을 눌러 평가를 시작해 보세요.</p>
+        </div>
+      ) : hasContent ? (
+        <>
       {editControls?.isShowingOriginal ? (
         <p className="notice">AI가 생성한 원본 레포트를 보고 있습니다. 수정 내용은 반영되어 있지 않습니다.</p>
       ) : null}
@@ -296,12 +307,6 @@ export function AiReportSection({
           {report.edited ? <Badge tone="primary">법무 수정</Badge> : null}
         </div>
       </div>
-      {report.scores.length === 0 && !report.rawMarkdown && !regenerateControls?.isRegenerating ? (
-        <div className="empty-state-card">
-          <strong>아직 AI 레포트가 없어요</strong>
-          <p>AI 레포트 재생성 버튼을 눌러 평가를 시작해 보세요.</p>
-        </div>
-      ) : null}
       {report.editStale ? (
         <p className="notice notice-warning">
           이 수정 내용은 이전 버전 레포트를 기준으로 작성되었습니다. 레포트가 다시 생성되었으니 수정 내용을
@@ -398,6 +403,8 @@ export function AiReportSection({
       ) : null}
       {report.rawMarkdown ? (
         <RawMarkdownBlock content={report.rawMarkdown} title="AI 특허 평가 레포트 전문" />
+      ) : null}
+        </>
       ) : null}
     </Section>
   );
