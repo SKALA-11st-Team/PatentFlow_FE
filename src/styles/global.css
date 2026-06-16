@@ -5851,9 +5851,9 @@ tbody tr:hover {
   border-radius: calc(var(--radius-md) - 3px);
   color: var(--color-text-muted);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  padding: var(--spacing-sm) var(--spacing-xs);
+  padding: var(--spacing-md) var(--spacing-sm);
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
@@ -5888,27 +5888,44 @@ tbody tr:hover {
 
 .axis-detail-confidence {
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: 14px;
   margin-left: auto;
 }
 
 .axis-detail-block {
   display: grid;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
 }
 
 .axis-detail-block h4 {
   align-items: center;
   color: var(--color-text-dark);
   display: flex;
-  font-size: 14px;
+  font-size: 16px;
   gap: 6px;
   margin: 0;
 }
 
 .axis-detail-block p {
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.8;
   margin: 0;
+}
+
+/* 모달 안에서는 근거·리스트 글자를 키워 오밀조밀함을 줄인다(전역 .score-detail-list/.clean-list는 13px 유지). */
+.axis-detail-panel .score-detail-list,
+.axis-detail-panel .clean-list {
+  font-size: 14.5px;
+  line-height: 1.8;
+}
+
+.axis-detail-panel .score-detail-list li,
+.axis-detail-panel .clean-list li {
+  margin-bottom: var(--spacing-sm);
+}
+
+.axis-detail-modal .modal-header h3 {
+  font-size: 20px;
 }
 
 /* 권리범위 참고도 — 작동 흐름 단계 */

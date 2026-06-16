@@ -381,7 +381,6 @@ export function AiReportSection({
           </ul>
         </div>
       ) : null}
-      <AiReportStructuredContent report={report} />
       {report.reportSections ? <ReportSectionPanels sections={report.reportSections} /> : null}
       {report.businessCheckRequests?.length ? (
         <div className="report-block">
