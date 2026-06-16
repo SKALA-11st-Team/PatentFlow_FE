@@ -4952,6 +4952,8 @@ tbody tr:hover {
 [data-theme="dark"] body { background: var(--color-bg-light); color: var(--color-text); }
 [data-theme="dark"] .table-wrap thead th { background: var(--color-bg-secondary); }
 [data-theme="dark"] .notice { background: var(--color-bg-secondary); }
+/* 알림 패널 배경이 라이트 흰색으로 하드코딩되어 다크모드에서 흰 배경+흰 글자가 되던 문제 보정 */
+[data-theme="dark"] .notification-panel { background: rgba(29, 33, 44, 0.94); }
 
 /* ── D5: 반응형(모바일) ───────────────────────────────────────────── */
 @media (max-width: 768px) {
