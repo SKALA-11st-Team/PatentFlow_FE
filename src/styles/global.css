@@ -3127,6 +3127,7 @@ tbody tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
   min-width: 0;
@@ -3771,6 +3772,7 @@ tbody tr:hover {
 .business-reference-stack,
 .history-mini-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
   /* 좌측 참고 패널이 콘텐츠 너비만큼 늘어나 우측 체크리스트를 침범하지 않도록
      그리드 트랙 안에서 축소 가능하게 둔다. */
@@ -3943,6 +3945,9 @@ tbody tr:hover {
 .markdown-body {
   color: var(--color-text-dark);
   display: grid;
+  /* 단일 컬럼을 [0, 1fr]로 고정 — auto 트랙이 콘텐츠(표/긴 줄) max-content로
+     부풀어 부모를 밀어내는 grid blowout을 막는다. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-md);
   line-height: 1.65;
   /* 좁은 컬럼(예: 사업부 체크리스트 좌측 패널)에서 긴 토큰/표가 옆 영역으로
@@ -3997,8 +4002,15 @@ tbody tr:hover {
 .markdown-body ul,
 .markdown-body ol {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-xs);
   padding-left: 1.25rem;
+}
+
+/* 리스트 항목 자체도 그리드 트랙을 넘지 않도록 축소 허용 + 긴 줄 줄바꿈. */
+.markdown-body li {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .markdown-body table {
