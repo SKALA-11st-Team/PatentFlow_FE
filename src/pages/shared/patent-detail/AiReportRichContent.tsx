@@ -227,48 +227,63 @@ function AxisStat({ label, score }: { label: string; score: EvaluationScore }) {
 }
 
 export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport }) {
+  const hasContent = report.scores.length > 0 || !!report.rawMarkdown;
   const scored = report.scores.filter((s) => typeof s.score === "number");
   const strongest = scored.length ? scored.reduce((a, b) => ((b.score ?? 0) > (a.score ?? 0) ? b : a)) : null;
   const weakest = scored.length ? scored.reduce((a, b) => ((b.score ?? 0) < (a.score ?? 0) ? b : a)) : null;
-  // averageScore 미제공 시 축 점수 평균으로 폴백(소수 1자리).
   const avgScore =
     report.averageScore ??
     (scored.length ? Math.round((scored.reduce((sum, s) => sum + (s.score ?? 0), 0) / scored.length) * 10) / 10 : null);
-  // 종합 점수 /300은 핵심 3축(권리성·기술성·시장성) 합으로 계산해 평균과 항상 일관되게 한다.
   const coreScores = scored.filter((s) => s.category === "RIGHTS" || s.category === "TECHNOLOGY" || s.category === "MARKET");
   const coreTotal = coreScores.length ? coreScores.reduce((sum, s) => sum + (s.score ?? 0), 0) : null;
   const oneLiner = report.summaryBrief?.one_line_summary ?? report.keyEvidence;
   const action = report.businessCheckRequests?.find((item) => item.trim());
+
+  const tone = getRecommendationTone(report.recommendation);
+  const verdictClass = hasContent
+    ? `judgment-verdict judgment-verdict--${tone}`
+    : "judgment-verdict judgment-verdict--neutral";
+
   return (
     <div className="judgment-band">
       <motion.div className="judgment-grid" initial="hidden" variants={containerVariants} viewport={VIEWPORT} whileInView="show">
-        <motion.div className="judgment-verdict" variants={itemVariants}>
+        <motion.div className={verdictClass} variants={itemVariants}>
           <span className="judgment-label">
             <Sparkles aria-hidden size={16} />
             AI 제안 판단
           </span>
-          <strong className="judgment-verdict-value" style={{ color: recommendationColor(report.recommendation) }}>
-            {recommendationLabels[report.recommendation]}
-          </strong>
+          {hasContent ? (
+            <strong className="judgment-verdict-value" style={{ color: recommendationColor(report.recommendation) }}>
+              {recommendationLabels[report.recommendation]}
+            </strong>
+          ) : (
+            <strong className="judgment-verdict-value judgment-verdict-value--pending">
+              AI 레포트 생성 전
+            </strong>
+          )}
         </motion.div>
-        <motion.div className="judgment-stat" variants={itemVariants}>
-          <span>AI 종합 점수</span>
-          <strong>
-            {avgScore != null ? <CountUp value={Math.round(avgScore)} /> : "–"}
-            <small> / 100</small>
-          </strong>
-          {coreTotal != null ? <small className="judgment-sub">{coreTotal} / 300</small> : null}
-        </motion.div>
-        {strongest ? <AxisStat label="가장 강한 평가축" score={strongest} /> : null}
-        {weakest && weakest !== strongest ? <AxisStat label="가장 약한 평가축" score={weakest} /> : null}
-        {action ? (
-          <motion.div className="judgment-stat" variants={itemVariants}>
-            <span>핵심 확인 사항</span>
-            <strong className="judgment-action">{action}</strong>
-          </motion.div>
+        {hasContent ? (
+          <>
+            <motion.div className="judgment-stat" variants={itemVariants}>
+              <span>AI 종합 점수</span>
+              <strong>
+                {avgScore != null ? <CountUp value={Math.round(avgScore)} /> : "–"}
+                <small> / 100</small>
+              </strong>
+              {coreTotal != null ? <small className="judgment-sub">{coreTotal} / 300</small> : null}
+            </motion.div>
+            {strongest ? <AxisStat label="가장 강한 평가축" score={strongest} /> : null}
+            {weakest && weakest !== strongest ? <AxisStat label="가장 약한 평가축" score={weakest} /> : null}
+            {action ? (
+              <motion.div className="judgment-stat" variants={itemVariants}>
+                <span>핵심 확인 사항</span>
+                <strong className="judgment-action">{action}</strong>
+              </motion.div>
+            ) : null}
+          </>
         ) : null}
       </motion.div>
-      {oneLiner ? <p className="judgment-oneliner">{oneLiner}</p> : null}
+      {hasContent && oneLiner ? <p className="judgment-oneliner">{oneLiner}</p> : null}
     </div>
   );
 }

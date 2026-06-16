@@ -5647,8 +5647,24 @@ tbody tr:hover {
 
 .judgment-verdict {
   align-content: start;
+}
+
+/* recommendation tone별 verdict 카드 색상 */
+.judgment-verdict--success {
+  background: rgba(var(--color-success-rgb), 0.07);
+  border-color: rgba(var(--color-success-rgb), 0.3);
+}
+.judgment-verdict--warning {
   background: rgba(var(--color-accent-rgb), 0.07);
   border-color: rgba(var(--color-accent-rgb), 0.28);
+}
+.judgment-verdict--danger {
+  background: rgba(239, 68, 68, 0.07);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+.judgment-verdict--neutral {
+  background: var(--color-bg-light);
+  border-color: var(--color-border);
 }
 
 .judgment-label {
@@ -5661,7 +5677,12 @@ tbody tr:hover {
 }
 
 .judgment-label svg {
-  color: var(--color-accent);
+  color: var(--color-text-muted);
+}
+
+.judgment-verdict-value--pending {
+  color: var(--color-text-muted);
+  font-size: 18px;
 }
 
 .judgment-verdict-value {
