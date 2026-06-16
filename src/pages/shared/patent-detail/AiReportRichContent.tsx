@@ -16,6 +16,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Badge } from "../../../components/common/Badge";
+import { MarkdownView } from "../../../components/common/MarkdownView";
 import {
   evaluationCategoryLabels,
   getGradeLabel,
@@ -205,7 +206,9 @@ export function ReportSectionPanels({ sections }: { sections: Partial<Record<Rep
             {label}
             <ChevronDown aria-hidden className="report-section-chevron" size={16} />
           </summary>
-          <div className="report-section-panel-body">{sections[key]}</div>
+          <div className="report-section-panel-body">
+            <MarkdownView content={sections[key] ?? ""} />
+          </div>
         </details>
       ))}
     </div>

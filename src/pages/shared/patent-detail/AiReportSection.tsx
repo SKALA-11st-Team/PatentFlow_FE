@@ -349,13 +349,13 @@ export function AiReportSection({
       {report.reportSections?.finalOpinion ? (
         <div className="report-callout report-callout--final">
           <strong>최종 검토 의견</strong>
-          <p>{report.reportSections.finalOpinion}</p>
+          <MarkdownView content={report.reportSections.finalOpinion} />
         </div>
       ) : null}
       {report.keyEvidence ? (
         <div className="report-callout">
           <strong>핵심 근거</strong>
-          <p>{report.keyEvidence}</p>
+          <MarkdownView content={report.keyEvidence} />
         </div>
       ) : null}
       {report.scores.length ? (

@@ -5672,7 +5672,6 @@ tbody tr:hover {
   border-top: 1px solid var(--color-border);
   line-height: 1.72;
   padding: var(--spacing-md) 0;
-  white-space: pre-wrap;
 }
 
 /* ① 한눈에 보는 판단 요약 밴드 */

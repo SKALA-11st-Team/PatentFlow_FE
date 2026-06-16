@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ExternalLink, GitBranch } from "lucide-react";
 import { Badge } from "../../../components/common/Badge";
+import { MarkdownView } from "../../../components/common/MarkdownView";
 import { Modal } from "../../../components/common/Modal";
 import { evaluationCategoryLabels, getGradeLabel, getGradeTone } from "../../../constants/status";
 import type { EvaluationScore, PatentDetail } from "../../../types/patent";
@@ -73,7 +74,7 @@ function AxisDetailPanel({ score, steps }: { score: EvaluationScore; steps?: str
 
       <div className="axis-detail-block">
         <h4>핵심 근거 요약</h4>
-        {summary.text ? <p>{summary.text}</p> : null}
+        {summary.text ? <MarkdownView content={summary.text} /> : null}
         <FigureList figures={summary.figures} />
       </div>
 
@@ -108,7 +109,7 @@ function AxisDetailPanel({ score, steps }: { score: EvaluationScore; steps?: str
               const detailContent = stripFigures(detail.text);
               return (
                 <li key={`${index}-${detailContent.text.slice(0, 40)}`}>
-                  {detailContent.text}
+                  <MarkdownView content={detailContent.text} />
                   {detail.source ? (
                     <>
                       {" "}
@@ -143,7 +144,7 @@ function AxisDetailPanel({ score, steps }: { score: EvaluationScore; steps?: str
                 <div className="claim-flow-step" key={`${index}-${stepContent.text.slice(0, 40)}`}>
                   <span className="claim-flow-no">{`S${(index + 1) * 100}`}</span>
                   <div className="claim-flow-body">
-                    {stepContent.text ? <span>{stepContent.text}</span> : null}
+                    {stepContent.text ? <MarkdownView content={stepContent.text} /> : null}
                     <FigureList figures={stepContent.figures} />
                   </div>
                 </div>
