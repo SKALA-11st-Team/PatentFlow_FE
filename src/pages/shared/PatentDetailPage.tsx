@@ -391,9 +391,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
               : undefined
           }
           regenerateControls={
-            (role !== "BUSINESS" || aiReportRegenBusinessAllowed) &&
-            !patent.finalDecisionRecord?.decisionId &&
-            patent.reviewWorkflowStatus !== "REVIEW_QUARTER_STARTED"
+            (role !== "BUSINESS" || aiReportRegenBusinessAllowed)
               ? {
                   isRegenerating: isWorkflowActionProcessing,
                   regenerateMessage: workflowActionMessage,
