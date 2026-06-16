@@ -275,7 +275,8 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta icon={Calendar} label="출원일" value={formatDate(patent.applicationDate)} />
           <Meta icon={CalendarCheck} label="등록일" value={formatDate(patent.registrationDate)} />
           <Meta icon={CalendarClock} label="예상 소멸일" value={formatDate(patent.expectedExpirationDate)} />
-          <Meta icon={Coins} label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} />
+          {/* BUS-FEE-01: 연차료는 법무팀 업무 영역이므로 사업부 화면에서는 납부 예정일을 노출하지 않는다. */}
+          {isAdmin ? <Meta icon={Coins} label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} /> : null}
           {patent.aiEvaluationReport ? (
             <Meta icon={FileClock} label="보고서 생성일" value={formatDate(patent.aiEvaluationReport.createdAt)} />
           ) : null}
@@ -424,7 +425,8 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           message={patentHistoryMessage}
         />
 
-        {feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
+        {/* BUS-FEE-01: 연차료 일정/추정액은 사업부 화면에서 숨긴다(법무팀 전용). */}
+        {isAdmin && feeSchedule && feeSchedule.items.length > 0 ? <FeeScheduleCard schedule={feeSchedule} /> : null}
 
         <Link className="back-link detail-back-link" to={role === "ADMIN" ? "/admin/dashboard" : "/business/dashboard"}>
           대시보드로 돌아가기
@@ -821,7 +823,8 @@ function PatentFamilyCard({ isAdmin, members }: { isAdmin: boolean; members: Pat
               <th>관리번호</th>
               <th>국가</th>
               <th>상태</th>
-              <th>납부 예정일</th>
+              {/* BUS-FEE-01: 연차료 납부 예정일은 사업부 화면에서 숨긴다(법무팀 전용). */}
+              {isAdmin ? <th>납부 예정일</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -834,7 +837,7 @@ function PatentFamilyCard({ isAdmin, members }: { isAdmin: boolean; members: Pat
                 </td>
                 <td>{member.country}</td>
                 <td>{reviewWorkflowStatusLabels[member.reviewWorkflowStatus]}</td>
-                <td>{member.feeDueDate || "—"}</td>
+                {isAdmin ? <td>{member.feeDueDate || "—"}</td> : null}
               </tr>
             ))}
           </tbody>
