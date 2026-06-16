@@ -4805,7 +4805,6 @@ tbody tr:hover {
 
 .timeline-y-label {
   writing-mode: vertical-rl;
-  transform: rotate(180deg);
   font-size: 0.7rem;
   color: var(--color-text-muted);
   text-align: center;
