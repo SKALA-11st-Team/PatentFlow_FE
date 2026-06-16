@@ -120,6 +120,7 @@ export function AdminPatentListPage() {
         ...currentForm,
         ...result,
         managementNumber: currentForm.managementNumber,
+        applicationNumber: result.applicationNumber || currentForm.applicationNumber,
         businessArea: currentForm.businessArea,
         technologyArea: currentForm.technologyArea,
         productName: currentForm.productName,

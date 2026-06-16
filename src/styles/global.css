@@ -4733,19 +4733,37 @@ tbody tr:hover {
   color: var(--color-text);
   font-size: 0.78rem;
   font-weight: 400;
-  left: 50%;
-  line-height: 1.6;
-  min-width: 280px;
-  padding: 0.75rem 1rem;
+  left: 0;
+  padding: 0.5rem 0.75rem;
   position: absolute;
   top: calc(100% + 6px);
-  transform: translateX(-50%);
-  white-space: normal;
+  white-space: nowrap;
   z-index: 100;
 }
 
 .fee-help-tooltip p {
   margin: 0.15rem 0;
+}
+
+.fee-help-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.fee-help-table th,
+.fee-help-table td {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.3rem 0.6rem;
+  text-align: left;
+}
+
+.fee-help-table th {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.fee-help-table tr:last-child td {
+  border-bottom: none;
 }
 
 .timeline-unit-toggle {

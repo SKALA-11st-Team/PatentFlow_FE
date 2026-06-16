@@ -630,12 +630,16 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
             ?
             {showHelp && (
               <div className="fee-help-tooltip">
-                <p>국가별 기산일·연차 경과 구간 기준 추정치입니다.</p>
-                <p>· 기산일: KR·US는 등록일 기준, 그 외(JP·CN·EP 등)는 출원일 기준</p>
-                <p>· 단가: 경과 연차 구간별 누진 추정 (KR 15만→18만→24만→30만원 등)</p>
-                <p>· 해외는 환율 환산값 (JPY 9 / CNY 190 / EUR 1,500원)</p>
-                <p>· 납부 예정 시점은 BE 연차료 일정(feeDueDate)을 우선 사용</p>
-                <p>실제 납부액은 특허청 고시·청구항 수·환율에 따라 달라질 수 있는 참고용 값입니다.</p>
+                <table className="fee-help-table">
+                  <thead>
+                    <tr><th>통화</th><th>적용 환율</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>JPY</td><td>1 JPY = 9 원</td></tr>
+                    <tr><td>CNY</td><td>1 CNY = 190 원</td></tr>
+                    <tr><td>EUR</td><td>1 EUR = 1,500 원</td></tr>
+                  </tbody>
+                </table>
               </div>
             )}
           </span>
