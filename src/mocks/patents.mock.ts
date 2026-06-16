@@ -297,7 +297,7 @@ function createPatentDetail(row: SkaxPatentRow, index: number): PatentDetail {
       claimsSummary: `${title}의 시스템 또는 방법 구성을 중심으로 권리를 주장합니다.`,
       missingFields: getMissingFields(row),
     },
-    aiEvaluationReport: getAiEvaluationReport(row, recommendation, index),
+    aiEvaluationReport: getAiEvaluationReport(row),
     finalDecisionRecord: {
       decisionId: legalActionResult ? `DEC-${row.managementNumber}` : null,
       reason: legalActionResult ? `${getLegalActionText(legalActionResult)} 결과가 데모 데이터로 입력되었습니다.` : null,
@@ -424,24 +424,13 @@ function getMissingFields(row: SkaxPatentRow) {
   return fields;
 }
 
-function getRecommendationText(recommendation: Recommendation, row: SkaxPatentRow) {
-  const productText = normalizeProductName(row.productName) || "관련 제품";
-  const textMap: Record<Recommendation, string> = {
-    MAINTAIN: `${productText} 관련 기술성, 권리성, 유지 비용 대비 가치가 확인되어 유지 권고가 타당한 AI 특허 평가 레포트입니다.`,
-    REVIEW_AGAIN: "권리성, 기술성, 시장성, 사업 연계성 중 일부 근거 보완이 필요한 AI 특허 평가 레포트입니다.",
-    ABANDON: "권리성 또는 사업 연계성 보완 근거가 부족해 포기 검토가 가능한 AI 특허 평가 레포트입니다.",
-    CONDITIONAL_MAINTAIN: "권리성·기술성 기반은 확인되나 일부 근거 보완을 전제로 조건부 유지가 적절한 AI 특허 평가 레포트입니다.",
-  };
-
-  return textMap[recommendation];
-}
-
 /**
  * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08
  * @relatedUI UI-LEGAL-04, UI-BUS-03
  * @description 발표에서 바로 보여줄 수 있는 대표 특허의 작성 완료 AI 평가 레포트를 반환한다.
+ *     레포트가 없는 특허는 null을 반환한다.
  */
-function getAiEvaluationReport(row: SkaxPatentRow, recommendation: Recommendation, index: number): AiEvaluationReport {
+function getAiEvaluationReport(row: SkaxPatentRow): AiEvaluationReport | null {
   const generatedReport = aiReportsByManagementNumber[row.managementNumber];
 
   if (generatedReport) {
@@ -454,18 +443,7 @@ function getAiEvaluationReport(row: SkaxPatentRow, recommendation: Recommendatio
     return withDemoRichFields(demoReport, row);
   }
 
-  return withDemoRichFields(
-    {
-      evaluationId: `EVAL-${row.managementNumber}`,
-      createdAt: getAiReportCreatedAt(index),
-      recommendation,
-      recommendationText: getRecommendationText(recommendation, row),
-      totalScore: getTotalScore(recommendation, index),
-      scores: getScores(row, recommendation, index),
-      missingInformation: getMissingFields(row),
-    },
-    row,
-  );
+  return null;
 }
 
 // AIREPORT-RICH(목 전용): 목 레포트에 등급·요약 카드·섹션 본문·근거 신뢰도가 없으면 데모용 값을 채운다.
@@ -502,60 +480,6 @@ function withDemoRichFields(report: AiEvaluationReport, row: SkaxPatentRow): AiE
       finalOpinion: "기술적 차별성은 확인되나 사업 연계성 근거가 제한적이라, 보완 자료 확보 후 유지 여부를 재검토하는 것이 적절합니다.",
     },
   };
-}
-
-function getAiReportCreatedAt(index: number) {
-  const day = 1 + (index % 5);
-
-  return `2026-05-${String(day).padStart(2, "0")}T09:00:00+09:00`;
-}
-
-function getTotalScore(recommendation: Recommendation, index: number) {
-  const baseScore: Record<Recommendation, number> = {
-    MAINTAIN: 82,
-    REVIEW_AGAIN: 68,
-    ABANDON: 45,
-    CONDITIONAL_MAINTAIN: 60,
-  };
-
-  return Math.min(95, baseScore[recommendation] + (index % 7));
-}
-
-function getScores(row: SkaxPatentRow, recommendation: Recommendation, index: number) {
-  const rightsScore = row.isJointApplication ? 58 : recommendation === "ABANDON" ? 52 : 76 + (index % 8);
-  const technologyScore = recommendation === "MAINTAIN" ? 82 : recommendation === "ABANDON" ? 48 : 68;
-  const marketScore = 62 + (index % 14);
-  const businessAlignmentScore =
-    !row.productName || row.productName === "해당사항없음"
-      ? 55
-      : recommendation === "MAINTAIN"
-        ? 80 + (index % 8)
-        : 62 + (index % 10);
-
-  return [
-    createScore(
-      "RIGHTS",
-      rightsScore,
-      row.isJointApplication
-        ? "공동출원 관계로 권리 행사 조건과 법적 안정성 확인이 필요합니다."
-        : "청구항 기반 보호 범위와 권리 안정성은 기본 검토 가능한 수준입니다.",
-    ),
-    createScore(
-      "TECHNOLOGY",
-      technologyScore,
-      `${row.technologyArea || "관련 기술"} 분야의 기술 영향력과 구현 가능성을 함께 검토했습니다.`,
-    ),
-    createScore(
-      "MARKET",
-      marketScore,
-      `${row.businessArea || "미분류"} 분야의 시장 범위, 경쟁 활동, 산업 트렌드 확인이 필요합니다.`,
-    ),
-    createScore(
-      "BUSINESS_ALIGNMENT",
-      businessAlignmentScore,
-      `${row.businessArea || "미분류"} 사업과 ${row.productName || "관련 제품"}의 적용 가능성, 제품 로드맵 연결성, 내부 활용 우선순위를 기준으로 검토했습니다.`,
-    ),
-  ];
 }
 
 function createScore(

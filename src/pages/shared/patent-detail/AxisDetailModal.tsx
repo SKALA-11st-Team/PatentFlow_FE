@@ -118,7 +118,7 @@ export function AxisDetailModal({
   report,
   onClose,
 }: {
-  report: PatentDetail["aiEvaluationReport"];
+  report: NonNullable<PatentDetail["aiEvaluationReport"]>;
   onClose: () => void;
 }) {
   const scores = report.scores;

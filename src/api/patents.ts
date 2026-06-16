@@ -161,7 +161,7 @@ interface BackendPatentDetail extends BackendPatentListItem {
   aiEvaluationReport: {
     reportId: string;
     createdAt: string;
-    recommendation: PatentDetail["aiEvaluationReport"]["recommendation"];
+    recommendation: Exclude<PatentDetail["aiEvaluationReport"], null>["recommendation"];
     recommendationReason: string;
     totalScore: number | null;
     averageScore?: number | null;
@@ -203,7 +203,7 @@ interface BackendPatentDetail extends BackendPatentListItem {
     editVersion?: number | null;
     editStale?: boolean | null;
     appliedCriteria?: Record<string, unknown> | null;
-  };
+  } | null;
   finalDecisionRecord: {
     decisionId: string | null;
     reason: string | null;
@@ -681,7 +681,7 @@ export async function updatePatentAiReport(
       `/patents/${patentId}/ai-report`,
       { method: "PATCH", body: JSON.stringify(payload) },
     );
-    return response.data ? mapBackendAiEvaluationReport(response.data) : undefined;
+    return mapBackendAiEvaluationReport(response.data) ?? undefined;
   }
   return updateMockPatentAiReport(patentId, payload);
 }
@@ -693,7 +693,7 @@ export async function revertPatentAiReport(patentId: string): Promise<AiEvaluati
       `/patents/${patentId}/ai-report/edits`,
       { method: "DELETE" },
     );
-    return response.data ? mapBackendAiEvaluationReport(response.data) : undefined;
+    return mapBackendAiEvaluationReport(response.data) ?? undefined;
   }
   return revertMockPatentAiReport(patentId);
 }
@@ -704,7 +704,7 @@ export async function getPatentAiReportOriginal(patentId: string): Promise<AiEva
     const response = await requestJson<ApiEnvelope<BackendPatentDetail["aiEvaluationReport"]>>(
       `/patents/${patentId}/ai-report/original`,
     );
-    return response.data ? mapBackendAiEvaluationReport(response.data) : undefined;
+    return mapBackendAiEvaluationReport(response.data) ?? undefined;
   }
   return getMockPatentAiReportOriginal(patentId);
 }
@@ -909,7 +909,8 @@ function mapBackendSummary(summary: BackendPatentDetail["summary"]): PatentSumma
   };
 }
 
-export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationReport"]): AiEvaluationReport {
+export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEvaluationReport"]): AiEvaluationReport | null {
+  if (!report) return null;
   const scores = mapBackendEvaluationScores(report.scores);
   const scoreAverage = getAverageScore(scores);
   const rawTotalScore = typeof report.totalScore === "number" ? report.totalScore : getScoreTotal(scores) ?? 0;
@@ -959,7 +960,7 @@ export function mapBackendAiEvaluationReport(report: BackendPatentDetail["aiEval
  * @relatedUI UI-LEGAL-05, UI-BUS-03
  * @description 백엔드가 이전 5축 응답을 보내도 현재 FE/API 계약의 4축 평가 점수만 화면 모델로 통과시킨다.
  */
-export function mapBackendEvaluationScores(scores: BackendPatentDetail["aiEvaluationReport"]["scores"]): EvaluationScore[] {
+export function mapBackendEvaluationScores(scores: Exclude<BackendPatentDetail["aiEvaluationReport"], null>["scores"]): EvaluationScore[] {
   return scores.flatMap((score) => {
     if (!isEvaluationCategory(score.category)) {
       return [];

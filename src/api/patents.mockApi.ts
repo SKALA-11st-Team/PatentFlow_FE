@@ -78,6 +78,7 @@ export function updateMockPatentAiReport(
     return undefined;
   }
   const current = detailItem.aiEvaluationReport;
+  if (!current) return undefined;
   if (!mockOriginalAiReports.has(patentId)) {
     mockOriginalAiReports.set(patentId, structuredClone(current));
   }
@@ -126,14 +127,14 @@ export function revertMockPatentAiReport(patentId: string): AiEvaluationReport |
     return undefined;
   }
   if (!original) {
-    return detailItem.aiEvaluationReport;
+    return detailItem.aiEvaluationReport ?? undefined;
   }
   const reverted: AiEvaluationReport = {
     ...structuredClone(original),
     edited: false,
     editedBy: null,
     editedAt: null,
-    editVersion: (detailItem.aiEvaluationReport.editVersion ?? 0) + 1,
+    editVersion: (detailItem.aiEvaluationReport?.editVersion ?? 0) + 1,
     editStale: false,
   };
   detailItem.aiEvaluationReport = reverted;
@@ -151,7 +152,7 @@ export function getMockPatentAiReportOriginal(patentId: string): AiEvaluationRep
   if (original) {
     return structuredClone(original);
   }
-  return patentDetails.find((patent) => patent.patentId === patentId)?.aiEvaluationReport;
+  return patentDetails.find((patent) => patent.patentId === patentId)?.aiEvaluationReport ?? undefined;
 }
 
 export function updateMockPatent(patentId: string, payload: PatentUpsertPayload) {
@@ -234,7 +235,7 @@ function getMockGeneratedRecommendation(patent: PatentDetail): Recommendation {
 }
 
 function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recommendation): AiEvaluationReport {
-  const scores = patent.aiEvaluationReport.scores.length
+  const scores = patent.aiEvaluationReport?.scores.length
     ? patent.aiEvaluationReport.scores
     : EVALUATION_CATEGORIES.map((category) => ({
         category,
@@ -249,22 +250,22 @@ function createGeneratedMockAiReport(patent: PatentDetail, recommendation: Recom
   const scoreSum = scoredValues.reduce((sum, score) => sum + score, 0);
   const averageScore = scoredValues.length
     ? Number((scoreSum / scoredValues.length).toFixed(1))
-    : patent.aiEvaluationReport.averageScore;
+    : patent.aiEvaluationReport?.averageScore;
   const maxScore = scoredValues.length * 100;
 
   return {
-    ...patent.aiEvaluationReport,
+    ...(patent.aiEvaluationReport ?? {}),
     averageScore,
     createdAt: new Date().toISOString(),
     evaluationId: `REPORT-${patent.patentId}-${Date.now()}`,
     recommendation,
     recommendationText: getGeneratedMockRecommendationText(recommendation),
-    totalScore: scoredValues.length ? scoreSum : patent.aiEvaluationReport.totalScore,
+    totalScore: scoredValues.length ? scoreSum : (patent.aiEvaluationReport?.totalScore ?? null),
     totalScoreText: scoredValues.length
       ? `${scoreSum}/${maxScore}점, 평균 ${averageScore}점`
-      : patent.aiEvaluationReport.totalScoreText,
+      : patent.aiEvaluationReport?.totalScoreText,
     scores,
-  };
+  } as AiEvaluationReport;
 }
 
 function getGeneratedMockRecommendationText(recommendation: Recommendation) {

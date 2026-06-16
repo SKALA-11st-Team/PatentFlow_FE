@@ -40,9 +40,9 @@ export function createBusinessChecklistDraft(
     qualitativeMemo: "",
     finalOpinion:
       patent.businessOpinion.opinion ??
-      (patent.aiEvaluationReport.recommendation === "ABANDON" ? "ABANDON" : "MAINTAIN"),
+      (patent.aiEvaluationReport?.recommendation === "ABANDON" ? "ABANDON" : "MAINTAIN"),
     finalReason: patent.businessOpinion.comment ?? "",
-    additionalNeeds: patent.aiEvaluationReport.missingInformation.join(", "),
+    additionalNeeds: patent.aiEvaluationReport?.missingInformation.join(", ") ?? "",
   };
 }
 
@@ -99,6 +99,7 @@ export function suggestedScoreFromRepresentative(score: number | null | undefine
 }
 
 function getAiSuggestedScore(patent: PatentDetail, itemId: string) {
+  if (!patent.aiEvaluationReport) return DEFAULT_AI_SUGGESTED_SCORE;
   const reportScores = patent.aiEvaluationReport.scores;
   const category = CHECKLIST_ITEM_TO_AI_CATEGORY[itemId];
   const categoryScore = category

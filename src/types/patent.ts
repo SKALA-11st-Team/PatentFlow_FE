@@ -215,7 +215,7 @@ export interface CoApplicantConsent {
 
 export interface PatentDetail extends PatentListItem {
   summary: PatentSummary;
-  aiEvaluationReport: AiEvaluationReport;
+  aiEvaluationReport: AiEvaluationReport | null;
   finalDecisionRecord: FinalDecisionRecord;
   businessOpinion: BusinessOpinion;
   // 공동출원 합의 게이트: jointApplication 이면 최종 판단 전 coApplicantConsent(AGREED) 필요.

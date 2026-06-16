@@ -31,7 +31,7 @@ function stripScorePrefix(text: string): string {
   return text.replace(/^\s*\d{1,3}\s*\/\s*[A-Da-d]\s*[:·-]?\s*/, "").trim();
 }
 
-export function AiReportStructuredContent({ report }: { report: PatentDetail["aiEvaluationReport"] }) {
+export function AiReportStructuredContent({ report }: { report: NonNullable<PatentDetail["aiEvaluationReport"]> }) {
   return (
     <div className="score-list">
       {report.scores.map((score) => (
@@ -198,11 +198,30 @@ export function AiReportSection({
   regenerateControls?: AiReportRegenerateControls;
 }) {
   const [pendingRegenConfirm, setPendingRegenConfirm] = useState(false);
-  const confidence = getEvidenceConfidenceMeta(report.evidenceConfidence);
+  const confidence = report ? getEvidenceConfidenceMeta(report.evidenceConfidence) : null;
   const [isAxisModalOpen, setIsAxisModalOpen] = useState(false);
 
+  if (!report) {
+    const isRegenerating = regenerateControls?.isRegenerating ?? false;
+    return (
+      <Section title="AI 특허 평가 레포트" description="특허 유지 검토에 참고할 수 있는 AI 생성 평가 레포트입니다.">
+        {isRegenerating ? (
+          <RegenProgressSteps message={regenerateControls!.regenerateMessage} startedAt={regenerateControls!.regenStartedAt} />
+        ) : null}
+        <p className="empty-state">AI 레포트가 아직 생성되지 않았습니다.</p>
+        {regenerateControls && !isRegenerating ? (
+          <div className="ai-report-edit-toolbar">
+            <Button onClick={() => regenerateControls.onRegenerate()} type="button" variant="secondary">
+              AI 레포트 생성
+            </Button>
+          </div>
+        ) : null}
+      </Section>
+    );
+  }
+
   function handleRegenerateClick() {
-    if (report.edited) {
+    if (report!.edited) {
       setPendingRegenConfirm(true);
     } else {
       regenerateControls?.onRegenerate();

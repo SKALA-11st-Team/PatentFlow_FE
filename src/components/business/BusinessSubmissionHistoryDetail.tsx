@@ -121,7 +121,7 @@ export function BusinessSubmissionHistoryDetail({ patent }: { patent: PatentDeta
                     </span>
                     {(submission.snapshotScores?.length
                       ? submission.snapshotScores
-                      : patent.aiEvaluationReport.scores
+                      : (patent.aiEvaluationReport?.scores ?? [])
                     ).map((score) => (
                         <span key={score.category}>
                           {evaluationCategoryLabels[score.category as keyof typeof evaluationCategoryLabels]}{" "}
@@ -236,7 +236,9 @@ function AiReportModal({
           ? "제출 당시 AI 레포트 축별 점수"
           : "현재 AI 레포트 축별 점수 (제출 당시 스냅샷 미보존)"}
       </p>
-      <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
+      {patent.aiEvaluationReport?.recommendationText ? (
+        <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
+      ) : null}
       <div className="score-list">
         {submission.snapshotScores?.length
           ? submission.snapshotScores.map((score) => (
@@ -247,7 +249,7 @@ function AiReportModal({
                 <b>{score.score ?? "N/A"}</b>
               </div>
             ))
-          : patent.aiEvaluationReport.scores.map((score) => (
+          : (patent.aiEvaluationReport?.scores ?? []).map((score) => (
               <div className="score-row" key={score.category}>
                 <div>
                   <strong>{evaluationCategoryLabels[score.category]}</strong>

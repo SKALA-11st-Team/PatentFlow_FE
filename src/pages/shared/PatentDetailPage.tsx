@@ -227,13 +227,15 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                 특허 원문 보기
               </Button>
             ) : null}
-            <Button
-              onClick={() => downloadAiReportPdf(patent.title, patent.aiEvaluationReport)}
-              type="button"
-              variant="secondary"
-            >
-              보고서 다운로드
-            </Button>
+            {patent.aiEvaluationReport ? (
+              <Button
+                onClick={() => downloadAiReportPdf(patent.title, patent.aiEvaluationReport!)}
+                type="button"
+                variant="secondary"
+              >
+                보고서 다운로드
+              </Button>
+            ) : null}
             {pdfMeta?.exists && pdfMeta.storageType === "UPLOADED" ? (
               <Button onClick={handleDownloadPatentPdf} type="button" variant="secondary">
                 특허 PDF 다운로드{pdfMeta.docName ? ` (${pdfMeta.docName})` : ""}
@@ -273,7 +275,9 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta icon={CalendarCheck} label="등록일" value={formatDate(patent.registrationDate)} />
           <Meta icon={CalendarClock} label="예상 소멸일" value={formatDate(patent.expectedExpirationDate)} />
           <Meta icon={Coins} label="연차료 납부 예정일" value={formatDate(patent.feeDueDate)} />
-          <Meta icon={FileClock} label="보고서 생성일" value={formatDate(patent.aiEvaluationReport.createdAt)} />
+          {patent.aiEvaluationReport ? (
+            <Meta icon={FileClock} label="보고서 생성일" value={formatDate(patent.aiEvaluationReport.createdAt)} />
+          ) : null}
         </div>
       </Section>
 
@@ -314,14 +318,20 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <div className="business-review-workbench">
             <Section title="검토 참고 자료" description="기존 의사결정 기록과 AI 레포트 요약을 함께 확인합니다.">
               <div className="business-reference-stack">
-                <div className="report-callout">
-                  <strong>{recommendationLabels[patent.aiEvaluationReport.recommendation]}</strong>
-                  <p>{patent.aiEvaluationReport.recommendationText}</p>
-                </div>
-                {patent.aiEvaluationReport.rawMarkdown ? (
-                  <RawMarkdownBlock content={patent.aiEvaluationReport.rawMarkdown} title="AI 특허 평가 레포트 전문" />
+                {patent.aiEvaluationReport ? (
+                  <>
+                    <div className="report-callout">
+                      <strong>{recommendationLabels[patent.aiEvaluationReport.recommendation]}</strong>
+                      <p>{patent.aiEvaluationReport.recommendationText}</p>
+                    </div>
+                    {patent.aiEvaluationReport.rawMarkdown ? (
+                      <RawMarkdownBlock content={patent.aiEvaluationReport.rawMarkdown} title="AI 특허 평가 레포트 전문" />
+                    ) : (
+                      <AiReportStructuredContent report={patent.aiEvaluationReport} />
+                    )}
+                  </>
                 ) : (
-                  <AiReportStructuredContent report={patent.aiEvaluationReport} />
+                  <p className="empty-state">AI 레포트가 아직 생성되지 않았습니다.</p>
                 )}
                 <div className="history-mini-list">
                   {patentHistoryItems.slice(0, 4).map((item) => (
@@ -351,7 +361,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
 
       <div className="detail-main">
         <Section title="특허 이해 요약" description="비전문가도 검토 전에 빠르게 이해할 수 있는 요약입니다.">
-          {patent.aiEvaluationReport.summaryBrief ? (
+          {patent.aiEvaluationReport?.summaryBrief ? (
             <SummaryBriefCards brief={patent.aiEvaluationReport.summaryBrief} />
           ) : (
             <div className="summary-stack">
@@ -417,7 +427,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
         </Link>
       </div>
 
-      {isAdmin && aiReportEditing.isEditModalOpen ? (
+      {isAdmin && aiReportEditing.isEditModalOpen && patent.aiEvaluationReport ? (
         <AiReportEditModal
           report={patent.aiEvaluationReport}
           hasBusinessResponse={Boolean(patent.businessOpinion.submittedAt)}

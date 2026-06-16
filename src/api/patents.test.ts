@@ -139,7 +139,7 @@ describe("patents API Utils", () => {
           { category: "RIGHTS", score: 0, grade: "D", evidence: "근거 부족" },
         ],
         missingInformation: ["시장 근거"],
-      });
+      })!;
 
       expect(report.totalScore).toBe(0);
       expect(report.totalScoreText).toBe("0/100점, 평균 0점");
@@ -169,7 +169,7 @@ describe("patents API Utils", () => {
         editVersion: 3,
         editStale: true,
         appliedCriteria: { version: 2 },
-      });
+      })!;
 
       expect(report.edited).toBe(true);
       expect(report.editedBy).toBe("legal01");
@@ -190,7 +190,7 @@ describe("patents API Utils", () => {
         // degraded 폴백: averageScore 미제공 + 숫자 점수 없는 축만 존재.
         scores: [{ category: "RIGHTS", score: null, grade: null, evidence: "근거 부족" }],
         missingInformation: [],
-      });
+      })!;
 
       // 210 / 3 = 70 (이전 /4였다면 52.5로 약 25% 과소 산정됨).
       expect(report.averageScore).toBe(70);
@@ -208,7 +208,7 @@ describe("patents API Utils", () => {
         missingInformation: [],
         summaryBrief: { one_line_summary: "한 줄 요약", key_components: ["구성 A", "구성 B"] },
         reportSections: { finalOpinion: "최종 검토 의견 본문" },
-      });
+      })!;
 
       expect(report.summaryBrief?.one_line_summary).toBe("한 줄 요약");
       expect(report.summaryBrief?.key_components).toEqual(["구성 A", "구성 B"]);
@@ -281,7 +281,7 @@ describe("ORCH-06/AIREPORT-02 리치 근거 풀스루", () => {
         { title: "한국경제", url: "https://example.com/1" },
         { title: "KIET", url: null },
       ],
-    });
+    })!;
 
     expect(report.keyEvidence).toBe("기술성: 기술성 근거");
     expect(report.judgementGrounds).toEqual(["합산 300/400, 평균 75."]);

@@ -459,44 +459,49 @@ function BusinessOpinionModal({
       <div className="business-review-workbench">
         <div className="business-reference-stack">
           <div className="modal-report-summary">
-            <div className="evaluation-header">
-              <div>
-                <span>AI 특허 평가 레포트</span>
-                <strong>{formatReportDisplayScore(patent.aiEvaluationReport)}</strong>
-                {patent.aiEvaluationReport.totalScoreText ? (
-                  <small>원문 점수 {patent.aiEvaluationReport.totalScoreText}</small>
+            {patent.aiEvaluationReport ? (
+              <>
+                <div className="evaluation-header">
+                  <div>
+                    <span>AI 특허 평가 레포트</span>
+                    <strong>{formatReportDisplayScore(patent.aiEvaluationReport)}</strong>
+                    {patent.aiEvaluationReport.totalScoreText ? (
+                      <small>원문 점수 {patent.aiEvaluationReport.totalScoreText}</small>
+                    ) : null}
+                  </div>
+                  <div className="evaluation-badge-stack">
+                    <Badge tone={getRecommendationTone(patent.aiEvaluationReport.recommendation)}>
+                      {recommendationLabels[patent.aiEvaluationReport.recommendation]}
+                    </Badge>
+                    {patent.aiEvaluationReport.degraded ? <Badge tone="warning">제한 생성</Badge> : null}
+                  </div>
+                </div>
+                {patent.aiEvaluationReport.degraded && patent.aiEvaluationReport.failureReason ? (
+                  <p className="notice notice-warning">{patent.aiEvaluationReport.failureReason}</p>
                 ) : null}
-              </div>
-              <div className="evaluation-badge-stack">
-                <Badge tone={getRecommendationTone(patent.aiEvaluationReport.recommendation)}>
-                  {recommendationLabels[patent.aiEvaluationReport.recommendation]}
-                </Badge>
-                {/* CONTRACT-07: 폴백/제한 생성 레포트를 정상 레포트와 구분해 배지로 표면화한다. */}
-                {patent.aiEvaluationReport.degraded ? <Badge tone="warning">제한 생성</Badge> : null}
-              </div>
-            </div>
-            {patent.aiEvaluationReport.degraded && patent.aiEvaluationReport.failureReason ? (
-              <p className="notice notice-warning">{patent.aiEvaluationReport.failureReason}</p>
-            ) : null}
-            <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
-            {patent.aiEvaluationReport.keyEvidence ? <p>{patent.aiEvaluationReport.keyEvidence}</p> : null}
-            <div className="modal-score-grid">
-              {patent.aiEvaluationReport.scores.map((score) => (
-                  <span key={score.category}>
-                    {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
-                  </span>
-                ))}
-            </div>
-            {patent.aiEvaluationReport.businessCheckRequests?.length ? (
-              <div className="report-block">
-                <h3>사업부 확인 요청 사항</h3>
-                <ul className="clean-list">
-                  {patent.aiEvaluationReport.businessCheckRequests.map((item) => (
-                    <li key={item}>{item}</li>
+                <p className="notice">{patent.aiEvaluationReport.recommendationText}</p>
+                {patent.aiEvaluationReport.keyEvidence ? <p>{patent.aiEvaluationReport.keyEvidence}</p> : null}
+                <div className="modal-score-grid">
+                  {patent.aiEvaluationReport.scores.map((score) => (
+                    <span key={score.category}>
+                      {evaluationCategoryLabels[score.category]} <b>{score.score ?? "N/A"}</b>
+                    </span>
                   ))}
-                </ul>
-              </div>
-            ) : null}
+                </div>
+                {patent.aiEvaluationReport.businessCheckRequests?.length ? (
+                  <div className="report-block">
+                    <h3>사업부 확인 요청 사항</h3>
+                    <ul className="clean-list">
+                      {patent.aiEvaluationReport.businessCheckRequests.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </>
+            ) : (
+              <p className="empty-state">AI 레포트가 아직 생성되지 않았습니다.</p>
+            )}
           </div>
 
           <div className="business-decision-history-panel">
