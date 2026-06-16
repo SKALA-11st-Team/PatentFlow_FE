@@ -3044,7 +3044,9 @@ tbody tr:hover {
 }
 
 .business-checklist-modal {
-  max-width: 1180px;
+  max-height: min(92vh, 1100px);
+  max-width: 1280px;
+  overflow-y: auto;
 }
 
 .mail-preview-modal {
@@ -3384,7 +3386,7 @@ tbody tr:hover {
 .checklist-memo-label textarea {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  min-height: 76px;
+  min-height: 120px;
   padding: var(--spacing-md);
   resize: vertical;
 }
@@ -4045,9 +4047,9 @@ tbody tr:hover {
 }
 
 .ai-report-edit-modal {
-  max-height: min(86vh, 920px);
+  max-height: min(92vh, 1100px);
   overflow-y: auto;
-  width: min(720px, calc(100vw - 2 * var(--spacing-lg)));
+  width: min(1180px, calc(100vw - 2 * var(--spacing-lg)));
 }
 
 /* ── AI 레포트 재생성 프로그레스 스텝 ─────────────────────────── */
@@ -4229,7 +4231,7 @@ tbody tr:hover {
 .ai-report-edit-markdown-preview {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  max-height: 340px;
+  max-height: 520px;
   overflow-y: auto;
   padding: var(--spacing-md);
 }
@@ -4512,11 +4514,11 @@ tbody tr:hover {
 }
 
 .ai-report-edit-markdown-body textarea {
-  min-height: 280px;
+  min-height: 440px;
   resize: vertical;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 860px) {
   .ai-report-edit-markdown-body.is-split {
     grid-template-columns: 1fr;
   }
