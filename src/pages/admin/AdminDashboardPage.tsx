@@ -175,14 +175,15 @@ export function AdminDashboardPage() {
 
   const quarterlyTargets = patents.filter(isQuarterlyReviewTarget);
   const mailReady = patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY");
-  const aiReportFailed = patents.filter((patent) => patent.aiReportReadinessStatus === "FAILED");
   const waitingBusiness = patents.filter((patent) => patent.reviewWorkflowStatus === "WAITING_BUSINESS_RESPONSE");
   const businessResponseReceived = patents.filter((patent) => patent.reviewWorkflowStatus === "BUSINESS_RESPONSE_RECEIVED");
   const actionRecorded = patents.filter((patent) => patent.legalActionResult !== null);
   // DASH-01: 모든 KPI를 BE 요약 단일 출처로 통일(클라이언트 재집계는 fallback) — 동일 화면 합 불일치 방지.
   const quarterlyTargetCount = dashboardSummary?.quarterlyTargetCount ?? quarterlyTargets.length;
   const totalPatentCount = dashboardSummary?.totalPatents ?? patents.length;
-  const mailReadyCount = dashboardSummary?.pendingReview ?? (mailReady.length + aiReportFailed.length);
+  // 메일 발송 대기 = MAIL_READY 상태(레포트 산출물 있음). 실패/degraded는 발송 대기에 합산하지 않는다
+  // — 그래야 클릭 시 이동하는 메일 발송 대기 목록(MAIL_READY)과 카운트가 정합한다.
+  const mailReadyCount = dashboardSummary?.pendingReview ?? mailReady.length;
   const waitingBusinessCount = dashboardSummary?.waitingBusinessResponse ?? waitingBusiness.length;
   const businessResponseReceivedCount = dashboardSummary?.businessResponseReceived ?? businessResponseReceived.length;
   const actionRecordedCount = dashboardSummary?.legalActionCompleted ?? actionRecorded.length;

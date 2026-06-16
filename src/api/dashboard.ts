@@ -54,8 +54,9 @@ export async function getLegalDashboardSummary(): Promise<LegalDashboardSummary>
   return {
     totalPatents: patents.length,
     quarterlyTargetCount: patents.filter((patent) => patent.reviewWorkflowStatus !== "NOT_IN_REVIEW").length,
+    // 메일 발송 대기 = MAIL_READY 상태(산출물 있는 degraded 포함, 실패는 제외) — 발송 대기 목록과 동일 기준.
     pendingReview: patents.filter((patent) =>
-      patent.reviewWorkflowStatus === "MAIL_READY" || patent.aiReportReadinessStatus === "FAILED",
+      patent.reviewWorkflowStatus === "MAIL_READY" && (patent.aiReportReadinessStatus ?? "READY") !== "FAILED",
     ).length,
     mailReadySuccessCount: patents.filter((patent) => patent.reviewWorkflowStatus === "MAIL_READY").length,
     aiReportFailedCount: patents.filter((patent) => patent.aiReportReadinessStatus === "FAILED").length,
