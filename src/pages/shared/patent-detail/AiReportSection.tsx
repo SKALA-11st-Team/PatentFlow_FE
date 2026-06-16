@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "../../../components/common/Badge";
 import { Button } from "../../../components/common/Button";
 import { MarkdownView } from "../../../components/common/MarkdownView";
@@ -127,6 +127,7 @@ interface AiReportEditControls {
 interface AiReportRegenerateControls {
   isRegenerating: boolean;
   regenerateMessage: string;
+  regenStartedAt: string | null;
   onRegenerate: () => void;
 }
 
@@ -137,24 +138,46 @@ function extractCurrentStage(message: string): string | null {
   return parts.length > 1 ? parts[parts.length - 1].trim() : null;
 }
 
-function RegenProgressSteps({ message }: { message: string }) {
+function RegenElapsedTimer({ startedAt }: { startedAt: string }) {
+  const calcElapsed = () => Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000));
+  const [elapsed, setElapsed] = useState(calcElapsed);
+
+  useEffect(() => {
+    const id = window.setInterval(() => setElapsed(calcElapsed()), 1000);
+    return () => window.clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startedAt]);
+
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  return (
+    <span className="regen-timer">
+      {minutes > 0 ? `${minutes}분 ` : ""}{seconds}초 경과
+    </span>
+  );
+}
+
+function RegenProgressSteps({ message, startedAt }: { message: string; startedAt: string | null }) {
   const currentStage = extractCurrentStage(message);
   const currentIdx = currentStage ? REGEN_STAGES.indexOf(currentStage) : -1;
   return (
-    <div className="regen-progress">
-      {REGEN_STAGES.map((stage, idx) => {
-        const isDone = idx < currentIdx;
-        const isActive = idx === currentIdx;
-        return (
-          <div
-            key={stage}
-            className={`regen-stage${isDone ? " regen-stage--done" : ""}${isActive ? " regen-stage--active" : ""}`}
-          >
-            <div className="regen-stage-dot" />
-            <span className="regen-stage-label">{stage}</span>
-          </div>
-        );
-      })}
+    <div>
+      <div className="regen-progress">
+        {REGEN_STAGES.map((stage, idx) => {
+          const isDone = idx < currentIdx;
+          const isActive = idx === currentIdx;
+          return (
+            <div
+              key={stage}
+              className={`regen-stage${isDone ? " regen-stage--done" : ""}${isActive ? " regen-stage--active" : ""}`}
+            >
+              <div className="regen-stage-dot" />
+              <span className="regen-stage-label">{stage}</span>
+            </div>
+          );
+        })}
+      </div>
+      {startedAt ? <RegenElapsedTimer startedAt={startedAt} /> : null}
     </div>
   );
 }
@@ -199,7 +222,7 @@ export function AiReportSection({
       {editControls || regenerateControls ? (
         <>
         {regenerateControls?.isRegenerating ? (
-          <RegenProgressSteps message={regenerateControls.regenerateMessage} />
+          <RegenProgressSteps message={regenerateControls.regenerateMessage} startedAt={regenerateControls.regenStartedAt} />
         ) : null}
         <div className="ai-report-edit-toolbar">
           {editControls?.editMessage ? <span className="ai-report-edit-message">{editControls.editMessage}</span> : null}
@@ -240,7 +263,7 @@ export function AiReportSection({
           ) : null}
           {pendingRegenConfirm ? (
             <span className="regen-confirm-inline">
-              <span className="ai-report-edit-message">법무 수정 내용의 기준 원본이 교체됩니다. 계속하시겠습니까?</span>
+              <span className="ai-report-edit-message">법무 수정 내용이 새 레포트로 교체돼요. 계속할까요?</span>
               <Button onClick={handleConfirmRegenerate} type="button" variant="secondary">확인</Button>
               <Button onClick={() => setPendingRegenConfirm(false)} type="button" variant="secondary">취소</Button>
             </span>
@@ -273,6 +296,12 @@ export function AiReportSection({
           {report.edited ? <Badge tone="primary">법무 수정</Badge> : null}
         </div>
       </div>
+      {report.scores.length === 0 && !report.rawMarkdown && !regenerateControls?.isRegenerating ? (
+        <div className="empty-state-card">
+          <strong>아직 AI 레포트가 없어요</strong>
+          <p>AI 레포트 재생성 버튼을 눌러 평가를 시작해 보세요.</p>
+        </div>
+      ) : null}
       {report.editStale ? (
         <p className="notice notice-warning">
           이 수정 내용은 이전 버전 레포트를 기준으로 작성되었습니다. 레포트가 다시 생성되었으니 수정 내용을
@@ -280,16 +309,6 @@ export function AiReportSection({
         </p>
       ) : null}
       {report.degraded && report.failureReason ? <p className="notice notice-warning">{report.failureReason}</p> : null}
-      {report.warnings?.length ? (
-        <div className="report-block">
-          <h3>생성 경고</h3>
-          <ul className="clean-list">
-            {report.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
       {confidence ? (
         <p className="ai-report-signal-row">
           <Badge tone={confidence.tone}>{confidence.label}</Badge>
@@ -297,7 +316,6 @@ export function AiReportSection({
       ) : report.evidenceConfidence ? (
         <p className="notice">근거 신뢰도: {report.evidenceConfidence}</p>
       ) : null}
-      <p className="notice">{report.recommendationText}</p>
       {report.reportSections?.finalOpinion ? (
         <div className="report-callout report-callout--final">
           <strong>최종 검토 의견</strong>

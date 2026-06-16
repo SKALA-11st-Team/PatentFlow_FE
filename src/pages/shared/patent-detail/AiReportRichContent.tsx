@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { animate, motion, useMotionValue, type Variants } from "framer-motion";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from "recharts";
 import {
-  BarChart3,
   ChevronDown,
   ClipboardCheck,
   Eye,
@@ -176,7 +175,6 @@ export function AxisRadarChart({ scores }: { scores: EvaluationScore[] }) {
 const SECTION_META: Array<{ key: ReportSectionKey; label: string; Icon: LucideIcon }> = [
   { key: "evaluationScope", label: "평가 대상 및 범위", Icon: Eye },
   { key: "judgmentBasis", label: "판단 근거", Icon: MessageSquareText },
-  { key: "axisDetails", label: "평가축별 상세 근거", Icon: BarChart3 },
   { key: "roleChecklist", label: "역할별 확인 사항", Icon: ClipboardCheck },
 ];
 

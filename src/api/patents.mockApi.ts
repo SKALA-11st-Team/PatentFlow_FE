@@ -569,6 +569,23 @@ function getSortablePatentValue(patent: PatentListItem, field: string) {
   return patent.title;
 }
 
+function getMockFeeEntry(cc: string, ageYears: number): { estimatedAmount: number; currency: string } {
+  switch (cc) {
+    case "KR":
+      return { currency: "KRW", estimatedAmount: ageYears < 4 ? 150_000 : ageYears < 7 ? 180_000 : ageYears < 10 ? 240_000 : 300_000 };
+    case "JP":
+      return { currency: "JPY", estimatedAmount: ageYears < 4 ? 33_000 : ageYears < 7 ? 61_000 : ageYears < 10 ? 111_000 : 178_000 };
+    case "CN":
+      return { currency: "CNY", estimatedAmount: ageYears < 4 ? 900 : ageYears < 7 ? 1_200 : ageYears < 10 ? 2_000 : ageYears < 13 ? 4_000 : 6_000 };
+    case "EP":
+      return { currency: "EUR", estimatedAmount: ageYears < 4 ? 470 : ageYears < 7 ? 800 : ageYears < 10 ? 1_400 : 2_000 };
+    case "US":
+      return { currency: "USD", estimatedAmount: ageYears < 3.5 ? 860 : ageYears < 7.5 ? 1_930 : 4_000 };
+    default:
+      return { currency: "KRW", estimatedAmount: 300_000 };
+  }
+}
+
 /**
  * @relatedFR FR-LEGAL-24
  * @relatedUI UI-LEGAL-04, UI-BUS-02
@@ -588,6 +605,13 @@ export function getMockPatentFeeSchedule(patentId: string): PatentFeeSchedule | 
   const toIso = (date: Date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
+  const cc = (detail.country ?? "").toUpperCase();
+  const registrationBased = cc === "KR" || cc === "US";
+  const basisText = registrationBased
+    ? (detail.registrationDate ?? detail.applicationDate)
+    : (detail.applicationDate ?? detail.registrationDate);
+  const basisYear = basisText ? parseInt(basisText.slice(0, 4), 10) : null;
+
   let nextAssigned = false;
   const items: FeeScheduleEntry[] = Array.from({ length: 7 }, (_, index) => {
     const offset = index - 3;
@@ -598,16 +622,18 @@ export function getMockPatentFeeSchedule(patentId: string): PatentFeeSchedule | 
     if (isNext) {
       nextAssigned = true;
     }
+    const ageYears = basisYear != null ? (year + offset) - basisYear : 5;
+    const { estimatedAmount, currency } = getMockFeeEntry(cc, ageYears);
     return {
       yearLabel: `${year + offset}년`,
-      yearNumber: 0,
+      yearNumber: ageYears >= 0 ? Math.round(ageYears) : 0,
       lump: false,
       dueDate: toIso(dueDate),
       reviewStartDate: toIso(reviewStartDate),
       status: past ? "PAST" : isNext ? "NEXT" : "FUTURE",
       adjusted: false,
-      estimatedAmount: null,
-      currency: null,
+      estimatedAmount,
+      currency,
     };
   });
 

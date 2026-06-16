@@ -40,6 +40,7 @@ import {
   AiReportStructuredContent,
   RawMarkdownBlock,
 } from "./patent-detail/AiReportSection";
+import { MarkdownView } from "../../components/common/MarkdownView";
 import { AiReportEditModal } from "./patent-detail/AiReportEditModal";
 import { useAiReportEditing } from "./patent-detail/useAiReportEditing";
 import {
@@ -103,6 +104,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
     handleRecordFinalDecision,
     handleRequestAiReport,
     aiReportScrollTrigger,
+    regenStartedAt,
     openFinalDecisionModal,
     coApplicantConsentMessage,
     isApplyingCoApplicantConsent,
@@ -395,6 +397,7 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
               ? {
                   isRegenerating: isWorkflowActionProcessing,
                   regenerateMessage: workflowActionMessage,
+                  regenStartedAt,
                   onRegenerate: handleRequestAiReport,
                 }
               : undefined
@@ -667,7 +670,7 @@ function SummaryBlock({ title, content }: { title: string; content: string }) {
   return (
     <div>
       <h3>{title}</h3>
-      <p>{content}</p>
+      <MarkdownView content={content} />
     </div>
   );
 }
@@ -727,7 +730,7 @@ function FeeScheduleCard({ schedule }: { schedule: PatentFeeSchedule }) {
                     <span className="table-subtext">D-{daysUntil(item.reviewStartDate)}</span>
                   )}
                 </td>
-                <td>{formatFeeAmount(item.estimatedAmount, item.currency)}</td>
+                <td>{formatFeeAmount(item.estimatedAmount, item.currency, schedule.country)}</td>
                 <td>
                   {item.status === "PAID_LUMP" ? (
                     <span className="badge badge-success">등록 시 일괄 납부</span>
@@ -753,12 +756,18 @@ function FeeScheduleCard({ schedule }: { schedule: PatentFeeSchedule }) {
   );
 }
 
-/** F2: 예상 납부액 표기 — 요금표 없는 국가·일괄 행은 — 로 둔다. */
-function formatFeeAmount(amount: number | null, currency: string | null) {
+const COUNTRY_CURRENCY_MAP: Record<string, string> = {
+  KR: "KRW", US: "USD", JP: "JPY", CN: "CNY",
+  EP: "EUR", DE: "EUR", FR: "EUR", NL: "EUR", GB: "GBP",
+};
+
+/** F2: 예상 납부액 표기 — 요금표 없는 국가·일괄 행은 — 로 둔다. currency가 null이면 country 기반 코드로 폴백한다. */
+function formatFeeAmount(amount: number | null, currency: string | null, country?: string | null) {
   if (amount == null) {
     return "—";
   }
-  return `${new Intl.NumberFormat("ko-KR").format(amount)}${currency ? ` ${currency}` : ""}`;
+  const code = currency ?? (country ? (COUNTRY_CURRENCY_MAP[country.toUpperCase()] ?? null) : null);
+  return `${new Intl.NumberFormat("ko-KR").format(amount)}${code ? ` ${code}` : ""}`;
 }
 
 /** F2: 향후(NEXT·FUTURE) 납부 예상 합계 — 금액 있는 항목이 없으면 null. */
@@ -770,7 +779,7 @@ function upcomingFeeTotal(schedule: PatentFeeSchedule): string | null {
     return null;
   }
   const total = upcoming.reduce((sum, item) => sum + (item.estimatedAmount ?? 0), 0);
-  return formatFeeAmount(total, upcoming[0].currency);
+  return formatFeeAmount(total, upcoming[0].currency, schedule.country);
 }
 
 /**

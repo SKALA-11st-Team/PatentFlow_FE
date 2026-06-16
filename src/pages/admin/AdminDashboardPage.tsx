@@ -578,6 +578,7 @@ function ReviewFunnelCard({ stages }: { stages: Array<{ label: string; count: nu
  * @description D1-EXT: 다음 4분기 연차료 예상 총액 — 기존 patents 배열 기반 KRW 추정치 바 차트.
  */
 function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
+  const [showHelp, setShowHelp] = useState(false);
   const now = new Date();
   const quarterStart = Math.floor(now.getMonth() / 3) * 3;
   const buckets = Array.from({ length: 4 }, (_, offset) => {
@@ -618,18 +619,25 @@ function QuarterlyFeeChartCard({ patents }: { patents: PatentListItem[] }) {
           <span
             aria-label="예상 연차료 산정 기준"
             className="fee-help-icon"
-            role="img"
+            role="button"
             tabIndex={0}
-            title={[
-              "국가별 기산일·연차 경과 구간 기준 추정치입니다.",
-              "· 기산일: KR·US는 등록일 기준, 그 외(JP·CN·EP 등)는 출원일 기준",
-              "· 단가: 경과 연차 구간별 누진 추정 (KR 15만→18만→24만→30만원 등)",
-              "· 해외는 환율 환산값 (JPY 9 / CNY 190 / EUR 1,500원)",
-              "· 납부 예정 시점은 BE 연차료 일정(feeDueDate)을 우선 사용",
-              "실제 납부액은 특허청 고시·청구항 수·환율에 따라 달라질 수 있는 참고용 값입니다.",
-            ].join("\n")}
+            onBlur={() => setShowHelp(false)}
+            onClick={() => setShowHelp(true)}
+            onFocus={() => setShowHelp(true)}
+            onMouseEnter={() => setShowHelp(true)}
+            onMouseLeave={() => setShowHelp(false)}
           >
             ?
+            {showHelp && (
+              <div className="fee-help-tooltip">
+                <p>국가별 기산일·연차 경과 구간 기준 추정치입니다.</p>
+                <p>· 기산일: KR·US는 등록일 기준, 그 외(JP·CN·EP 등)는 출원일 기준</p>
+                <p>· 단가: 경과 연차 구간별 누진 추정 (KR 15만→18만→24만→30만원 등)</p>
+                <p>· 해외는 환율 환산값 (JPY 9 / CNY 190 / EUR 1,500원)</p>
+                <p>· 납부 예정 시점은 BE 연차료 일정(feeDueDate)을 우선 사용</p>
+                <p>실제 납부액은 특허청 고시·청구항 수·환율에 따라 달라질 수 있는 참고용 값입니다.</p>
+              </div>
+            )}
           </span>
         </div>
         <span className="table-subtext">추정치 (참고용)</span>
@@ -753,14 +761,17 @@ function FeeTimelineCard({ patents }: { patents: PatentListItem[] }) {
           </button>
         </div>
       </div>
-      <div className="timeline-bars">
-        {buckets.map((bucket) => (
-          <div className="timeline-col" key={bucket.key} title={`${bucket.key} · ${bucket.count}건`}>
-            <span className="timeline-count">{bucket.count > 0 ? bucket.count : ""}</span>
-            <span className="timeline-bar" style={{ height: `${Math.max(4, (bucket.count / max) * 100)}%` }} />
-            <span className="timeline-label">{bucket.label}</span>
-          </div>
-        ))}
+      <div className="timeline-chart-wrapper">
+        <span className="timeline-y-label">특허 수</span>
+        <div className="timeline-bars">
+          {buckets.map((bucket) => (
+            <div className="timeline-col" key={bucket.key} title={`${bucket.key} · ${bucket.count}건`}>
+              <span className="timeline-count">{bucket.count > 0 ? bucket.count : ""}</span>
+              <span className="timeline-bar" style={{ height: `${Math.max(4, (bucket.count / max) * 100)}%` }} />
+              <span className="timeline-label">{bucket.label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

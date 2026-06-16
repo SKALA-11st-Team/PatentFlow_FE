@@ -4122,6 +4122,14 @@ tbody tr:hover {
   50%       { box-shadow: 0 0 0 5px rgba(var(--color-primary-rgb), 0.08); }
 }
 
+.regen-timer {
+  color: var(--color-text-muted);
+  display: block;
+  font-size: 0.78rem;
+  margin-top: var(--spacing-xs);
+  text-align: center;
+}
+
 .btn-spinner {
   animation: auth-checking-spin 0.75s linear infinite;
   border: 2px solid rgba(var(--color-primary-rgb), 0.2);
@@ -4706,6 +4714,7 @@ tbody tr:hover {
   height: 1.05rem;
   justify-content: center;
   line-height: 1;
+  position: relative;
   width: 1.05rem;
 }
 
@@ -4714,6 +4723,29 @@ tbody tr:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
   outline: none;
+}
+
+.fee-help-tooltip {
+  background: var(--color-bg-elevated, #fff);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  color: var(--color-text);
+  font-size: 0.78rem;
+  font-weight: 400;
+  left: 50%;
+  line-height: 1.6;
+  min-width: 280px;
+  padding: 0.75rem 1rem;
+  position: absolute;
+  top: calc(100% + 6px);
+  transform: translateX(-50%);
+  white-space: normal;
+  z-index: 100;
+}
+
+.fee-help-tooltip p {
+  margin: 0.15rem 0;
 }
 
 .timeline-unit-toggle {
@@ -4742,7 +4774,24 @@ tbody tr:hover {
   color: var(--color-text-dark);
 }
 
+.timeline-chart-wrapper {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+.timeline-y-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .timeline-bars {
+  flex: 1;
   display: flex;
   align-items: flex-end;
   gap: 0.4rem;

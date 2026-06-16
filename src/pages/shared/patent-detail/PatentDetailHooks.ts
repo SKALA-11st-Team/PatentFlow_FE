@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { submitBusinessChecklist } from "../../../api/businessChecklist";
 import { getLatestBusinessSubmission } from "../../../api/businessSubmissions";
@@ -35,8 +35,11 @@ export function formatDate(dateText: string) {
 const AI_REPORT_POLL_INTERVAL_MS = 3000;
 const AI_REPORT_POLL_TIMEOUT_MS = 20 * 60 * 1000;
 
-async function waitForAiReportJob(patentId: string, initialJob?: AiReportJob,
+async function waitForAiReportJob(
+  patentId: string,
+  initialJob?: AiReportJob,
   onProgress?: (stageLabel: string | null) => void,
+  signal?: AbortSignal,
 ): Promise<AiReportJob | undefined> {
   if (initialJob && isAiReportTerminalStatus(initialJob.status)) {
     return initialJob;
@@ -46,7 +49,9 @@ async function waitForAiReportJob(patentId: string, initialJob?: AiReportJob,
   let latestJob = initialJob;
 
   while (Date.now() - startedAt < AI_REPORT_POLL_TIMEOUT_MS) {
+    if (signal?.aborted) return undefined;
     await sleep(AI_REPORT_POLL_INTERVAL_MS);
+    if (signal?.aborted) return undefined;
     latestJob = await getPatentAiReportStatus(patentId);
     if (latestJob && isAiReportTerminalStatus(latestJob.status)) {
       return latestJob;
@@ -145,6 +150,14 @@ export function usePatentDetail(role: UserRole) {
   const [isWorkflowActionProcessing, setIsWorkflowActionProcessing] = useState(false);
   const [workflowActionMessage, setWorkflowActionMessage] = useState("");
   const [aiReportScrollTrigger, setAiReportScrollTrigger] = useState(0);
+  const [regenStartedAt, setRegenStartedAt] = useState<string | null>(null);
+  const regenAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      regenAbortRef.current?.abort();
+    };
+  }, []);
   const checklistTotal = getBusinessChecklistTotal(businessChecklistSubmission);
   const canRecordFinalDecision = patent ? isFinalDecisionRecordable(patent) : false;
   const canSendBusinessReviewMail = patent?.reviewWorkflowStatus === "MAIL_READY";
@@ -252,6 +265,65 @@ export function usePatentDetail(role: UserRole) {
         if (isMounted) {
           setLoadMessage("");
         }
+
+        // 페이지를 나갔다 돌아온 경우 실행 중인 재생성 job을 감지해 폴링을 재개한다.
+        try {
+          const runningJob = await getPatentAiReportStatus(nextPatent.patentId);
+          if (!isMounted) return;
+          if (runningJob && (runningJob.status === "RUNNING" || runningJob.status === "PENDING")) {
+            const startedAt = runningJob.requestedAt ?? null;
+            setRegenStartedAt(startedAt);
+            setIsWorkflowActionProcessing(true);
+            setWorkflowActionMessage(
+              runningJob.progressStageLabel
+                ? `AI 레포트 생성 중 · ${runningJob.progressStageLabel}`
+                : "AI 레포트를 생성하고 있어요...",
+            );
+
+            regenAbortRef.current?.abort();
+            const resumeController = new AbortController();
+            regenAbortRef.current = resumeController;
+
+            waitForAiReportJob(
+              nextPatent.patentId,
+              runningJob,
+              (stageLabel) => {
+                if (!resumeController.signal.aborted) {
+                  setWorkflowActionMessage(stageLabel ? `AI 레포트 생성 중 · ${stageLabel}` : "AI 레포트를 생성하고 있어요...");
+                }
+              },
+              resumeController.signal,
+            )
+              .then(async (completedJob) => {
+                if (resumeController.signal.aborted) return;
+                const updated = isAdmin
+                  ? await getPatentDetail(nextPatent.patentId)
+                  : await getBusinessPatentDetail(nextPatent.patentId);
+                if (resumeController.signal.aborted) return;
+                if (updated) {
+                  setPatent(updated);
+                  if (isAdmin) refreshPatentHistory(updated.patentId);
+                  setAiReportScrollTrigger((n) => n + 1);
+                }
+                setWorkflowActionMessage(
+                  completedJob?.status === "DEGRADED"
+                    ? completedJob.message ?? "일부 정보로 AI 레포트를 생성했어요."
+                    : "AI 레포트 생성이 완료됐어요!",
+                );
+                setIsWorkflowActionProcessing(false);
+                setRegenStartedAt(null);
+              })
+              .catch(() => {
+                if (!resumeController.signal.aborted) {
+                  setWorkflowActionMessage("AI 레포트 생성 상태를 확인하지 못했어요.");
+                  setIsWorkflowActionProcessing(false);
+                  setRegenStartedAt(null);
+                }
+              });
+          }
+        } catch {
+          // 재생성 상태 확인 실패는 비치명 — 특허 로드 자체는 성공했으므로 무시.
+        }
       } catch {
         if (isMounted) {
           setLoadMessage("특허 상세 정보를 불러오지 못했습니다. BE 실행 상태를 확인해 주세요.");
@@ -315,20 +387,33 @@ export function usePatentDetail(role: UserRole) {
 
   async function handleRequestAiReport() {
     if (!patent) return;
+
+    // 이전 폴링 취소(페이지 이탈 또는 재클릭 시)
+    regenAbortRef.current?.abort();
+    const abortController = new AbortController();
+    regenAbortRef.current = abortController;
+    const { signal } = abortController;
+
     setIsWorkflowActionProcessing(true);
     setWorkflowActionMessage("");
     try {
       const job = await requestPatentAiReport(patent.patentId);
-      setWorkflowActionMessage(job?.message ?? "AI 레포트 생성을 시작했습니다.");
+      if (signal.aborted) return;
+      setRegenStartedAt(job?.requestedAt ?? null);
+      setWorkflowActionMessage(job?.message ?? "AI 레포트 생성을 시작했어요.");
       const completedJob = await waitForAiReportJob(patent.patentId, job, (stageLabel) => {
         // W1: 진행 단계 중계 — 단계 정보가 없으면 일반 진행 문구를 유지한다.
-        setWorkflowActionMessage(stageLabel ? `AI 레포트 생성 중 · ${stageLabel}` : "AI 레포트 생성 중입니다.");
-      });
+        if (!signal.aborted) {
+          setWorkflowActionMessage(stageLabel ? `AI 레포트 생성 중 · ${stageLabel}` : "AI 레포트를 생성하고 있어요...");
+        }
+      }, signal);
+
+      if (signal.aborted) return;
 
       if (completedJob?.status === "FAILED") {
         // I2: 실패 사유를 그대로 보여주고 같은 버튼으로 재시도할 수 있음을 안내한다.
         setWorkflowActionMessage(
-          `${completedJob.message ?? "AI 레포트 생성에 실패했습니다."} — 같은 버튼으로 다시 시도할 수 있습니다.`,
+          `${completedJob.message ?? "AI 레포트 생성에 실패했어요."} 같은 버튼으로 다시 시도해 보세요.`,
         );
         return;
       }
@@ -338,6 +423,7 @@ export function usePatentDetail(role: UserRole) {
       const updated = isAdmin
         ? await getPatentDetail(patent.patentId)
         : await getBusinessPatentDetail(patent.patentId);
+      if (signal.aborted) return;
       if (updated) {
         setPatent(updated);
         // /patents/{id}/history도 ADMIN 전용 — BUSINESS는 보장된 403 호출을 생략한다.
@@ -348,13 +434,18 @@ export function usePatentDetail(role: UserRole) {
       }
       setWorkflowActionMessage(
         completedJob?.status === "DEGRADED"
-          ? completedJob.message ?? "AI 레포트가 제한된 근거로 생성되었습니다."
-          : "AI 레포트 생성이 완료되었습니다.",
+          ? completedJob.message ?? "일부 정보로 AI 레포트를 생성했어요."
+          : "AI 레포트 생성이 완료됐어요!",
       );
     } catch (error) {
-      setWorkflowActionMessage(error instanceof Error ? error.message : "AI 레포트 생성에 실패했습니다.");
+      if (!signal.aborted) {
+        setWorkflowActionMessage(error instanceof Error ? error.message : "AI 레포트 생성에 실패했어요.");
+      }
     } finally {
-      setIsWorkflowActionProcessing(false);
+      if (!signal.aborted) {
+        setIsWorkflowActionProcessing(false);
+        setRegenStartedAt(null);
+      }
     }
   }
 
@@ -417,6 +508,7 @@ export function usePatentDetail(role: UserRole) {
     handleRecordFinalDecision: finalDecision.handleRecordFinalDecision,
     handleRequestAiReport,
     aiReportScrollTrigger,
+    regenStartedAt,
     openFinalDecisionModal: finalDecision.openFinalDecisionModal,
   };
 }

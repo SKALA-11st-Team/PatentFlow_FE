@@ -101,8 +101,7 @@ export async function updateResponseDeadline(months: number, days: number): Prom
 export interface ValuationCriteriaConfig {
   version: number;
   axisWeights: Record<string, number>;
-  gradeCutoffs: Record<string, number>;
-  maintainThreshold: number;
+  gradeCutoffs: Record<string, number>;  // keys: A(유지 권고), B(조건부 유지) — C 없음
   // agent-valuation-4: 사업 연계성 점수가 이 값 이상이면 AI 권고를 '유지 권고'로 끌어올리는 오버라이드 기준점.
   businessFitOverrideThreshold: number;
   subscoreWeights: Record<string, Record<string, number>>;
@@ -128,12 +127,11 @@ export type ValuationCriteriaPayload = Omit<ValuationCriteriaConfig, "version">;
 export const DEFAULT_VALUATION_CRITERIA: ValuationCriteria = {
   config: {
     version: 0,
-    axisWeights: { legal: 25, technology: 25, market: 25, business_fit: 25 },
-    gradeCutoffs: { A: 80, B: 60, C: 40 },
-    maintainThreshold: 60,
+    axisWeights: { legal: 34, technology: 33, market: 33 },
+    gradeCutoffs: { A: 70, B: 50 },
     businessFitOverrideThreshold: 60,
     subscoreWeights: {
-      legal: { right_stability: 35, claim_protection: 40, portfolio_defensive_value: 25 },
+      legal: { right_stability: 40, claim_protection: 40, portfolio_defensive_value: 20 },
       business_fit: { official_business_evidence: 30, product_function_direct_match: 45, business_context_fit: 25 },
     },
   },

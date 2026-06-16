@@ -26,6 +26,9 @@ const AXIS_LABELS: Record<string, string> = {
   business_fit: "사업 연계성",
 };
 
+// 종합 점수 산출에 참여하는 3개 핵심 축(가중치 편집 대상).
+const CORE_AXIS_ORDER = ["legal", "technology", "market"];
+// 프롬프트 탭은 사업 연계성 포함 4개 축 모두 편집 가능.
 const AXIS_ORDER = ["legal", "technology", "market", "business_fit"];
 
 type NumberDraft = Record<string, string>;
@@ -53,7 +56,6 @@ export function ValuationCriteriaSection() {
   const [history, setHistory] = useState<ValuationCriteriaVersion[]>([]);
   const [axisDraft, setAxisDraft] = useState<NumberDraft>({});
   const [cutoffDraft, setCutoffDraft] = useState<NumberDraft>({});
-  const [thresholdDraft, setThresholdDraft] = useState("60");
   const [businessFitDraft, setBusinessFitDraft] = useState("60");
   const [prompts, setPrompts] = useState<ValuationPrompt[]>([]);
   const [promptDrafts, setPromptDrafts] = useState<Record<string, string>>({});
@@ -72,7 +74,6 @@ export function ValuationCriteriaSection() {
     setCriteria(next);
     setAxisDraft(toDraft(next.config.axisWeights));
     setCutoffDraft(toDraft(next.config.gradeCutoffs));
-    setThresholdDraft(String(next.config.maintainThreshold));
     setBusinessFitDraft(String(next.config.businessFitOverrideThreshold ?? 60));
   };
 
@@ -103,17 +104,14 @@ export function ValuationCriteriaSection() {
   const axisInvalid = hasInvalidNumber(axisDraft, { min: 0.1, max: 100 }) || Math.abs(axisSum - 100) > 0.001;
   const cutoffA = Number(cutoffDraft.A);
   const cutoffB = Number(cutoffDraft.B);
-  const cutoffC = Number(cutoffDraft.C);
   const cutoffInvalid =
-    hasInvalidNumber(cutoffDraft) || !(100 >= cutoffA && cutoffA > cutoffB && cutoffB > cutoffC && cutoffC >= 0);
-  const threshold = Number(thresholdDraft);
-  const thresholdInvalid = thresholdDraft.trim() === "" || Number.isNaN(threshold) || threshold < 0 || threshold > 100;
+    hasInvalidNumber(cutoffDraft) || !(100 >= cutoffA && cutoffA > cutoffB && cutoffB >= 0);
   const businessFit = Number(businessFitDraft);
   const businessFitInvalid =
     businessFitDraft.trim() === "" || Number.isNaN(businessFit) || businessFit < 0 || businessFit > 100;
   // subscoreWeights는 화면에서 편집하지 않으므로(편집 UI 없음) 검증에서 제외한다. 저장 시 마지막으로
   // 로드한 criteria.config.subscoreWeights를 그대로 패스스루해, 사용자가 손댈 수 없는 영역이 저장을 막지 않게 한다.
-  const canSave = !axisInvalid && !cutoffInvalid && !thresholdInvalid && !businessFitInvalid;
+  const canSave = !axisInvalid && !cutoffInvalid && !businessFitInvalid;
   const activePrompt = prompts.find((item) => item.axis === activeAxis);
   const activePromptDraft = promptDrafts[activeAxis] ?? "";
   const isPromptDirty = Boolean(activePrompt && activePrompt.markdown !== activePromptDraft);
@@ -125,7 +123,6 @@ export function ValuationCriteriaSection() {
     const payload: ValuationCriteriaPayload = {
       axisWeights: Object.fromEntries(Object.entries(axisDraft).map(([key, value]) => [key, Number(value)])),
       gradeCutoffs: Object.fromEntries(Object.entries(cutoffDraft).map(([key, value]) => [key, Number(value)])),
-      maintainThreshold: threshold,
       businessFitOverrideThreshold: businessFit,
       // 편집 UI가 없는 subscoreWeights는 마지막으로 로드한 값을 그대로 전송한다.
       subscoreWeights: criteria?.config.subscoreWeights ?? DEFAULT_VALUATION_CRITERIA.config.subscoreWeights,
@@ -171,7 +168,6 @@ export function ValuationCriteriaSection() {
     const defaults = DEFAULT_VALUATION_CRITERIA.config;
     setAxisDraft(toDraft(defaults.axisWeights));
     setCutoffDraft(toDraft(defaults.gradeCutoffs));
-    setThresholdDraft(String(defaults.maintainThreshold));
     setBusinessFitDraft(String(defaults.businessFitOverrideThreshold ?? 60));
     // subscoreWeights는 편집 UI가 없으므로 저장 소스인 criteria.config에 기본값을 반영해 둔다.
     setCriteria((current) =>
@@ -188,7 +184,7 @@ export function ValuationCriteriaSection() {
         <div>
           <h2>AI 가치평가 기준</h2>
           <p>
-            4개 평가축의 가중치와 Agent md 파일의 세부 평가 기준을 관리합니다. 변경은 이후 생성되는 AI 레포트부터 적용됩니다.
+            권리성·기술성·시장성 3축 가중치와 AI 권고 기준점을 관리해요. 변경은 이후 생성되는 AI 레포트부터 적용돼요.
           </p>
         </div>
         <div className="inline-action-group">
@@ -213,8 +209,10 @@ export function ValuationCriteriaSection() {
       <div className="valuation-criteria-grid">
         <div className="valuation-criteria-card">
           <h3>축 가중치</h3>
-          <p className="valuation-criteria-help">평균 점수 산출 시 각 평가축의 비중입니다. 합계가 100이어야 합니다.</p>
-          {Object.keys(AXIS_LABELS).map((axis) => (
+          <p className="valuation-criteria-help">
+            종합 점수 산출 시 각 평가축의 비중이에요. 사업 연계성은 가중치 합산 대신 AI 권고 오버라이드로만 작용해요. 합계가 100이어야 해요.
+          </p>
+          {CORE_AXIS_ORDER.map((axis) => (
             <label className="valuation-criteria-field" key={axis}>
               <span>{AXIS_LABELS[axis]}</span>
               <input
@@ -229,41 +227,38 @@ export function ValuationCriteriaSection() {
           ))}
           <p className={axisInvalid ? "field-error" : "valuation-criteria-sum"}>
             합계 {axisSum}
-            {axisInvalid ? " - 합계가 100이어야 저장할 수 있습니다." : " / 100"}
+            {axisInvalid ? " - 합계가 100이어야 저장할 수 있어요." : " / 100"}
           </p>
         </div>
 
         <div className="valuation-criteria-card">
-          <h3>등급 컷오프 · 유지 임계</h3>
-          <p className="valuation-criteria-help">평균 점수 기준 등급 경계와 '유지 권고' 최소 점수입니다.</p>
-          {(["A", "B", "C"] as const).map((grade) => (
-            <label className="valuation-criteria-field" key={grade}>
-              <span>{grade} 등급 최소 점수</span>
-              <input
-                inputMode="decimal"
-                max={100}
-                min={0}
-                onChange={(event) => setCutoffDraft((draft) => ({ ...draft, [grade]: event.target.value }))}
-                type="number"
-                value={cutoffDraft[grade] ?? ""}
-              />
-            </label>
-          ))}
-          {cutoffInvalid ? <p className="field-error">100 ≥ A &gt; B &gt; C ≥ 0 순서를 지켜야 합니다.</p> : null}
+          <h3>AI 권고 기준</h3>
+          <p className="valuation-criteria-help">평균 점수에 따른 AI 권고가 결정되는 기준점이에요.</p>
           <label className="valuation-criteria-field">
-            <span>유지 권고 임계 점수</span>
+            <span>유지 권고 최소 점수</span>
             <input
               inputMode="decimal"
               max={100}
               min={0}
-              onChange={(event) => setThresholdDraft(event.target.value)}
+              onChange={(event) => setCutoffDraft((draft) => ({ ...draft, A: event.target.value }))}
               type="number"
-              value={thresholdDraft}
+              value={cutoffDraft.A ?? ""}
             />
           </label>
-          {thresholdInvalid ? <p className="field-error">0~100 사이 값이어야 합니다.</p> : null}
           <label className="valuation-criteria-field">
-            <span>사업 연계성 오버라이드 기준 점수</span>
+            <span>조건부 유지 최소 점수</span>
+            <input
+              inputMode="decimal"
+              max={100}
+              min={0}
+              onChange={(event) => setCutoffDraft((draft) => ({ ...draft, B: event.target.value }))}
+              type="number"
+              value={cutoffDraft.B ?? ""}
+            />
+          </label>
+          {cutoffInvalid ? <p className="field-error">유지 권고 최소 &gt; 조건부 유지 최소 ≥ 0 순서를 지켜야 해요.</p> : null}
+          <label className="valuation-criteria-field" style={{ marginTop: "var(--spacing-sm)" }}>
+            <span>사업 연계성 유지 권고 기준점</span>
             <input
               inputMode="decimal"
               max={100}
@@ -273,7 +268,10 @@ export function ValuationCriteriaSection() {
               value={businessFitDraft}
             />
           </label>
-          {businessFitInvalid ? <p className="field-error">0~100 사이 값이어야 합니다.</p> : null}
+          <p className="valuation-criteria-help" style={{ marginTop: "4px" }}>
+            이 점수 이상이면 종합 점수와 관계없이 '유지 권고'로 조정돼요.
+          </p>
+          {businessFitInvalid ? <p className="field-error">0~100 사이 값이어야 해요.</p> : null}
         </div>
       </div>
 
@@ -382,8 +380,9 @@ export function ValuationCriteriaSection() {
                 </strong>
                 <span>
                   가중치 {Object.entries(item.config.axisWeights)
+                    .filter(([axis]) => axis !== "business_fit")
                     .map(([axis, weight]) => `${AXIS_LABELS[axis] ?? axis} ${weight}`)
-                    .join(", ")} · 유지 임계 {item.config.maintainThreshold}점
+                    .join(", ")} · 유지 권고 기준 {(item.config.gradeCutoffs as Record<string, number>)?.A ?? "-"}점
                 </span>
               </div>
             ))}
