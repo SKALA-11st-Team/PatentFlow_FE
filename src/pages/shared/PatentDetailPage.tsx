@@ -271,7 +271,9 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
           <Meta icon={Cpu} label="기술 분야" value={patent.technologyArea} />
           <Meta icon={Package} label="관련 제품" value={patent.productName} />
           <Meta icon={Globe} label="국가" value={patent.country} />
-          <Meta icon={Users} label="공동출원인" value={patent.coApplicants} />
+          {/* 공동출원인이 없으면 단독 출원이므로 "없음"으로 표시한다.
+              "정보 부족 있음"은 출처 데이터 결손용 문구라 단독 출원에 쓰지 않는다. */}
+          <Meta icon={Users} label="공동출원인" value={patent.jointApplication ? patent.coApplicants : "없음"} />
           <Meta icon={Calendar} label="출원일" value={formatDate(patent.applicationDate)} />
           <Meta icon={CalendarCheck} label="등록일" value={formatDate(patent.registrationDate)} />
           <Meta icon={CalendarClock} label="예상 소멸일" value={formatDate(patent.expectedExpirationDate)} />
