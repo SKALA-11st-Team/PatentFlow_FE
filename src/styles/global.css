@@ -2175,6 +2175,8 @@ tbody tr:hover {
   border-left: 3px solid var(--color-primary);
   line-height: 1.72;
   margin: 0 0 var(--spacing-lg);
+  /* grid/flex 안에서 내부 마크다운(표 등)이 컬럼을 밀어내지 않도록 축소 허용. */
+  min-width: 0;
   padding-left: var(--spacing-md);
 }
 
