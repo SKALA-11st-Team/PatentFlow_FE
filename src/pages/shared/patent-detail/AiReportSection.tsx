@@ -98,7 +98,7 @@ export function RawMarkdownBlock({ content, title }: { content: string; title: s
   }
 
   return (
-    <details className="raw-markdown-block" open>
+    <details className="raw-markdown-block">
       <summary>{title}</summary>
       {tocItems.length >= 3 ? (
         <nav aria-label="레포트 목차" className="markdown-toc">
