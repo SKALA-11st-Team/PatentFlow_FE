@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import {
   isBackendApiEnabled,
   requestBlob,
@@ -565,7 +569,7 @@ export async function getPatentHistory(patentId: string): Promise<PatentHistoryI
 
 /**
  * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
- * @relatedUI UI-LEGAL-02, UI-LEGAL-06
+ * @relatedUI UI-LEGAL-02
  * @description 메일 발송 대기 상태의 선택 특허에 사업부 검토 요청 메일 발송 처리를 일괄 기록한다.
  */
 export async function sendBusinessReviewMails(drafts: BusinessReviewMailSendDraft[]): Promise<BulkMailingResult> {

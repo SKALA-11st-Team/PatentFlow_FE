@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { getStoredAuthUser } from "../../api/authStorage";
@@ -50,7 +54,7 @@ const sortLabels: Record<SortKey, string> = {
 
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-BUS-01
- * @relatedUI UI-BUS-02
+ * @relatedUI UI-BUS-07
  * @description 사업부 KPI 카드에서 진입하는 의견 요청 특허 전용 조회와 의견 등록 모달 화면
  */
 export function BusinessReviewRequestPage() {
@@ -290,7 +294,7 @@ export function BusinessReviewRequestPage() {
 
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-BUS-01
- * @relatedUI UI-BUS-02
+ * @relatedUI UI-BUS-07
  * @description KPI query parameter를 사업부 의견 상태 필터 초기값으로 변환한다.
  */
 function getInitialOpinionFilter(searchParams: URLSearchParams): OpinionFilter {

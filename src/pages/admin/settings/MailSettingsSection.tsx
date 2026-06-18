@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-04
+ */
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { Button } from "../../../components/common/Button";
 import type { MailOAuth2Status, ResponseDeadline } from "../../../api/settings";

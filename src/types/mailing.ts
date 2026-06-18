@@ -2,6 +2,8 @@
  * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
  * @relatedUI UI-LEGAL-05
  * @description 부서별 메일 담당자 설정과 사업부 검토 요청 메일 화면 모델 타입
+ * @author 유건욱
+ * @date 2026-05-12
  */
 export interface DepartmentRecipientMapping {
   departmentId: string;

@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { Badge } from "../common/Badge";
 import type { ReviewWorkflowStatus } from "../../types/patent";
 import { getReviewWorkflowTone, reviewWorkflowStatusLabels } from "../../constants/status";

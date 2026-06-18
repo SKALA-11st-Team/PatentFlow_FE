@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-11
+ */
 import { useEffect, useState } from "react";
 import { getApiErrorMessage } from "../../../api/client";
 import { MarkdownView } from "../../../components/common/MarkdownView";

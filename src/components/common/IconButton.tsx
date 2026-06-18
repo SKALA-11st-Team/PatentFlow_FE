@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-12
+ */
 import type { ButtonHTMLAttributes } from "react";
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

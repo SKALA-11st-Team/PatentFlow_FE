@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { getPatentDetail, suggestPatentContextFields, updatePatent } from "../../api/patents";
@@ -14,7 +18,7 @@ type PatentFormState = PatentUpsertPayload;
 
 /**
  * @relatedFR FR-LEGAL-03, FR-LEGAL-04
- * @relatedUI UI-LEGAL-04
+ * @relatedUI UI-LEGAL-03
  * @description 특허관리 테이블에서 선택한 특허의 기본 정보와 회사 컨텍스트를 상세 수정한다.
  */
 export function AdminPatentEditPage() {

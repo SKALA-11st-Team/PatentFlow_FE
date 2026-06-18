@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-11
+ */
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { getPatentDetail, recordPatentFinalDecision, updatePatentFinalDecision } from "../../../api/patents";
 import { useToast } from "../../../components/common/toastContext";

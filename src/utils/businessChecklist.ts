@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-20
+ */
 import { getAverageScore } from "../api/patents";
 import { businessChecklistItems } from "../mocks/businessChecklist.mock";
 import type {

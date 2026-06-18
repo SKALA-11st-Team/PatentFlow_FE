@@ -1,6 +1,15 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-16
+ */
 import type { AiEvaluationReport } from "../types/patent";
 import { evaluationCategoryLabels, recommendationLabels } from "../constants/status";
 
+/**
+ * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08
+ * @relatedUI UI-LEGAL-04
+ * @description AI 평가 레포트를 인쇄 전용 마크업으로 새 창에 띄워 브라우저 인쇄(PDF 저장)로 출력한다.
+ */
 // D3: AI 레포트를 PDF로 "다운로드". 별도 PDF 라이브러리 없이, 새 창에 인쇄 전용 마크업을 써서
 // window.print()를 호출 → 사용자가 브라우저 인쇄 대화상자에서 "PDF로 저장"한다.
 // 구조화 필드(점수·근거·섹션 본문)로 직접 조판하므로 마크다운 파서가 필요 없다.

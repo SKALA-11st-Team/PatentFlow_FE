@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "../../components/layout/AppLayout";
@@ -41,7 +45,7 @@ const emptyPatentForm: PatentFormState = {
 
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-03, FR-LEGAL-04
- * @relatedUI UI-LEGAL-03, UI-LEGAL-04
+ * @relatedUI UI-LEGAL-02
  * @description 관리자 특허 기본 정보 등록과 수정 대상 특허 테이블 조회 화면
  */
 export function AdminPatentListPage() {

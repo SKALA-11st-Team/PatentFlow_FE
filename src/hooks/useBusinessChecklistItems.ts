@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { useEffect, useState } from "react";
 import { getBusinessChecklistItems } from "../api/businessChecklist";
 import type { BusinessChecklistItem } from "../types/businessChecklist";

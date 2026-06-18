@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-19
+ */
 import { useState } from "react";
 import { getApiErrorMessage } from "../../api/client";
 import type { Department } from "../../api/departments";

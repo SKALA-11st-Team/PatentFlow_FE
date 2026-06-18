@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-14
+ */
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { acceptInvitation, validateInvitation } from "../api/invitations";

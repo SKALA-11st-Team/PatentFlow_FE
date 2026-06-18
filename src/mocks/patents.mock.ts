@@ -1,7 +1,9 @@
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-BUS-01, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-11, FR-LEGAL-15
- * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-04, UI-LEGAL-06, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-04, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
  * @description docs 기반 특허 메타데이터에 발표용 AI 평가 레포트, workflow, 의견/판단 mock 데이터를 결합한다.
+ * @author 유건욱
+ * @date 2026-05-06
  */
 import type {
   AiEvaluationReport,

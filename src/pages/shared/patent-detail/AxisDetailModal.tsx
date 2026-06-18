@@ -1,3 +1,10 @@
+/**
+ * @relatedFR FR-LEGAL-06, FR-LEGAL-07
+ * @relatedUI UI-LEGAL-04
+ * @description AI 평가 4축(권리성·기술성·시장성·사업 연계성)별 점수와 평가 근거를 보여주는 상세 모달.
+ * @author 유건욱
+ * @date 2026-06-16
+ */
 import { useState } from "react";
 import { ExternalLink, GitBranch } from "lucide-react";
 import { Badge } from "../../../components/common/Badge";

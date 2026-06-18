@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-14
+ */
 import type { BusinessInvitationStatus, InvitationValidation } from "../types/invitation";
 
 // 9개 사업부(DEPT-*)에 1:1 대응하는 사업부 계정 초대 상태 시드.

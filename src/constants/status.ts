@@ -1,7 +1,9 @@
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-06, FR-BUS-01, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-15
- * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-06, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-04, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
  * @description PatentFlow FE에서 사용하는 상태값, 라벨, 표시 순서, 배지 tone을 한 곳에서 관리한다.
+ * @author 유건욱
+ * @date 2026-05-06
  */
 
 export type StatusTone = "neutral" | "primary" | "warning" | "success" | "danger";

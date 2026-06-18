@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { useEffect, useState } from "react";
 import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
 import { getCurrentUser } from "./api/auth";
@@ -103,7 +107,7 @@ function ProtectedRoute({
 
 /**
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-03, FR-LEGAL-04, FR-BUS-01, FR-LEGAL-11, FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14, FR-LEGAL-15
- * @relatedUI UI-COM-01, UI-COM-04, UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-04, UI-LEGAL-05, UI-LEGAL-06, UI-LEGAL-07, UI-LEGAL-08, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05, UI-BUS-06
+ * @relatedUI UI-COM-01, UI-COM-04, UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-03, UI-LEGAL-04, UI-LEGAL-05, UI-LEGAL-07, UI-LEGAL-08, UI-BUS-01, UI-BUS-02, UI-BUS-03, UI-BUS-04, UI-BUS-05
  * @description PatentFlow 관리자/사업부 화면 라우트 정의
  */
 const router = createBrowserRouter([

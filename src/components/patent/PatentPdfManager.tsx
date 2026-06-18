@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-12
+ */
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { deletePatentPdf, downloadPatentPdf, getPatentPdfMeta, uploadPatentPdf } from "../../api/patents";
 import { getApiErrorMessage } from "../../api/client";

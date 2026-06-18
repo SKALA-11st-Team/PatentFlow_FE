@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-04
+ */
 import { useState } from "react";
 import { Button } from "../../../components/common/Button";
 import type { QuarterSetting, ReviewPeriodTemplate } from "../../../api/settings";

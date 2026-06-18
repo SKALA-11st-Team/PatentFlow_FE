@@ -1,3 +1,10 @@
+/**
+ * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08
+ * @relatedUI UI-LEGAL-04
+ * @description 특허 상세의 AI 평가 레포트를 평가축 레이더·점수·근거·섹션 본문으로 렌더링한다.
+ * @author 유건욱
+ * @date 2026-06-15
+ */
 import { useEffect, useState } from "react";
 import { animate, motion, useMotionValue, type Variants } from "framer-motion";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from "recharts";

@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-12
+ */
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getAuditLogs, type AuditLogEntry, type AuditLogType } from "../../api/auditLogs";
@@ -24,7 +28,7 @@ const AUDIT_SUMMARY_TYPES: AuditLogType[] = ["AI_REPORT_EDIT", "FEE_ADJUSTMENT",
 
 /**
  * @relatedFR FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-24
- * @relatedUI UI-LEGAL-04
+ * @relatedUI UI-LEGAL-09
  * @description F4/AUDIT-02: 변경 추적(감사 로그) — 누가 언제 AI 레포트를 고치고, 납부일을 조정하고,
  * 최종 결정을 내렸는지 추적한다. 특허 ID를 몰라도 전체 이력이 바로 보이고, 특허명·관리번호·작업자
  * 키워드로 좁힐 수 있다.

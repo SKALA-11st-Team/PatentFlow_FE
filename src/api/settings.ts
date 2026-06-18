@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-19
+ */
 import { isBackendApiEnabled, requestJson, type ApiEnvelope } from "./client";
 import { businessChecklistItems as mockChecklistSeed } from "../mocks/businessChecklist.mock";
 import type { BusinessChecklistItem } from "../types/businessChecklist";

@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-11
+ */
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import { ToastContext, type ToastTone } from "./toastContext";
 

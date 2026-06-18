@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-08
+ */
 import type { PatentListItem } from "../types/patent";
 import type { BusinessReviewMailSendDraft, DepartmentRecipientMapping, PatentPdfLink } from "../types/mailing";
 
@@ -14,7 +18,7 @@ export interface BusinessReviewMailDraft {
 
 /**
  * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
- * @relatedUI UI-LEGAL-02, UI-LEGAL-04
+ * @relatedUI UI-LEGAL-02, UI-LEGAL-04, UI-LEGAL-05
  * @description 선택 특허와 부서 담당자 정보를 기반으로 사업부 검토 요청 메일 초안을 만든다.
  */
 export function createBusinessReviewMailDraft(

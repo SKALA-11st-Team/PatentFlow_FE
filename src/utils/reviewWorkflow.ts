@@ -2,6 +2,8 @@
  * @relatedFR FR-LEGAL-01, FR-LEGAL-02
  * @relatedUI UI-LEGAL-01, UI-LEGAL-02
  * @description 이번 분기 연차료 검토 대상 여부를 대시보드 KPI와 조회 필터에서 같은 기준으로 판정한다.
+ * @author 유건욱
+ * @date 2026-05-15
  */
 import type { PatentListItem, ReviewWorkflowStatus } from "../types/patent";
 

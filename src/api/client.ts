@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { clearAuthSession, getStoredAccessToken, updateAccessToken } from "./authStorage";
 
 const importMetaEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;

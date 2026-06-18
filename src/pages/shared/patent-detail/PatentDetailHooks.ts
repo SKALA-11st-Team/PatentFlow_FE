@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-04
+ */
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { submitBusinessChecklist } from "../../../api/businessChecklist";

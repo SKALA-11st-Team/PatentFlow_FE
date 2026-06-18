@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { getDepartmentRecipientMappings, getPatentPdfLinks } from "../../api/mailing";
@@ -65,8 +69,8 @@ const contextFilterConfigs: ContextFilterConfig[] = [
 ];
 
 /**
- * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14, FR-LEGAL-15
- * @relatedUI UI-LEGAL-02
+ * @relatedFR FR-LEGAL-01, FR-LEGAL-02, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-COM-02, UI-LEGAL-05
  * @description 관리자 KPI 카드에서 진입하는 상태별 특허 조회와 메일 일괄 처리 화면
  */
 export function AdminReviewTargetPage() {

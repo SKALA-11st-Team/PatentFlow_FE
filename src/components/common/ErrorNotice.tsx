@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-29
+ */
 interface ErrorNoticeProps {
   message: string;
 }

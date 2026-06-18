@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-13
+ */
 import { DOCUMENTED_FX_RATES, type CurrencyCode } from "../utils/annualFee";
 
 /**

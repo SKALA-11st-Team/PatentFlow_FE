@@ -1,6 +1,15 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 // Generated from docs/skax_patents_list.md.
 // Keep this file aligned with the source table when patent metadata changes.
 
+/**
+ * @relatedFR FR-LEGAL-03
+ * @relatedUI COMMON
+ * @description SK AX 데모 특허 원본 메타데이터(관리 출처 docs/skax_patents_list.md 기반). 목록·상세·필터 mock의 기준 데이터.
+ */
 export interface SkaxPatentRow {
   managementNumber: string;
   draftTitle: string;

@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-11
+ */
 import { describe, it, expect } from "vitest";
 import {
   createBusinessReviewMailDraftFromPatents,
@@ -5,6 +9,12 @@ import {
 } from "./businessReviewMail";
 import type { PatentListItem } from "../types/patent";
 import type { PatentPdfLink } from "../types/mailing";
+
+/**
+ * @relatedFR FR-LEGAL-13, FR-LEGAL-14
+ * @relatedUI UI-LEGAL-05
+ * @description 사업부 검토 요청 메일 미리보기·발송 드래프트 생성 유틸의 회귀 테스트.
+ */
 
 function patent(patentId: string, overrides: Partial<PatentListItem> = {}): PatentListItem {
   return {

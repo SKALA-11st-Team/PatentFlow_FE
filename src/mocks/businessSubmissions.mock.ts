@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { businessChecklistItems } from "./businessChecklist.mock";
 import type { BusinessSubmissionChecklistScore, BusinessSubmissionVersion } from "../types/businessSubmission";
 import type { BusinessOpinionDecision, PatentDetail, PatentListItem, Recommendation } from "../types/patent";

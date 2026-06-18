@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-29
+ */
 import { EVALUATION_CATEGORIES, PATENT_CONTEXT_CATEGORY_OPTIONS } from "../constants/status";
 import { appendMockMailingHistory } from "../mocks/mailing.mock";
 import { patentDetails, patents } from "../mocks/patents.mock";

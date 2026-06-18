@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-12
+ */
 import type { BusinessOpinionDecision, Recommendation } from "./patent";
 
 export interface BusinessSubmissionChecklistScore {

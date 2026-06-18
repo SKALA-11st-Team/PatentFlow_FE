@@ -1,5 +1,15 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-19
+ */
 import { describe, it, expect } from "vitest";
 import { getNextAnnualFeeDueDate, getRemainingDaysUntilDate } from "./annualFee";
+
+/**
+ * @relatedFR FR-LEGAL-24
+ * @relatedUI UI-LEGAL-01, UI-LEGAL-02, UI-LEGAL-07
+ * @description 연차료 다음 납부 기한·잔여일 계산 유틸의 회귀 테스트.
+ */
 
 describe("annualFee Utils", () => {
   describe("getNextAnnualFeeDueDate", () => {

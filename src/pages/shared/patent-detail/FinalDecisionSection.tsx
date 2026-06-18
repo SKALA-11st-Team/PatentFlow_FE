@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-04
+ */
 import { Badge } from "../../../components/common/Badge";
 import { Button } from "../../../components/common/Button";
 import { Modal } from "../../../components/common/Modal";

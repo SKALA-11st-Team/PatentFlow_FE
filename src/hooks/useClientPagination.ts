@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { useEffect, useMemo, useState } from "react";
 
 export const DEFAULT_PAGE_SIZE = 20;

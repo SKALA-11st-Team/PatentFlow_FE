@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-22
+ */
 import { isBackendApiEnabled, requestJson, toQueryString, type ApiEnvelope } from "./client";
 import { patents } from "../mocks/patents.mock";
 import type { PatentListItem } from "../types/patent";

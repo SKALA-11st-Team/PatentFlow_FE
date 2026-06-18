@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-10
+ */
 import { describe, it, expect } from "vitest";
 import { patentDetails } from "../mocks/patents.mock";
 import { businessChecklistItems } from "../mocks/businessChecklist.mock";
@@ -10,6 +14,11 @@ import {
   suggestedScoreFromRepresentative,
 } from "./businessChecklist";
 
+/**
+ * @relatedFR FR-BUS-04
+ * @relatedUI UI-BUS-03
+ * @description 사업부 평가 체크리스트 점수 환산·드래프트 생성 유틸의 회귀 테스트.
+ */
 // BIZ-07: 임계값·매핑이 명명 상수로 외부화됐고 경계값 환산이 안정적인지 회귀 가드.
 describe("businessChecklist — AI 제안 점수 환산(BIZ-07)", () => {
   it("0~100 대표 점수를 임계값(80/65/45) 경계 기준으로 1~4로 환산한다", () => {

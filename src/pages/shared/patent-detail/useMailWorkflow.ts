@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-11
+ */
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { getDepartmentRecipientMappings, getMailingHistory, getPatentPdfLinks } from "../../../api/mailing";
 import { getPatentDetail, getPatents, sendBusinessReviewMails } from "../../../api/patents";
@@ -20,7 +24,7 @@ interface UseMailWorkflowArgs {
 
 /**
  * @relatedFR FR-LEGAL-12, FR-LEGAL-13, FR-LEGAL-14
- * @relatedUI UI-LEGAL-04, UI-LEGAL-06
+ * @relatedUI UI-LEGAL-04
  * @description 특허 상세의 메일 발송 흐름(드래프트 작성/미리보기/발송/이력) 상태를 관리한다.
  *     usePatentDetail 메가훅에서 순수 분리한 클러스터로, 동작 변경은 없다.
  */

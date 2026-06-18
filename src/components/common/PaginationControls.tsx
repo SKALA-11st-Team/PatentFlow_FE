@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 interface PaginationControlsProps {
   currentPage: number;
   onPageChange: (page: number) => void;

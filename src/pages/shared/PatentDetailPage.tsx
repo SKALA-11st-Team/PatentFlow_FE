@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-05-06
+ */
 import { useEffect, useRef, useState } from "react";
 import { getAiReportRegenSetting } from "../../api/settings";
 import { Link } from "react-router-dom";
@@ -53,8 +57,8 @@ import { BusinessChecklistModal, BusinessOpinionSection } from "./patent-detail/
 type BadgeTone = "neutral" | "primary" | "success" | "warning" | "danger";
 
 /**
- * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-11, FR-LEGAL-15
- * @relatedUI UI-LEGAL-04, UI-BUS-03
+ * @relatedFR FR-LEGAL-05, FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-LEGAL-09, FR-LEGAL-10, FR-LEGAL-11
+ * @relatedUI UI-LEGAL-04, UI-BUS-02, UI-BUS-03
  * @description 관리자와 사업부 사용자가 각 역할에 맞게 특허 상세, AI 특허 평가 레포트, 의견/판단 정보를 확인하는 화면
  */
 export function PatentDetailPage({ role }: { role: UserRole }) {

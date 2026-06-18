@@ -1,7 +1,16 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-12
+ */
 import { describe, it, expect } from "vitest";
 import { parsePatentCsv, patentsToCsv, splitCsvLine } from "./patentCsv";
 import type { PatentListItem } from "../types/patent";
 
+/**
+ * @relatedFR FR-LEGAL-02, FR-LEGAL-03
+ * @relatedUI UI-LEGAL-02
+ * @description 특허 목록 CSV 내보내기/가져오기 유틸(patentCsv)의 회귀 테스트.
+ */
 // F5: CSV 내보내기/가져오기 — 따옴표 셀·필수 컬럼·BOM 처리 회귀 가드.
 describe("patentCsv (F5)", () => {
   it("따옴표로 감싼 셀과 이스케이프를 분리한다", () => {

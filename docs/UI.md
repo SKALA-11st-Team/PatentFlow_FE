@@ -18,12 +18,14 @@
 | `UI-LEGAL-05` | 메일링 | 관리자 | 사업부 검토 요청 메일 미리보기, 발송, 발송 이력 조회 | `/admin/mailing` |
 | `UI-LEGAL-07` | 관리자 설정 | 관리자 | 운영 기준, 회신 기한, 메일 발송 기준, 평가 기준, 부서/메일링, 사업/기술 분류 설정 관리 | `/admin/settings` |
 | `UI-LEGAL-08` | 사용자 관리 | 관리자 | 관리자와 사업부 사용자 계정/부서 권한 관리 | `/admin/users` |
+| `UI-LEGAL-09` | 변경 추적(감사 로그) | 관리자 | AI 레포트 편집·연차료 조정·최종 결정 변경 이력을 전체 특허 범위에서 추적 조회 | `/admin/audit-logs` |
 | `UI-BUS-01` | 사업부서 대시보드 | 사업부서 | 부서에 배정받은 연차료 검토 특허 리스트와 현황 확인 | `/business/dashboard` |
 | `UI-BUS-02` | 사업부서 특허 상세 | 사업부서 | AI 레포트, 특허 요약, 기존 의사결정 기록, 내 사업부 의견 입력 영역 확인 | `/business/patents/:patentId` |
 | `UI-BUS-03` | 사업부서 특허 평가 체크리스트 모달창 | 사업부서 | 기술완성도, 기술 독창성, 시장성, 기대효과 점수와 의견 입력 | 상세/요청 목록 내 checklist modal |
 | `UI-BUS-04` | 특허별 제출 이력 리스트 페이지 | 사업부서 | 사업 의견을 제출한 특허의 제출 이력 확인 | `/business/submissions` |
-| `UI-BUS-05` | 특허별 제출 상세 페이지 | 사업부서 | 특허의 제출 상세 이력과 당시 평가 근거 확인 | `/business/submissions/:patentId` |
-| `UI-BUS-06` | 사업부 설정 | 사업부서 | 알림, 의견 템플릿, 담당자 정보 설정 | `/business/settings` |
+| `UI-BUS-05` | 특허별 제출 상세 | 사업부서 | 특허 상세(`UI-BUS-02`) 내 제출 상세 이력과 당시 평가 근거 확인 (별도 라우트 아님) | `/business/patents/:patentId` 내 `BusinessSubmissionHistoryDetail` 섹션 |
+| `UI-BUS-07` | 검토 요청 목록 | 사업부서 | 사업부 담당자가 의견 요청받은(검토 요청) 특허 목록 조회 | `/business/review-requests` |
+> 제거됨: `UI-LEGAL-06`(매각 후보 관리), `UI-BUS-06`(사업부 설정)은 화면이 구현되지 않아 공식 목록에서 제외한다.
 
 ## Fixed Functional Requirements
 

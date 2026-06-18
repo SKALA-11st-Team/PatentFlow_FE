@@ -1,3 +1,7 @@
+/**
+ * @author 유건욱
+ * @date 2026-06-14
+ */
 import type { CreateUserRequest, UpdateUserRequest, UserItem } from "../api/adminUsers";
 
 // 계정 관리(UI-LEGAL-08) mock 시드.
