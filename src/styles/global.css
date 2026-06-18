@@ -5799,11 +5799,6 @@ tbody tr:hover {
   font-weight: 500;
 }
 
-.judgment-sub {
-  color: var(--color-text-muted);
-  font-size: 12px;
-}
-
 .judgment-action {
   font-size: 14px !important;
   font-weight: 600;

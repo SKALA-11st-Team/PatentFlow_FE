@@ -266,8 +266,6 @@ export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport | n
   const avgScore =
     report.averageScore ??
     (scored.length ? Math.round((scored.reduce((sum, s) => sum + (s.score ?? 0), 0) / scored.length) * 10) / 10 : null);
-  const coreScores = scored.filter((s) => s.category === "RIGHTS" || s.category === "TECHNOLOGY" || s.category === "MARKET");
-  const coreTotal = coreScores.length ? coreScores.reduce((sum, s) => sum + (s.score ?? 0), 0) : null;
   const oneLiner = report.summaryBrief?.one_line_summary ?? report.keyEvidence;
   const action = report.businessCheckRequests?.find((item) => item.trim());
 
@@ -302,7 +300,6 @@ export function JudgmentSummaryBand({ report }: { report: AiEvaluationReport | n
                 {avgScore != null ? <CountUp value={Math.round(avgScore)} /> : "–"}
                 <small> / 100</small>
               </strong>
-              {coreTotal != null ? <small className="judgment-sub">{coreTotal} / 300</small> : null}
             </motion.div>
             {strongest ? <AxisStat label="가장 강한 평가축" score={strongest} /> : null}
             {weakest && weakest !== strongest ? <AxisStat label="가장 약한 평가축" score={weakest} /> : null}
