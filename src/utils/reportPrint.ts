@@ -35,7 +35,10 @@ function list(items: string[] | undefined): string {
 }
 
 export function downloadAiReportPdf(patentTitle: string, report: AiEvaluationReport): void {
-  const win = window.open("", "_blank", "noopener,nowidth");
+  // 새 창에 직접 마크업을 써서 인쇄해야 하므로 창 핸들이 필요하다.
+  // features에 noopener를 넣으면 window.open이 null을 반환해 핸들을 잃으므로 쓰지 않는다.
+  // (생성 HTML은 same-origin이라 opener 노출 위험이 없다.)
+  const win = window.open("", "_blank");
   if (!win) return;
 
   const scoresRows = report.scores
