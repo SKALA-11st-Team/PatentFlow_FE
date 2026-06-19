@@ -46,7 +46,7 @@ export function createBusinessChecklistDraft(
       patent.businessOpinion.opinion ??
       (patent.aiEvaluationReport?.recommendation === "ABANDON" ? "ABANDON" : "MAINTAIN"),
     finalReason: patent.businessOpinion.comment ?? "",
-    additionalNeeds: patent.aiEvaluationReport?.missingInformation.join(", ") ?? "",
+    additionalNeeds: "",
   };
 }
 

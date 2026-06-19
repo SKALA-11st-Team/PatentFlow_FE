@@ -330,7 +330,11 @@ export function PatentDetailPage({ role }: { role: UserRole }) {
                   <>
                     <div className="report-callout">
                       <strong>{recommendationLabels[patent.aiEvaluationReport.recommendation]}</strong>
-                      <p>{patent.aiEvaluationReport.recommendationText}</p>
+                      {patent.aiEvaluationReport.reportSections?.finalOpinion ? (
+                        <MarkdownView content={patent.aiEvaluationReport.reportSections.finalOpinion} />
+                      ) : patent.aiEvaluationReport.recommendationText ? (
+                        <p>{patent.aiEvaluationReport.recommendationText}</p>
+                      ) : null}
                     </div>
                     {patent.aiEvaluationReport.rawMarkdown ? (
                       <RawMarkdownBlock content={patent.aiEvaluationReport.rawMarkdown} title="AI 특허 평가 레포트 전문" />
