@@ -1,10 +1,31 @@
 # PatentFlow Frontend
 
-PatentFlow는 SYUUK 팀의 내부 특허 관리 AI 워크플로우 시스템입니다.  
+PatentFlow는 SYUUK 팀의 내부 특허 관리 AI 워크플로우 시스템입니다.
 프론트엔드는 법무/특허 관리팀과 사업부 사용자가 연차료 납부 시점의 회사 보유 특허를 검토하고, AI 특허 평가 레포트를 참고해 사람이 최종 판단을 기록할 수 있도록 돕는 업무형 웹앱입니다.
 
-핵심 원칙은 `Explain the Value, Guide the Decision`입니다.  
+핵심 원칙은 `Explain the Value, Guide the Decision`입니다.
 AI 결과는 단순 점수가 아니라 특허의 유지·포기 판단에 필요한 가치 설명과 의사결정 가이드로 제공하며, 최종 판단과 법적 액션 결과는 사람의 기록 영역으로 분리합니다.
+
+## 시스템 속 위치
+
+- **FE → BE**: 백엔드(`PatentFlow_BE`)가 권위 API이며, 프론트엔드는 이를 호출합니다.
+- 백엔드 URL이 설정되지 않으면 `src/mocks/`의 데모 데이터로 동작하는 **mock fallback**이 내장되어, 백엔드 준비 전에도 화면과 사용자 흐름을 검증할 수 있습니다.
+
+## 빠른 시작
+
+```bash
+npm install
+npm run dev      # Vite 개발 서버 (기본 진입 경로 /login)
+```
+
+| 스크립트 | 설명 |
+|---|---|
+| `npm run dev` | Vite 개발 서버 실행 |
+| `npm run build` | TypeScript 빌드 확인 후 프로덕션 번들 생성 |
+| `npm run lint` | ESLint 검사 |
+| `npm run preview` | 빌드 결과 미리보기 |
+
+기술 스택: React 19 · Vite · TypeScript · React Router · Plain CSS. 새 의존성은 최소화하며, 별도 UI 라이브러리 없이 공통 컴포넌트와 전역 CSS로 화면을 구성합니다.
 
 ## 주요 기능
 
@@ -24,84 +45,6 @@ AI 결과는 단순 점수가 아니라 특허의 유지·포기 판단에 필�
 - 특허 요약, 해결 과제, 핵심 기술, 권리 범위 이해
 - 사업부 의견 제출
 - 제출 이력 및 당시 AI 레포트 확인
-- 사업부 설정 확인
-
-## 기술 스택
-
-- React 19
-- Vite
-- TypeScript
-- React Router
-- ESLint
-- Plain CSS
-
-새 의존성은 최소화하며, 현재 프로젝트는 별도 UI 라이브러리 없이 공통 컴포넌트와 전역 CSS로 화면을 구성합니다.
-
-## 시작하기
-
-```bash
-npm install
-npm run dev
-```
-
-개발 서버 실행 후 Vite가 출력하는 로컬 주소로 접속합니다. 기본 진입 경로는 `/login`입니다.
-
-## 사용 가능한 스크립트
-
-```bash
-npm run dev
-npm run build
-npm run lint
-npm run preview
-```
-
-- `dev`: Vite 개발 서버 실행
-- `build`: TypeScript 빌드 확인 후 프로덕션 번들 생성
-- `lint`: ESLint 검사
-- `preview`: 빌드 결과 미리보기 서버 실행
-
-## 환경 변수
-
-실제 백엔드 API를 연결할 때는 `.env` 또는 실행 환경에 다음 값을 설정합니다.
-
-```bash
-VITE_API_BASE_URL=http://localhost:8080
-```
-
-`VITE_API_BASE_URL`이 비어 있으면 프론트엔드는 `src/mocks/`의 데모 데이터를 사용합니다. 이 방식으로 백엔드가 준비되기 전에도 화면과 사용자 흐름을 검증할 수 있습니다.
-
-백엔드 없이 화면만 단독 개발할 때는 다음 값을 사용합니다.
-
-```bash
-VITE_USE_MOCK_API=true
-```
-
-프로덕션 배포는 Vercel 정적 배포를 기준으로 합니다. `vercel.json`의 rewrite 설정이 `/admin/...`, `/business/...` 같은 React Router 하위 라우트 새로고침을 `index.html`로 연결합니다.
-
-## 주요 라우트
-
-### 공통
-
-- `/login`: 로그인
-
-### 관리자
-
-- `/admin/dashboard`: 관리자 대시보드
-- `/admin/review-targets`: 검토 대상 특허 목록
-- `/admin/patents`: 특허 관리
-- `/admin/patents/:patentId`: 관리자 특허 상세
-- `/admin/patents/:patentId/edit`: 특허 등록/수정
-- `/admin/mailing`: 메일링
-- `/admin/settings`: 설정
-
-### 사업부
-
-- `/business/dashboard`: 사업부 대시보드
-- `/business/review-requests`: 의견 요청 특허
-- `/business/patents/:patentId`: 사업부 특허 상세
-- `/business/submissions`: 제출 이력
-- `/business/submissions/:patentId`: 제출 이력 상세
-- `/business/settings`: 사업부 설정
 
 ## 디렉터리 구조
 
@@ -120,72 +63,15 @@ src/
   utils/               연차료 납부일 등 공통 계산 유틸
 ```
 
-## 데이터와 API 연동 방식
+## 데이터·API 연동 / 환경변수
 
 API 함수는 `src/api/`에 모여 있으며, 백엔드 URL 설정 여부에 따라 실제 API 또는 mock 데이터를 사용합니다.
 
-- `src/api/client.ts`: 공통 request helper와 API 활성화 확인
-- `src/api/patents.ts`: 특허 목록, 상세, 이력, 등록/수정, 일괄 처리
-- `src/api/businessSubmissions.ts`: 사업부 제출 이력
-- `src/api/businessChecklist.ts`: 사업부 체크리스트
-- `src/api/notifications.ts`: 알림 목록과 읽음 상태
-
-백엔드 API 우선순위와 MVP 응답 형태는 `docs/api_priority.md`를 기준으로 맞춥니다.
-
-## 평가 기준
-
-현재 AI 평가 점수 축은 다음 4개만 사용합니다.
-
-- 권리성
-- 기술성
-- 시장성
-- 사업 연계성
-
-AI 권고 라벨은 `유지 권고`, `포기 검토`, `추가 정보 필요`처럼 표시하고, workflow 상태는 `사업부 응답 대기`, `처리 완료`처럼 프로세스 상태로 표시합니다.
-
-
-
-- `docs/DESIGN_SYSTEM.md`: UI 톤, 토큰, 레이아웃, 컴포넌트 원칙
-- `docs/skax_patents_list.md`: 데모 특허 메타데이터 원본
-- `docs/patent_evaluation_criteria.md`: 평가 기준과 표시 규칙
-- `docs/business_evaluavte_checklist.md`: 사업부 체크리스트 기준
-- `docs/api_priority.md`: API 우선순위와 MVP 응답 형태
-- `docs/need_api.md`: 추가 API 필요 사항
-- `docs/prompt.md`: AI prompt/reference 관련 내용
-
-## 구현 규칙
-
-- 프론트엔드 범위만 수정합니다.
-- 백엔드, AI serving, LangChain agent, DB schema, 배포 로직은 구현하지 않습니다.
-- 화면, 컴포넌트, API 함수, mock, 주요 유틸에는 FR/UI traceability comment를 유지합니다.
-- FR-001부터 FR-022까지의 의미와 번호는 변경하지 않습니다.
-- 특허 상세 화면에서는 AI 특허 평가 레포트, 최종 판단, 사업부 의견, 평가 근거, 정보 부족 영역을 명확히 분리합니다.
-- 개별 특허 상세 페이지는 메인 내비게이션에 직접 노출하지 않고, 목록이나 대시보드 행에서 진입합니다.
-
-## 검증
-
-변경 후 가능한 범위에서 다음 명령을 실행합니다.
-
 ```bash
-npm install
-npm run lint
-npm run build
+VITE_API_BASE_URL=http://localhost:8080   # 실제 백엔드 연결
+VITE_USE_MOCK_API=true                    # 백엔드 없이 mock 데이터로 화면만 개발
 ```
 
-백엔드 없이 화면만 검증할 때는 `.env`에 mock 모드를 켭니다.
+`VITE_API_BASE_URL`이 비어 있으면 프론트엔드는 `src/mocks/`의 데모 데이터를 사용합니다.
 
-```bash
-VITE_USE_MOCK_API=true
-npm run dev
-```
-
-실제 백엔드와 연동할 때는 `.env`에 API 주소를 설정한 뒤 실행합니다.
-
-```bash
-VITE_API_BASE_URL=http://localhost:8080
-npm run dev
-```
-
-Vercel 배포 전에는 로컬에서 `npm run build`를 실행해 정적 번들이 정상 생성되는지 확인합니다.
-
-문서만 변경한 경우에는 별도 빌드가 필요하지 않을 수 있지만, 코드 변경이 포함되면 실제 실행 결과를 확인한 뒤 보고합니다.
+프로덕션 배포는 Vercel 정적 배포를 기준으로 합니다. `vercel.json`의 rewrite 설정이 `/admin/...`, `/business/...` 같은 React Router 하위 라우트 새로고침을 `index.html`로 연결합니다.
