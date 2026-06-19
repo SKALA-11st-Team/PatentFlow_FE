@@ -100,7 +100,7 @@ export async function updateResponseDeadline(months: number, days: number): Prom
   return response.data ?? { months, days };
 }
 
-// ── AI 가치평가 기준 (UI-008) ─────────────────────────────────
+// ── AI 가치평가 기준 (UI-LEGAL-07) ─────────────────────────────────
 
 export interface ValuationCriteriaConfig {
   version: number;

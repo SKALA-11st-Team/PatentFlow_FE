@@ -4297,7 +4297,7 @@ tbody tr:hover {
   padding: var(--spacing-md);
 }
 
-/* ── UI-008: AI 가치평가 기준 설정 ─────────────────────────── */
+/* ── UI-LEGAL-07: AI 가치평가 기준 설정 ─────────────────────────── */
 
 .valuation-criteria-grid {
   display: grid;
@@ -4598,7 +4598,7 @@ tbody tr:hover {
 }
 
 
-/* ── UI-008: 설정 subnav 및 Agent md 평가 기준 편집 ── */
+/* ── UI-LEGAL-07: 설정 subnav 및 Agent md 평가 기준 편집 ── */
 .settings-subnav {
   align-items: center;
   background: var(--color-white);

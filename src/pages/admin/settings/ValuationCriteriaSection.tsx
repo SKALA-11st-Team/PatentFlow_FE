@@ -50,8 +50,8 @@ const hasInvalidNumber = (draft: NumberDraft, { min = 0, max = 100 } = {}) =>
   });
 
 /**
- * @relatedFR FR-006, FR-007, FR-008, FR-LEGAL-21
- * @relatedUI UI-008
+ * @relatedFR FR-LEGAL-06, FR-LEGAL-07, FR-LEGAL-08, FR-LEGAL-21
+ * @relatedUI UI-LEGAL-07
  * @description AI 특허 평가 레포트의 축 가중치와 Agent md 기반 세부 평가 기준을 관리한다.
  */
 export function ValuationCriteriaSection() {
