@@ -80,7 +80,7 @@ export function logout() {
 
 function createMockLoginResult(loginId: string): LoginResult {
   // "business@…" 이외의 모든 ID는 ADMIN으로 처리 — 목업이므로 패턴 매칭으로 역할 결정
-  const role = loginId === "business@syuuk.test" ? "BUSINESS" : "ADMIN";
+  const role = loginId.startsWith("business@") ? "BUSINESS" : "ADMIN";
   const user: AuthUser = {
     departmentId: role === "BUSINESS" ? "DEPT-RND" : null,
     departmentName: role === "BUSINESS" ? "R&D본부" : null,
